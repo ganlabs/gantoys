@@ -1,0 +1,8 @@
+usando apenas os arquivos ja criados na pasta faça o seguinte app:
+
+recebe uma planilha ou abre o ultimo trabalho
+a estrutura da planilha que vai ser lida é a mesma que eu forneci aqui como exemplo.
+ele lera a planilha e populará um banco de dados sqlite local que estará na pasta do projeto ou sera criado e confugirado (inclusive com a estrutura de tabelas) se nao houver um.
+a cada planilha lida os registros receberao um id que identificará tambem a data daquela inserção. exemplo se na planilha tiverem 3 itens eles receberao uma identificação que sera no formato yyyymmddnnnn exemplo, os itens receberao a identificacao 2026032001, 2026032002 e 2026032003 (y-ano, m-mes, d-dia e n-numero incremental). se houver mais de uma planilha naquele dia os proximos registros seguirao o incremento.
+todos os filtros do excel em cada campo tambem devera ser implementado 
+a visualizaçao dos dados devem ser feitas parecido com o excel, ou seja em tabela e com campos totalmente editaveis

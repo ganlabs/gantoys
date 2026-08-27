@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GanCopy - Copiador de Processos</title>
+    <style>
+        :root {
+            --gold: #ffc107;
+            --dark-gold: #f0a000;
+            --ink: #1a1a1a;
+            --deep: #2f2a18;
+            --muted: #687078;
+            --surface: #f8f9fa;
+            --line: #e1e4e7;
+            --success: #1d8b50;
+            --danger: #c73d42;
+            --warning: #b76c00;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 42px 20px;
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at 62% 100%, #d5b52c 0%, #695a21 40%, var(--deep) 100%);
+            background-attachment: fixed;
+        }
+
+        .shell { width: min(100%, 980px); margin: 0 auto; }
+
+        .brand { text-align: center; color: white; margin-bottom: 26px; }
+
+        .brand-mark {
+            display: inline-grid;
+            place-items: center;
+            width: 58px;
+            height: 58px;
+            border: 2px solid rgba(255, 255, 255, .72);
+            border-radius: 18px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, .12);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, .22);
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -3px;
+        }
+
+        h1 { margin: 0; font-size: clamp(1.9rem, 5vw, 2.45rem); font-weight: 850; letter-spacing: -.04em; text-shadow: 0 2px 4px rgba(0, 0, 0, .25); }
+        .brand p { margin: 8px auto 0; max-width: 550px; color: rgba(255, 255, 255, .86); font-weight: 500; }
+
+        .glass-card {
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, .34);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, .96);
+            box-shadow: 0 14px 44px rgba(0, 0, 0, .28);
+            backdrop-filter: blur(12px);
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            padding: 9px;
+            border-bottom: 1px solid var(--line);
+            background: #f3f4f5;
+        }
+
+        .tab {
+            border: 0;
+            border-radius: 11px;
+            padding: 13px 18px;
+            color: var(--muted);
+            background: transparent;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 800;
+            transition: .2s ease;
+        }
+
+        .tab:hover { color: var(--ink); background: rgba(255, 255, 255, .72); }
+        .tab[aria-selected="true"] { color: var(--ink); background: white; box-shadow: 0 3px 10px rgba(26, 26, 26, .1); }
+
+        .panel { display: none; padding: clamp(24px, 5vw, 40px); }
+        .panel.active { display: block; }
+        .panel-heading { margin-bottom: 28px; }
+        .panel-heading h2 { margin: 0 0 7px; font-size: 1.45rem; letter-spacing: -.025em; }
+        .panel-heading p { margin: 0; color: var(--muted); line-height: 1.5; font-size: .95rem; }
+
+        .folder-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 24px; }
+        .folder-card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+        .folder-card label { display: block; margin-bottom: 10px; color: #4f565d; font-size: .78rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+        .folder-selected { min-height: 22px; margin: 10px 0 0; overflow: hidden; color: var(--muted); font-size: .84rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+        .folder-selected.ready { color: var(--success); }
+
+        button { font: inherit; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: .93rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform .2s, box-shadow .2s, opacity .2s;
+        }
+
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 13px rgba(0, 0, 0, .14); }
+        .btn:disabled { cursor: not-allowed; opacity: .5; }
+        .btn-outline { border: 2px solid #cbd0d4; color: #454b51; background: white; }
+        .btn-outline:hover:not(:disabled) { border-color: var(--dark-gold); }
+        .btn-gold { padding: 15px 24px; color: var(--ink); background: linear-gradient(135deg, var(--gold), var(--dark-gold)); }
+
+        .input-label { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 9px; font-size: .93rem; font-weight: 800; }
+        .counter { color: var(--muted); font-size: .8rem; font-weight: 700; }
+        .counter.invalid { color: var(--danger); }
+
+        textarea {
+            display: block;
+            width: 100%;
+            min-height: 188px;
+            resize: vertical;
+            border: 2px solid #dfe2e5;
+            border-radius: 13px;
+            padding: 15px;
+            outline: none;
+            color: var(--ink);
+            background: #fff;
+            font: 600 .94rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(255, 193, 7, .17); }
+        textarea::placeholder { color: #9ca2a8; }
+
+        .pair-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
+        .hint { margin: 9px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+        .validation { min-height: 22px; margin: 18px 0 0; color: var(--muted); font-size: .88rem; font-weight: 650; }
+        .validation.error { color: var(--danger); }
+        .actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+
+        .progress-area { display: none; margin-top: 27px; padding-top: 23px; border-top: 1px solid var(--line); }
+        .progress-area.visible { display: block; }
+        .progress-top { display: flex; justify-content: space-between; gap: 15px; color: #4e555c; font-size: .86rem; font-weight: 750; }
+        .progress-wrap { height: 15px; margin-top: 10px; overflow: hidden; border-radius: 20px; background: #e6e8ea; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .08); }
+        .progress-bar { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f4d242, var(--dark-gold)); transition: width .18s ease; }
+
+        .summary { display: none; grid-template-columns: repeat(3, 1fr); gap: 11px; margin-top: 22px; }
+        .summary.visible { display: grid; }
+        .stat { padding: 14px 10px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); text-align: center; }
+        .stat strong { display: block; font-size: 1.5rem; line-height: 1.2; }
+        .stat span { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+        .stat.ok strong { color: var(--success); }
+        .stat.fail strong { color: var(--danger); }
+
+        .report { display: none; margin-top: 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; }
+        .report.visible { display: block; }
+        .report-title { padding: 12px 15px; color: #4d555c; background: var(--surface); font-size: .82rem; font-weight: 800; }
+        .report-list { max-height: 190px; overflow: auto; }
+        .report-row { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 10px; padding: 10px 15px; border-top: 1px solid var(--line); font-size: .83rem; }
+        .report-row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .report-status { font-weight: 850; }
+        .report-status.ok { color: var(--success); }
+        .report-status.fail { color: var(--danger); }
+
+        .notice { display: flex; gap: 10px; margin-top: 25px; padding: 13px 15px; border: 1px solid #f1dfaa; border-radius: 12px; color: #765f20; background: #fff9e9; font-size: .84rem; line-height: 1.45; }
+        .notice strong { color: #584614; }
+
+        @media (max-width: 640px) {
+            body { padding: 25px 14px; }
+            .folder-grid, .pair-grid { grid-template-columns: 1fr; }
+            .panel { padding: 24px 18px; }
+            .actions { justify-content: stretch; }
+            .actions .btn { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header class="brand">
+            <div class="brand-mark" aria-hidden="true">GC</div>
+            <h1>GanCopy</h1>
+            <p>Copie documentos por processo, diretamente entre pastas locais.</p>
+        </header>
+
+        <section class="glass-card" aria-label="Utilitário de cópia de processos">
+            <nav class="tabs" role="tablist" aria-label="Instituição bancária">
+                <button class="tab" id="tab-santander" role="tab" aria-selected="true" aria-controls="panel-santander">Santander</button>
+                <button class="tab" id="tab-bradesco" role="tab" aria-selected="false" aria-controls="panel-bradesco">Bradesco</button>
+            </nav>
+
+            <section class="panel active" id="panel-santander" role="tabpanel" aria-labelledby="tab-santander">
+                <div class="panel-heading">
+                    <h2>Cópia por número de processo</h2>
+                    <p>Localiza todos os arquivos cujo nome contenha um dos processos informados e os copia mantendo o nome original.</p>
+                </div>
+
+                <div class="folder-grid">
+                    <div class="folder-card">
+                        <label for="santander-source">Pasta de origem</label>
+                        <button class="btn btn-outline" id="santander-source" type="button">Selecionar origem</button>
+                        <p class="folder-selected" id="santander-source-name">Nenhuma pasta selecionada</p>
+                    </div>
+                    <div class="folder-card">
+                        <label for="santander-destination">Pasta de destino</label>
+                        <button class="btn btn-outline" id="santander-destination" type="button">Selecionar destino</button>
+                        <p class="folder-selected" id="santander-destination-name">Nenhuma pasta selecionada</p>
+                    </div>
+                </div>
+
+                <label class="input-label" for="santander-processes">
+                    <span>Números dos processos</span>
+                    <span class="counter" id="santander-count">0 processos</span>
+                </label>
+                <textarea id="santander-processes" spellcheck="false" placeholder="Um processo por linha&#10;Ex.: 12345&#10;ou 0001234-56.2026.8.00.0000"></textarea>
+                <p class="hint">Linhas vazias são ignoradas. A busca percorre também as subpastas da origem.</p>
+
+                <div class="actions">
+                    <button class="btn btn-gold" id="santander-copy" type="button" disabled>Copiar arquivos</button>
+                </div>
+                <div class="progress-area" id="santander-progress" aria-live="polite">
+                    <div class="progress-top"><span id="santander-progress-text">Preparando cópia...</span><span id="santander-progress-value">0%</span></div>
+                    <div class="progress-wrap"><div class="progress-bar" id="santander-progress-bar"></div></div>
+                </div>
+                <div class="summary" id="santander-summary">
+                    <div class="stat"><strong id="santander-total">0</strong><span>Encontrados</span></div>
+                    <div class="stat ok"><strong id="santander-success">0</strong><span>Copiados</span></div>
+                    <div class="stat fail"><strong id="santander-failure">0</strong><span>Erros</span></div>
+                </div>
+                <div class="report" id="santander-report"><div class="report-title">Relatório da operação</div><div class="report-list" id="santander-report-list"></div></div>
+            </section>
+
+            <section class="panel" id="panel-bradesco" role="tabpanel" aria-labelledby="tab-bradesco" hidden>
+                <div class="panel-heading">
+                    <h2>Cópia e renomeação de iniciais</h2>
+                    <p>Cada linha de processo corresponde à mesma linha da pasta cliente. Os PDFs copiados serão salvos como <strong>INICIAL &lt;pasta cliente&gt;.pdf</strong>.</p>
+                </div>
+
+                <div class="folder-grid">
+                    <div class="folder-card">
+                        <label for="bradesco-source">Pasta de origem</label>
+                        <button class="btn btn-outline" id="bradesco-source" type="button">Selecionar origem</button>
+                        <p class="folder-selected" id="bradesco-source-name">Nenhuma pasta selecionada</p>
+                    </div>
+                    <div class="folder-card">
+                        <label for="bradesco-destination">Pasta de destino</label>
+                        <button class="btn btn-outline" id="bradesco-destination" type="button">Selecionar destino</button>
+                        <p class="folder-selected" id="bradesco-destination-name">Nenhuma pasta selecionada</p>
+                    </div>
+                </div>
+
+                <div class="pair-grid">
+                    <div>
+                        <label class="input-label" for="bradesco-processes"><span>Números dos processos</span><span class="counter" id="bradesco-process-count">0 processos</span></label>
+                        <textarea id="bradesco-processes" spellcheck="false" placeholder="Um processo por linha&#10;Ex.: 12345"></textarea>
+                    </div>
+                    <div>
+                        <label class="input-label" for="bradesco-clients"><span>Pastas cliente</span><span class="counter" id="bradesco-client-count">0 pastas</span></label>
+                        <textarea id="bradesco-clients" spellcheck="false" placeholder="Uma pasta cliente por linha&#10;Ex.: 45678"></textarea>
+                    </div>
+                </div>
+                <p class="hint">A ordem das linhas define a correspondência: o primeiro processo recebe a primeira pasta cliente, e assim por diante.</p>
+                <p class="validation" id="bradesco-validation">Informe os processos e as pastas cliente.</p>
+
+                <div class="actions">
+                    <button class="btn btn-gold" id="bradesco-copy" type="button" disabled>Copiar e renomear PDFs</button>
+                </div>
+                <div class="progress-area" id="bradesco-progress" aria-live="polite">
+                    <div class="progress-top"><span id="bradesco-progress-text">Preparando cópia...</span><span id="bradesco-progress-value">0%</span></div>
+                    <div class="progress-wrap"><div class="progress-bar" id="bradesco-progress-bar"></div></div>
+                </div>
+                <div class="summary" id="bradesco-summary">
+                    <div class="stat"><strong id="bradesco-total">0</strong><span>Processos</span></div>
+                    <div class="stat ok"><strong id="bradesco-success">0</strong><span>Copiados</span></div>
+                    <div class="stat fail"><strong id="bradesco-failure">0</strong><span>Não copiados</span></div>
+                </div>
+                <div class="report" id="bradesco-report"><div class="report-title">Relatório da operação</div><div class="report-list" id="bradesco-report-list"></div></div>
+            </section>
+        </section>
+
+        <aside class="notice">
+            <span aria-hidden="true">i</span>
+            <span><strong>Uso local e privado.</strong> Abra este arquivo no Google Chrome ou Microsoft Edge. A seleção e a cópia das pastas usam a File System Access API; nenhum arquivo é enviado para a internet.</span>
+        </aside>
+    </main>
+
+    <script>
+        const state = {
+            santander: { source: null, destination: null },
+            bradesco: { source: null, destination: null },
+        };
+
+        const $ = (id) => document.getElementById(id);
+
+        function linesFrom(text) {
+            return text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        }
+
+        function normalise(value) {
+            return value.replace(/\D/g, '');
+        }
+
+        function fileMatchesProcess(fileName, process) {
+            const cleanProcess = normalise(process);
+            return fileName.toLowerCase().includes(process.toLowerCase()) || (cleanProcess.length > 0 && normalise(fileName).includes(cleanProcess));
+        }
+
+        async function pickDirectory(bank, kind) {
+            if (!('showDirectoryPicker' in window)) {
+                window.alert('Este navegador não suporta a seleção de pastas. Abra o arquivo no Google Chrome ou Microsoft Edge.');
+                return;
+            }
+
+            try {
+                const handle = await window.showDirectoryPicker({ mode: kind === 'destination' ? 'readwrite' : 'read' });
+                state[bank][kind] = handle;
+                const nameElement = $(`${bank}-${kind}-name`);
+                nameElement.textContent = handle.name;
+                nameElement.classList.add('ready');
+                updateAvailability(bank);
+            } catch (error) {
+                if (error.name !== 'AbortError') console.error(error);
+            }
+        }
+
+        async function requestAccess(handle, writable) {
+            const options = { mode: writable ? 'readwrite' : 'read' };
+            if ((await handle.queryPermission(options)) === 'granted') return true;
+            return (await handle.requestPermission(options)) === 'granted';
+        }
+
+        async function* walkFiles(directory, parentPath = '') {
+            for await (const entry of directory.values()) {
+                if (entry.kind === 'file') {
+                    yield { handle: entry, path: `${parentPath}${entry.name}` };
+                } else if (entry.kind === 'directory') {
+                    yield* walkFiles(entry, `${parentPath}${entry.name}/`);
+                }
+            }
+        }
+
+        async function fileExists(directory, name) {
+            try {
+                await directory.getFileHandle(name);
+                return true;
+            } catch (error) {
+                if (error.name === 'NotFoundError') return false;
+                throw error;
+            }
+        }
+
+        async function availableName(directory, name) {
+            if (!(await fileExists(directory, name))) return name;
+            const dot = name.lastIndexOf('.');
+            const base = dot > 0 ? name.slice(0, dot) : name;
+            const extension = dot > 0 ? name.slice(dot) : '';
+            let suffix = 2;
+            while (await fileExists(directory, `${base} (${suffix})${extension}`)) suffix += 1;
+            return `${base} (${suffix})${extension}`;
+        }
+
+        async function copyFile(sourceHandle, destinationDirectory, destinationName) {
+            const sourceFile = await sourceHandle.getFile();
+            const target = await destinationDirectory.getFileHandle(destinationName, { create: true });
+            const writable = await target.createWritable();
+            await writable.write(sourceFile);
+            await writable.close();
+        }
+
+        function setProgress(bank, current, total, text) {
+            const percent = total === 0 ? 0 : Math.round((current / total) * 100);
+            $(`${bank}-progress`).classList.add('visible');
+            $(`${bank}-progress-text`).textContent = text;
+            $(`${bank}-progress-value`).textContent = `${percent}%`;
+            $(`${bank}-progress-bar`).style.width = `${percent}%`;
+        }
+
+        function setScanningProgress(bank, scanned, copied, text) {
+            $(`${bank}-progress`).classList.add('visible');
+            $(`${bank}-progress-text`).textContent = text;
+            $(`${bank}-progress-value`).textContent = `${scanned} analisado(s) | ${copied} copiado(s)`;
+            $(`${bank}-progress-bar`).style.width = '100%';
+        }
+
+        function showResults(bank, results, totalLabel) {
+            const copied = results.filter((result) => result.status === 'ok').length;
+            const failed = results.length - copied;
+            $(`${bank}-total`).textContent = totalLabel;
+            $(`${bank}-success`).textContent = copied;
+            $(`${bank}-failure`).textContent = failed;
+            $(`${bank}-summary`).classList.add('visible');
+
+            const list = $(`${bank}-report-list`);
+            list.replaceChildren(...results.map((result) => {
+                const row = document.createElement('div');
+                row.className = 'report-row';
+                const status = document.createElement('span');
+                status.className = `report-status ${result.status}`;
+                status.textContent = result.status === 'ok' ? 'COPIADO' : result.status === 'missing' ? 'NÃO LOCALIZADO' : 'ERRO';
+                const message = document.createElement('span');
+                message.textContent = result.message;
+                row.append(status, message);
+                return row;
+            }));
+            $(`${bank}-report`).classList.add('visible');
+        }
+
+        function resetResults(bank) {
+            $(`${bank}-progress`).classList.remove('visible');
+            $(`${bank}-summary`).classList.remove('visible');
+            $(`${bank}-report`).classList.remove('visible');
+            $(`${bank}-progress-bar`).style.width = '0';
+        }
+
+        function updateAvailability(bank) {
+            if (bank === 'santander') {
+                const processes = linesFrom($('santander-processes').value);
+                $('santander-count').textContent = `${processes.length} ${processes.length === 1 ? 'processo' : 'processos'}`;
+                $('santander-copy').disabled = !(state.santander.source && state.santander.destination && processes.length > 0);
+                return;
+            }
+
+            const processes = linesFrom($('bradesco-processes').value);
+            const clients = linesFrom($('bradesco-clients').value);
+            $('bradesco-process-count').textContent = `${processes.length} ${processes.length === 1 ? 'processo' : 'processos'}`;
+            $('bradesco-client-count').textContent = `${clients.length} ${clients.length === 1 ? 'pasta' : 'pastas'}`;
+
+            const validation = $('bradesco-validation');
+            const matchingCounts = processes.length > 0 && processes.length === clients.length;
+            if (processes.length === 0 && clients.length === 0) {
+                validation.textContent = 'Informe os processos e as pastas cliente.';
+                validation.classList.remove('error');
+            } else if (!matchingCounts) {
+                validation.textContent = `As listas precisam ter a mesma quantidade: ${processes.length} processo(s) e ${clients.length} pasta(s).`;
+                validation.classList.add('error');
+            } else {
+                validation.textContent = `${processes.length} correspondência(s) pronta(s) para cópia.`;
+                validation.classList.remove('error');
+            }
+
+            $('bradesco-copy').disabled = !(state.bradesco.source && state.bradesco.destination && matchingCounts);
+        }
+
+        async function runSantander() {
+            const button = $('santander-copy');
+            const processes = linesFrom($('santander-processes').value);
+            resetResults('santander');
+            button.disabled = true;
+
+            try {
+                const canRead = await requestAccess(state.santander.source, false);
+                const canWrite = await requestAccess(state.santander.destination, true);
+                if (!canRead || !canWrite) throw new Error('É necessário conceder permissão de leitura e escrita nas pastas selecionadas.');
+
+                const results = [];
+                let scanned = 0;
+                let found = 0;
+                let copied = 0;
+                setScanningProgress('santander', scanned, copied, 'Procurando e copiando arquivos...');
+
+                for await (const item of walkFiles(state.santander.source)) {
+                    scanned += 1;
+                    if (!processes.some((process) => fileMatchesProcess(item.path, process))) {
+                        if (scanned % 50 === 0) setScanningProgress('santander', scanned, copied, 'Procurando e copiando arquivos...');
+                        continue;
+                    }
+
+                    found += 1;
+                    setScanningProgress('santander', scanned, copied, `Copiando ${item.path}`);
+                    try {
+                        const name = await availableName(state.santander.destination, item.handle.name);
+                        await copyFile(item.handle, state.santander.destination, name);
+                        copied += 1;
+                        results.push({ status: 'ok', message: name === item.handle.name ? item.path : `${item.path} -> ${name}` });
+                    } catch (error) {
+                        results.push({ status: 'fail', message: `${item.path}: ${error.message}` });
+                    }
+                }
+
+                if (found === 0) results.push({ status: 'missing', message: 'Nenhum arquivo encontrado para os processos informados.' });
+                setProgress('santander', 1, 1, found === 0 ? 'Nenhum arquivo correspondente foi encontrado.' : 'Cópia concluída.');
+                showResults('santander', results, found);
+            } catch (error) {
+                setProgress('santander', 1, 1, 'Não foi possível concluir a cópia.');
+                showResults('santander', [{ status: 'fail', message: error.message }], 0);
+            } finally {
+                updateAvailability('santander');
+            }
+        }
+
+        async function runBradesco() {
+            const button = $('bradesco-copy');
+            const processes = linesFrom($('bradesco-processes').value);
+            const clients = linesFrom($('bradesco-clients').value);
+            resetResults('bradesco');
+            button.disabled = true;
+
+            try {
+                const canRead = await requestAccess(state.bradesco.source, false);
+                const canWrite = await requestAccess(state.bradesco.destination, true);
+                if (!canRead || !canWrite) throw new Error('É necessário conceder permissão de leitura e escrita nas pastas selecionadas.');
+
+                const results = Array(processes.length);
+                const copiedProcesses = new Set();
+                let scanned = 0;
+                let copied = 0;
+                setScanningProgress('bradesco', scanned, copied, 'Procurando e copiando PDFs...');
+
+                for await (const item of walkFiles(state.bradesco.source)) {
+                    scanned += 1;
+                    if (!item.handle.name.toLowerCase().endsWith('.pdf')) {
+                        if (scanned % 50 === 0) setScanningProgress('bradesco', scanned, copied, 'Procurando e copiando PDFs...');
+                        continue;
+                    }
+
+                    for (let index = 0; index < processes.length; index += 1) {
+                        if (copiedProcesses.has(index) || !fileMatchesProcess(item.path, processes[index])) continue;
+                        const targetName = `INICIAL ${clients[index]}.pdf`;
+                        setScanningProgress('bradesco', scanned, copied, `Copiando ${item.path} como ${targetName}`);
+                        try {
+                            await copyFile(item.handle, state.bradesco.destination, targetName);
+                            copiedProcesses.add(index);
+                            copied += 1;
+                            results[index] = { status: 'ok', message: `${processes[index]} -> ${targetName}` };
+                        } catch (error) {
+                            copiedProcesses.add(index);
+                            results[index] = { status: 'fail', message: `${processes[index]}: ${error.message}` };
+                        }
+                    }
+                }
+
+                for (let index = 0; index < processes.length; index += 1) {
+                    if (!results[index]) results[index] = { status: 'missing', message: `${processes[index]}: nenhum PDF localizado.` };
+                }
+                setProgress('bradesco', processes.length, processes.length, 'Cópia concluída.');
+                showResults('bradesco', results, processes.length);
+            } catch (error) {
+                setProgress('bradesco', 1, 1, 'Não foi possível concluir a cópia.');
+                showResults('bradesco', [{ status: 'fail', message: error.message }], 0);
+            } finally {
+                updateAvailability('bradesco');
+            }
+        }
+
+        function activateTab(bank) {
+            for (const current of ['santander', 'bradesco']) {
+                const active = current === bank;
+                $(`tab-${current}`).setAttribute('aria-selected', String(active));
+                $(`panel-${current}`).classList.toggle('active', active);
+                $(`panel-${current}`).hidden = !active;
+            }
+        }
+
+        $('tab-santander').addEventListener('click', () => activateTab('santander'));
+        $('tab-bradesco').addEventListener('click', () => activateTab('bradesco'));
+        $('santander-source').addEventListener('click', () => pickDirectory('santander', 'source'));
+        $('santander-destination').addEventListener('click', () => pickDirectory('santander', 'destination'));
+        $('bradesco-source').addEventListener('click', () => pickDirectory('bradesco', 'source'));
+        $('bradesco-destination').addEventListener('click', () => pickDirectory('bradesco', 'destination'));
+        $('santander-processes').addEventListener('input', () => updateAvailability('santander'));
+        $('bradesco-processes').addEventListener('input', () => updateAvailability('bradesco'));
+        $('bradesco-clients').addEventListener('input', () => updateAvailability('bradesco'));
+        $('santander-copy').addEventListener('click', runSantander);
+        $('bradesco-copy').addEventListener('click', runBradesco);
+        updateAvailability('santander');
+        updateAvailability('bradesco');
+    </script>
+</body>
+</html>

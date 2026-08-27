@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script>
+        (function () {
+            function syncThemeCss(cssText) {
+                try {
+                    const css = cssText || localStorage.getItem('gantoys_theme_css');
+                    if (!css || !document.head) return;
+                    const existingStyle = document.getElementById('gantoys-theme-inject');
+                    if (existingStyle) existingStyle.remove();
+                    const style = document.createElement('style');
+                    style.id = 'gantoys-theme-inject';
+                    style.textContent = css;
+                    document.head.appendChild(style);
+                } catch (e) {}
+            }
+            function applyTheme(theme, visual, cssText) {
+                if (theme) document.documentElement.setAttribute('data-theme', theme);
+                if (visual) document.documentElement.setAttribute('data-visual', visual);
+                if (cssText) { try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {} }
+                syncThemeCss(cssText);
+            }
+            try { applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
+            document.addEventListener('DOMContentLoaded', function () { syncThemeCss(); });
+            window.addEventListener('message', function (e) {
+                if (e.data && e.data.type === 'theme') applyTheme(e.data.theme, e.data.visual, e.data.css);
+            });
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extrator Santander</title>
+    <link rel="icon" href="../../favicon.png" type="image/png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="toy-header">
+        <img src="../../logo.png" alt="GAN" class="logo">
+        <h1>Extrator Santander</h1>
+        <p>Extraia o schema fixo de tabelas Santander com colunas voláteis.</p>
+    </header>
+    <main class="tool-card">
+        <section class="input-section">
+            <div class="section-heading"><h2>Entrada</h2><span id="inputHint">Cole os dados, um por linha.</span></div>
+            <div id="settings" class="settings hidden"></div>
+            <label class="field-label" for="toolInput">Dados</label>
+            <textarea id="toolInput" spellcheck="false" placeholder="Cole os dados aqui..."></textarea>
+            <button id="runButton" class="primary-btn" type="button">Processar</button>
+        </section>
+        <section id="resultsSection" class="results-section hidden" aria-live="polite">
+            <div class="results-header"><div><h2>Resultado</h2><span id="resultSummary"></span></div><div class="result-actions"><button id="clearButton" class="secondary-btn" type="button">Limpar</button><button id="copyButton" class="secondary-btn" type="button">Copiar resultado</button></div></div>
+            <div id="errorMessage" class="message error hidden"></div>
+            <div id="results" class="results-table-wrap"></div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

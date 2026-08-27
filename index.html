@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark" data-visual="glassmorphism">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAN Toys</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/bootstrap-icons/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="bg-orb" id="bgOrb"></div>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Compactar menu">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="sidebar-brand" onclick="document.querySelector('[data-toy=\'home\']').click()">
+                    <img src="logo.png" alt="GAN" class="sidebar-logo" onerror="this.style.display='none'">
+                    <span class="sidebar-title">GAN Toys</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav" id="sidebarNav">
+                <a href="#" class="nav-item active" data-toy="home">
+                    <i class="bi bi-house"></i>
+                    <span>Início</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganclassificadorvara">
+                    <i class="bi bi-bank"></i>
+                    <span>Classificador de Vara</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="gancompressor">
+                    <i class="bi bi-file-zip"></i>
+                    <span>Compressor</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganconverterrito">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Conversor de Rito</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="gancopy">
+                    <i class="bi bi-folder-symlink"></i>
+                    <span>Cópia Santander e Bradesco</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="gannovodiv">
+                    <i class="bi bi-scissors"></i>
+                    <span>Divisor Automático Santander</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganpdf">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    <span>Divisor PDF</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="gandivisorsantander">
+                    <i class="bi bi-layout-split"></i>
+                    <span>Divisor Santander</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganextratorvalores">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>Extrator de Valores</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganjuntar">
+                    <i class="bi bi-files"></i>
+                    <span>Juntar PDFs</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="gannormalizadordocumentos">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Normalizador CPF/CNPJ</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="gannormalizadornomes">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <span>Normalizador de Nomes</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganpadronizadorcnj">
+                    <i class="bi bi-list-ol"></i>
+                    <span>Padronizador CNJ</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganremovedorsufixouf">
+                    <i class="bi bi-eraser"></i>
+                    <span>Removedor por Wildcard</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganrenomeador">
+                    <i class="bi bi-input-cursor-text"></i>
+                    <span>Renomeador em Massa</span>
+                </a>
+                <a href="#" class="nav-item" data-toy="ganresolvercarteirareu">
+                    <i class="bi bi-diagram-3"></i>
+                    <span>Resolver Carteira/Réu</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">
+                    <i class="bi bi-sun-fill theme-icon sun"></i>
+                    <i class="bi bi-moon-fill theme-icon moon"></i>
+                </button>
+                <div class="theme-selector" id="themeSelector">
+                    <button class="theme-btn" id="visualGlassmorphism" data-visual="glassmorphism" title="Glassmorphism">
+                        <div class="theme-preview glass"></div>
+                        <span>Glass</span>
+                    </button>
+                    <button class="theme-btn" id="visualNeumorphism" data-visual="neumorphism" title="Neumorphism">
+                        <div class="theme-preview neo"></div>
+                        <span>Neo</span>
+                    </button>
+                    <button class="theme-btn" id="visualNeobrutalism" data-visual="neobrutalism" title="Neobrutalism">
+                        <div class="theme-preview brute"></div>
+                        <span>Brute</span>
+                    </button>
+                    <button class="theme-btn" id="visualMaterial" data-visual="material" title="Material">
+                        <div class="theme-preview material"></div>
+                        <span>Mat</span>
+                    </button>
+                    <button class="theme-btn" id="visualClaymorphism" data-visual="claymorphism" title="Claymorphism">
+                        <div class="theme-preview clay"></div>
+                        <span>Clay</span>
+                    </button>
+                    <button class="theme-btn" id="visualJapandi" data-visual="japandi" title="Japandi">
+                        <div class="theme-preview japandi"></div>
+                        <span>Japan</span>
+                    </button>
+                    <button class="theme-btn" id="visualGlassmorphismLight" data-visual="glassmorphism" title="Glassmorphism Light">
+                        <div class="theme-preview glass-light"></div>
+                        <span>Glass</span>
+                    </button>
+                    <button class="theme-btn" id="visualNeumorphismLight" data-visual="neumorphism" title="Neumorphism Light">
+                        <div class="theme-preview neo-light"></div>
+                        <span>Neo</span>
+                    </button>
+                    <button class="theme-btn" id="visualNeobrutalismLight" data-visual="neobrutalism" title="Neobrutalism Light">
+                        <div class="theme-preview brute"></div>
+                        <span>Brute</span>
+                    </button>
+                    <button class="theme-btn" id="visualMaterialLight" data-visual="material" title="Material Light">
+                        <div class="theme-preview material"></div>
+                        <span>Mat</span>
+                    </button>
+                    <button class="theme-btn" id="visualClaymorphismLight" data-visual="claymorphism" title="Claymorphism Light">
+                        <div class="theme-preview clay-light"></div>
+                        <span>Clay</span>
+                    </button>
+                    <button class="theme-btn" id="visualJapandiLight" data-visual="japandi" title="Japandi Light">
+                        <div class="theme-preview japandi-light"></div>
+                        <span>Japan</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-area">
+            <div class="content-area" id="contentArea">
+                <div class="toy-frame" id="toyFrame">
+                    <div class="welcome-panel" id="welcomePanel">
+                        <div class="welcome-icon">
+                            <i class="bi bi-controller"></i>
+                        </div>
+                        <h2>Bem-vindo ao GAN Toys</h2>
+                        <p class="welcome-subtitle">Selecione uma ferramenta no menu lateral.</p>
+                        <p class="welcome-quote" id="welcomeQuote"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="directory-picker-modal" id="directoryPickerModal" hidden role="dialog" aria-modal="true" aria-labelledby="directoryPickerTitle">
+        <div class="directory-picker-dialog">
+            <h2 id="directoryPickerTitle">Selecionar pasta</h2>
+            <p id="directoryPickerMessage">Selecione uma pasta local para continuar.</p>
+            <div class="directory-picker-actions">
+                <button type="button" class="directory-picker-cancel" id="directoryPickerCancel">Cancelar</button>
+                <button type="button" class="directory-picker-confirm" id="directoryPickerConfirm">Selecionar pasta</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const quotes = [
+            "A vida é curta. Não desperdice um só dia querendo ser outra pessoa.",
+            "O presente é um presente. Agradeça por ele.",
+            "Cada amanhecer é uma chance de recomeçar.",
+            "A paz não é a ausência de problemas, mas a capacidade de enfrentá-los.",
+            "O amor não se acha, se constrói.",
+            "Sorria. Este dia pode ser o melhor da sua vida.",
+            "A gratidão transforma o que temos em tudo o que precisamos.",
+            "Viva como se fosse o último dia. Porque um dia será.",
+            "A verdadeira riqueza é ser feliz com o que se tem.",
+            "O tempo não cura. Você é que cura com o tempo.",
+            "Não espere por oportunidades. Crie as suas.",
+            "A simplicidade é o último степ de sofisticação.",
+            "O sucesso não é para quem nunca falha, mas para quem nunca desiste.",
+            "A vida é 10% o que acontece e 90% como você reage.",
+            "Seja a mudança que quer ver no mundo.",
+            "Cada pessoa que CrossMark é uma história que pode mudar a sua.",
+            "O terbesar erro é ter medo de errar.",
+            "A alegria de dar existe em quem já experimentou dar.",
+            "Não procure por alguém perfeito. Procure por alguém que te faça melhor.",
+            "O sol brilha para todos. A sombra é escolha sua.",
+            "A paciência é a arte de esperar com esperança.",
+            "Você não precisa ser perfeito. Só precisa dar o seu melhor.",
+            "A vida oferece mais possibilidades do que você imagina.",
+            "O que você pens yesterday não define quem você é hoje.",
+            "A cada passo, você está mais perto do seu sonho.",
+            "Acredite. Muitas coisas boas acontecem quando você menos espera.",
+            "O amor propio é o começo de toda sabedoria.",
+            "Não tenha medo de ser feliz. Tenha medo de não tentar.",
+            "A liberdade está em aceptar o que não podemos mudar.",
+            "Viva, ame, ria. Repita todos os dias.",
+            "A beleza está nos olhos de quem olha.",
+            "O que importa não é o tempo, mas o momento.",
+            "A gentileza muda o mundo aos poucos.",
+            "Você é maior do que seus medos.",
+            "A esperança é a única coisa mais forte que o medo.",
+            "Cada fim é um novo começo disfarçado.",
+            "O amor é a língua que todos entendem.",
+            "A paciência é amadurecer como uma boa vinho.",
+            "Não olhe para trás com arrependimento. Olhe para frente com esperança.",
+            "A vida é uma aventura. Divirta-se explorando.",
+            "O terbesar tesouro está em você mesmo.",
+            "Agradeça pelo mal que não aconteceu.",
+            "Você merece ser feliz. Acredite nisso.",
+            "O passado não define o seu futuro.",
+            "A cada dia, uma nova oportunidade nasce.",
+            "Sorria sem motivo. É um jeito de viver.",
+            "O amor não precisa de razões. Ele só existe.",
+            "A vida não melhorar quando você melhorar. Você melhora quando melhorar a forma de viver.",
+            "Não espere por amanha. O agora é tudo o que temos.",
+            "A ajuda é a maior forma de amor que existe.",
+            "O universo conspirou a seu favor. Acredite.",
+            "A gratidão multiplica a felicidade.",
+            "Você é o autor da sua própria história.",
+            "A luz que você projeta illumina o seu caminho.",
+            "O amor não tem preço, tem valor.",
+            "A cada respiração, uma nova chance de viver melhor.",
+            "Não tenha pressa. O tempo faz tudo no tempo certo.",
+            "A bondade é o язык mais universal.",
+            "Viva com o coração aberto.",
+            "O sorriso é o idioma universal da felicidade.",
+            "A natureza não tem pressa. Você também não precisa.",
+            "A vida está-cheia de pequenos milagres.",
+            "O amor próprio abre todas as portas.",
+            "A каждый dia é um presente. Abra com cuidado.",
+            "Você é a peça que faltava no quebra-cabeça do universo.",
+            "A sabedoria está em aceitar o que não podemos controlar.",
+            "O bonheur está nas pequenas coisas.",
+            "A paciência é a chave do sucesso, mas a gratidão é a chave da felicidade.",
+            "Viva cada momento como se fosse o primeiro.",
+            "O amor é a única força que cresce quando dividida.",
+            "A vida oferece mais do que você pode carregar.",
+            "Você é suficiente. Sempre foi.",
+            "A luz que você busca está dentro de você.",
+            "O melhor está por vir. Continue acreditando.",
+            "A cada amanhecer, a possibility renasce.",
+            "Não tema comenzar de novo.",
+            "O amor é a resposta. A pergunta é como se amar.",
+            "A vida é doce quando você decide ser doce consigo mesmo.",
+            "Você tem o poder de mudar a sua narrativa.",
+            "A gratidão atrai mais gratidão.",
+            "O sol nasce para todos. Alguns só precisam de tempo para ver.",
+            "A calma é o primeiro passo para a sabedoria.",
+            "Viva sem medos. Os medos só existem na sua mente.",
+            "O amor é a força mais poderosa do universo.",
+            "A cada dia, você está mais perto de se tornar quem quer ser.",
+            "Não se compare. Você é único.",
+            "O universo responde à sua energia.",
+            "A esperança é a luz que nunca se apaga.",
+            "Viva, ame, dance. Essa é a receita.",
+            "O que importa é o amor que você dá.",
+            "A vida é uma curva, não uma linha reta.",
+            "Você cria a sua própria sorte.",
+            "A paz é um estado de espírito.",
+            "O ontem não pode ser mudado. O hoje é tudo o que você tem.",
+            "A bondade é a única riqueza que aumenta quando dada.",
+            "Viva com propósito.",
+            "O amor é a única coisa que não se perde quando compartilhado.",
+            "A cada passo, você se torna mais você mismo.",
+            "Sorria. É contagious.",
+            "O universo estáte favorece. Acredite.",
+            "A vida é uma dádiva. Desdobre-a.",
+            "Você é capaz de mais do que imagina.",
+            "O amor próprio é o amor que se распространяa.",
+            "A cada dia, o sol nasce de novo.",
+            "Não desista. O céu está logo ali.",
+            "O amor é a única linguagem universal.",
+            "A gratitude é o primeiro paso para a abundância.",
+            "Viva com o coração.",
+            "O segredo da vida está em amar e ser amado.",
+            "A cada respiro, uma nova chance.",
+            "Você é o protagonista da sua história.",
+            "O beste momento é agora.",
+            "A vida oferece infinitas possibilidades.",
+            "Você é luz neste mundo.",
+            "O amor não vê diferenças. O amor vê possibilidades.",
+            "A paciência é sabedoria em ação.",
+            "Viva sem medo de ser feliz.",
+            "O universo conspir che você tenha sucesso.",
+            "A ajuda está em dar ajuda.",
+            "Você é a resposta que procura.",
+            "O sorriso muda o energy do universo.",
+            "A gratidão muda a perspectiva.",
+            "Viva cada día como se fosse único.",
+            "O amor é a única coisa que cresce quando даada.",
+            "A setiap hari é uma nova oportunidade.",
+            "Você é valente. Mesmo quando esquece.",
+            "O mundo precisa da sua luz.",
+            "A paz começa com você.",
+            "Viva com gratidão.",
+            "O amor é a essência da vida.",
+            "A cada dia, você escolhe ser feliz.",
+            "Não tenha medo da felicidade.",
+            "O universo estáte sempre apoiando.",
+            "A bondade muda o mundo.",
+            "Viva! É o que importa.",
+            "O amor é a força invisível que move tudo.",
+            "A vida é um present. Accepted-o.",
+            "Você é exatamente onde necesita estar.",
+            "O sorriso é o primeiro passo para a felicidade.",
+            "A esperança não morre. Ela só descansa.",
+            "Viva com amor no corazón.",
+            "O день de hoje é um présent do universo.",
+            "A ogni giorno è una nuova occasione.",
+            "Você é perfeito imperfecto.",
+            "O amor flui quando não tentamos controla-lo.",
+            "A chaque jour est une nueva oportunidad.",
+            "Você é livre para escolher a sua alegria.",
+            "Le bonheur est dans les petites choses.",
+            "A vida é feita de momentos. Faça-os Lindos.",
+            "O amor é um state de ser.",
+            "La vida es bella quando la decides bella.",
+            "Você é a sua própria luz.",
+            "Vivamos com amor.",
+            "O melhor está porvir. Acredite.",
+            "A vida se torna melhor quando você melhora.",
+            "Você tem o controle. Use-o com sabedoria.",
+            "A escolha de ser feliz é daily.",
+            "O amor é a resposta para tudo.",
+            "A cada amanhecer, uma nova chance.",
+            "Viva com o coração cheio.",
+            "O universo estáte ouvindo.",
+            "A gratidão multiplica as alegrias.",
+            "Você é a pessoa mais importante da sua vida.",
+            "O amor propio é o fundamento de tudo.",
+            "A felicidade está em aceitar who você é.",
+            "Viva com propósito e amor.",
+            "O sol always nasce. Até nos dias nublados.",
+            "A cada dificuldade, uma lição.",
+            "Você é forte. Você vai passar por isso.",
+            "O amor é a única verdade universal.",
+            "A vida é breve. Faça-a extraordinária.",
+            "Viva com intensidade.",
+            "O universo responder quando você действуешь com amor.",
+            "A каждый день приносит новую радость.",
+            "Você é luz. Não se esconda.",
+            "O amor é o caminho.",
+            "La felicità è una scelta. Sceglila.",
+            "Viva a vida com sorriso.",
+            "O amor move montanhas.",
+            "A gratitude é o segredo da abundância.",
+            "Você é exatamente quem você precisa ser.",
+            "La vie est belle. Appréciez-la.",
+            "Viva cada momento presente.",
+            "O amor é a força que vence o medo.",
+            "A vida é uma jornada. Aproveite a viagem.",
+            "Viva sem julgar.",
+            "O universo conspira a favor dos valentes.",
+            "A cada dia, um novo começo.",
+            "Você é valioso.",
+            "O amor é tudo o que você precisa."
+        ];
+
+        function getRandomQuote() {
+            const quote = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('welcomeQuote').textContent = `"${quote}"`;
+        }
+        
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const savedVisual = localStorage.getItem('visual') || 'glassmorphism';
+            const savedToy = localStorage.getItem('lastToy');
+
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.documentElement.setAttribute('data-visual', savedVisual);
+
+            // Set active visual theme button
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                if (btn.dataset.visual === savedVisual) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.dataset.toy === (savedToy || 'home')) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            document.getElementById('themeToggle').addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateOrbColors();
+                GANTOYS.updateThemeInAllIframes();
+                updateThemeButtons();
+            });
+
+            function updateThemeButtons() {
+                const theme = document.documentElement.getAttribute('data-theme');
+                const allBtns = document.querySelectorAll('.theme-btn');
+                const btnCount = allBtns.length;
+                const half = Math.floor(btnCount / 2);
+                
+                allBtns.forEach((btn, index) => {
+                    if (theme === 'dark') {
+                        btn.style.display = index < half ? 'flex' : 'none';
+                    } else {
+                        btn.style.display = index >= half ? 'flex' : 'none';
+                    }
+                });
+                
+                const currentVisual = localStorage.getItem('visual') || 'glassmorphism';
+                allBtns.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.visual === currentVisual && btn.style.display !== 'none') {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            // Theme selector buttons
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const visual = this.dataset.visual;
+                    document.documentElement.setAttribute('data-visual', visual);
+                    localStorage.setItem('visual', visual);
+                    updateOrbColors();
+                    GANTOYS.updateThemeInAllIframes();
+                    // Update active state
+                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Set initial active state
+            const currentVisual = localStorage.getItem('visual') || 'glassmorphism';
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                if (btn.dataset.visual === currentVisual) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            updateThemeButtons();
+
+            const activeToyNames = new Set(
+                [...document.querySelectorAll('.nav-item[data-toy]')]
+                    .map((item) => item.dataset.toy)
+                    .filter((toy) => toy !== 'home')
+            );
+
+            if (savedToy && activeToyNames.has(savedToy)) {
+                loadToy(savedToy);
+            } else {
+                showHome();
+            }
+
+            document.getElementById('sidebarToggle').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('open');
+            });
+
+            document.getElementById('sidebarNav').addEventListener('click', function(e) {
+                const navItem = e.target.closest('.nav-item');
+                if (navItem) {
+                    e.preventDefault();
+                    const toy = navItem.dataset.toy;
+
+                    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                    navItem.classList.add('active');
+
+                    if (toy === 'home') {
+                        showHome();
+                    } else {
+                        loadToy(toy);
+                    }
+
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            });
+
+            function showHome() {
+                GANTOYS.persistCurrentToyState();
+                GANTOYS.currentToy = null;
+                const toyFrame = document.getElementById('toyFrame');
+                toyFrame.innerHTML = `
+                    <div class="welcome-panel" id="welcomePanel">
+                        <div class="welcome-icon">
+                            <i class="bi bi-controller"></i>
+                        </div>
+                        <h2>Bem-vindo ao GAN Toys</h2>
+                        <p class="welcome-subtitle">Selecione uma ferramenta no menu lateral.</p>
+                        <p class="welcome-quote" id="welcomeQuote"></p>
+                    </div>
+                `;
+                localStorage.removeItem('lastToy');
+                getRandomQuote();
+            }
+
+            function loadToy(toyName) {
+                localStorage.setItem('lastToy', toyName);
+                GANTOYS.loadToy(toyName);
+                GANTOYS.updateThemeInAllIframes();
+            }
+
+            function updateOrbColors() {
+                const orb = document.getElementById('bgOrb');
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const visual = document.documentElement.getAttribute('data-visual');
+
+                let colors = getVisualColors(visual, isDark);
+                orb.style.setProperty('--orb-color-1', colors.primary);
+                orb.style.setProperty('--orb-color-2', colors.secondary);
+            }
+
+            function getVisualColors(visual, isDark) {
+                const configs = {
+                    glassmorphism: {
+                        dark: { primary: '#4A4A4A', secondary: '#FFD700' },
+                        light: { primary: '#FFD700', secondary: '#4A4A4A' }
+                    },
+                    neumorphism: {
+                        dark: { primary: '#3D3D3D', secondary: '#FFD700' },
+                        light: { primary: '#E0E0E0', secondary: '#4A4A4A' }
+                    },
+                    neobrutalism: {
+                        dark: { primary: '#FFD700', secondary: '#4A4A4A' },
+                        light: { primary: '#4A4A4A', secondary: '#FFD700' }
+                    },
+                    material: {
+                        dark: { primary: '#424242', secondary: '#FFD700' },
+                        light: { primary: '#FFD700', secondary: '#424242' }
+                    },
+                    claymorphism: {
+                        dark: { primary: '#3E3B36', secondary: '#E9C46A' },
+                        light: { primary: '#E9C46A', secondary: '#8D7B68' }
+                    },
+                    japandi: {
+                        dark: { primary: '#6B5B4D', secondary: '#C8A97E' },
+                        light: { primary: '#C8A97E', secondary: '#A68A64' }
+                    }
+                };
+                return configs[visual][isDark ? 'dark' : 'light'];
+            }
+
+            setTimeout(updateOrbColors, 100);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+/* Toys use variáveis injetadas pelo app.js */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.toy-header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.toy-header .logo {
+    height: 72px;
+    margin-bottom: 1.5rem;
+    object-fit: contain;
+}
+
+.toy-header h1 {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0;
+    color: var(--text-primary);
+    text-transform: none;
+}
+
+.container { width: 100%; max-width: 600px; }
+.logo-container { text-align: center; margin-bottom: 2rem; }
+.main-logo { height: 70px; object-fit: contain; }
+
+.card {
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--glass-shadow);
+}
+
+.section-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; margin-bottom: 1rem; }
+
+.folder-btn {
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    border: 2px dashed var(--glass-border);
+    border-radius: 12px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: all 0.3s;
+}
+.folder-btn:hover { border-color: var(--egg-yellow); background: rgba(255, 215, 0, 0.08); }
+.folder-btn.selected { border-style: solid; border-color: var(--egg-yellow); background: rgba(255, 215, 0, 0.1); }
+
+.folder-info { display: none; text-align: center; margin-top: 1rem; }
+.folder-info.visible { display: block; }
+
+.folder-stats { display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; }
+.stat { display: flex; flex-direction: column; align-items: center; }
+.stat-value { font-size: 1.5rem; color: var(--egg-yellow); font-weight: 700; }
+.stat-label { font-size: 0.75rem; opacity: 0.6; }
+
+.subfolders-list { margin-top: 1rem; max-height: 200px; overflow-y: auto; display: none; }
+.subfolders-list.visible { display: block; }
+.subfolder-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; border-radius: 10px;
+    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.04);
+}
+.subfolder-count {
+    font-size: 0.85rem;
+    background: var(--egg-yellow);
+    color: var(--lead-gray);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.btn-gondim {
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+.btn-primary-gondim {
+    background: var(--egg-yellow);
+    color: var(--lead-gray);
+}
+.btn-primary-gondim:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.progress-container { display: none; margin-top: 1.5rem; }
+.progress-container.visible { display: block; }
+.progress-header { display: flex; justify-content: space-between; margin-bottom: 0.75rem; }
+.progress-percent { font-weight: 700; color: var(--egg-yellow); }
+.progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--egg-yellow); transition: width 0.3s; }
+.progress-status { margin-top: 1rem; padding: 1rem; background: rgba(255, 215, 0, 0.08); border-radius: 10px; text-align: center; }
+
+.results { display: none; }
+.results.visible { display: block; }
+.result-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem;
+    background: rgba(255,255,255,0.04);
+}
+.result-item.success { border-left: 4px solid var(--success); }
+.result-item.error { border-left: 4px solid var(--error); }
+.result-status.success { color: var(--success); }
+.result-status.error { color: var(--error); }

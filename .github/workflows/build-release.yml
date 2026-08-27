@@ -1,0 +1,46 @@
+name: build-release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Gerar bundle HTML único
+        run: node build/bundle.mjs
+
+      - name: Validar bundle
+        run: node build/check-bundle.mjs
+
+      - name: Upload do artefato (rastreabilidade)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gantoys-html
+          path: dist/gantoys.html
+          if-no-files-found: error
+
+      - name: Criar release no GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA_SHORT="$(git rev-parse --short HEAD)"
+          TAG="v$(date -u +%Y.%m.%d)-${SHA_SHORT}"
+          gh release create "${TAG}" dist/gantoys.html \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "GAN Toys ${TAG}" \
+            --notes "Bundle HTML único (imagens/fontes embutidas em base64) gerado automaticamente a partir de ${GITHUB_SHA}."

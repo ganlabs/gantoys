@@ -1,0 +1,59 @@
+import { readFileSync } from 'node:fs';
+
+const html = readFileSync('dist/gantoys.html', 'utf8');
+const marker = '<script>window.GANTOYS_TOYS = ';
+const start = html.indexOf(marker) + marker.length;
+const end = html.indexOf('};</script>', start);
+
+if (start < 0 || end < 0) {
+    console.error('marcador do mapa de toys não encontrado');
+    process.exit(1);
+}
+
+let map;
+try {
+    // inclui o '}' fechador: end aponta para o '}' de '};</script>'
+    map = JSON.parse(html.slice(start, end + 1));
+    console.log('JSON GANTOYS_TOYS OK — toys:', Object.keys(map).length);
+    console.log('toys:', Object.keys(map).join(', '));
+} catch (e) {
+    console.error('JSON FAIL:', e.message);
+    process.exit(1);
+}
+
+// 1) nenhum </script> cru dentro dos srcdoc (fecharia o script embutido antes da hora)
+let rawTotal = 0;
+for (const t of Object.keys(map)) {
+    const raw = map[t].split('</script>').length - 1;
+    if (raw) {
+        rawTotal += raw;
+        const i = map[t].indexOf('</script>');
+        console.log(`  srcdoc ${t}: ${raw} ocorrência(s) — ctx:`, JSON.stringify(map[t].slice(Math.max(0, i - 60), i + 40)));
+    }
+}
+console.log('srcdocs com </script> cru:', rawTotal);
+
+// 2) referências locais quebradas (../../) que ficaram nos srcdoc
+let leftover = 0;
+for (const t of Object.keys(map)) {
+    const refs = map[t].match(/(?:src|href)="(?:\.\.\/)+[^"]+"/g) || [];
+    if (refs.length) {
+        leftover += refs.length;
+        console.log(`  srcdoc ${t}: referências locais restantes:`, refs.slice(0, 5));
+    }
+}
+console.log('referências locais restantes nos toys:', leftover);
+
+// 3) estrutura principal
+console.log('worker b64 embutido:', html.includes('window.GANTOYS_PDF_WORKER_B64'));
+console.log('srcdoc usado no app.js:', html.includes('iframe.srcdoc = bundled'));
+console.log('tesseract CDN (externo, intencional):', html.includes('cdn.jsdelivr.net/npm/tesseract'));
+console.log('data:image:', (html.match(/data:image\//g) || []).length);
+console.log('data:font:', (html.match(/data:font\//g) || []).length);
+console.log('tamanho total MB:', (html.length / 1024 / 1024).toFixed(2));
+
+if (leftover > 0) {
+    console.error('FALHA: há referências locais quebradas no bundle.');
+    process.exit(1);
+}
+console.log('VALIDAÇÃO OK');

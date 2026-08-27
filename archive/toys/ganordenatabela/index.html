@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <script>
+        (function () {
+            function syncThemeCss(cssText) {
+                try {
+                    const css = cssText || localStorage.getItem('gantoys_theme_css');
+                    if (!css || !document.head) return;
+
+                    const existingStyle = document.getElementById('gantoys-theme-inject');
+                    if (existingStyle) existingStyle.remove();
+
+                    const style = document.createElement('style');
+                    style.id = 'gantoys-theme-inject';
+                    style.textContent = css;
+                    document.head.appendChild(style);
+                } catch (e) {}
+            }
+
+            function applyTheme(theme, visual, cssText) {
+                if (theme) document.documentElement.setAttribute('data-theme', theme);
+                if (visual) document.documentElement.setAttribute('data-visual', visual);
+                if (cssText) {
+                    try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {}
+                }
+                syncThemeCss(cssText);
+            }
+
+            try {
+                applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
+            } catch (e) {}
+
+            document.addEventListener('DOMContentLoaded', function () {
+                syncThemeCss();
+            });
+
+            window.addEventListener('message', function (e) {
+                if (e.data && e.data.type === 'theme') {
+                    applyTheme(e.data.theme, e.data.visual, e.data.css);
+                }
+            });
+
+            function forwardPointer(e) {
+                try {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'toy-pointer', x: e.clientX, y: e.clientY }, '*');
+                    }
+                } catch (err) {}
+            }
+
+            window.addEventListener('pointermove', forwardPointer, { capture: true, passive: true });
+            window.addEventListener('mousemove', forwardPointer, { capture: true, passive: true });
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordenador de Tabela - Gondim Advogados</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.png">
+    <script src="jszip.min.js"></script>
+</head>
+<body>
+    <header class="toy-header">
+        <img src="../../favicon.png" alt="Gondim Advogados" class="logo">
+        <h1>Ordenador De Tabela</h1>
+        <p class="subtitle">Organize seus dados de forma rápida e prática.</p>
+    </header>
+
+    <main class="glass-container">
+        <div class="content">
+            <div class="card">
+                <h2>Configurações do Lote</h2>
+                <p class="card-subtitle">Selecione o arquivo Excel e defina a ordem.</p>
+
+                <div class="form-container">
+                    <label for="fileInput">Arquivo Excel:</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept=".xlsx,.xlsm" hidden>
+                        <div class="file-display">
+                            <span id="fileName">Nenhum arquivo selecionado</span>
+                            <button class="btn-gold">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                                    <path d="M2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4z"/>
+                                </svg>
+                                Escolher Arquivo
+                            </button>
+                        </div>
+                    </div>
+
+                    <label for="priorities">Lista de Prioridades (um por linha):</label>
+                    <textarea id="priorities" placeholder="Ex: 0001234-56.2023.8.26.0100&#10;0002345-67.2023.8.26.0200&#10;..."></textarea>
+
+                    <button id="sortBtn" class="btn-main">
+                        <span id="btnText">ORDENAR E SALVAR</span>
+                        <div id="loader" class="spinner" style="display: none;"></div>
+                    </button>
+                </div>
+
+                <div id="statusBox" class="status-box">
+                    Pronto para iniciar
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="script.js?v=5"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+#!/usr/bin/env node
+import { spawnSync } from "child_process";
+
+/**
+ * Lê stdin, escreve em stdout (passthrough) e copia pro clipboard
+ * de forma cross-platform (Windows clip, Linux wl-copy/xclip, macOS pbcopy).
+ * Seguro para ambientes sem display gráfico.
+ */
+
+let buf = "";
+process.stdin.on("data", (chunk) => (buf += chunk));
+process.stdin.on("end", () => {
+  process.stdout.write(buf);
+
+  const tryCopy = (cmd, args = []) => {
+    try {
+      const r = spawnSync(cmd, args, { input: buf, timeout: 2000 });
+      return r.status === 0;
+    } catch {
+      return false;
+    }
+  };
+
+  const platform = process.platform;
+  if (platform === "win32") {
+    tryCopy("clip");
+  } else if (platform === "darwin") {
+    tryCopy("pbcopy");
+  } else {
+    // Linux: testa se tem display antes de tentar
+    if (process.env.WAYLAND_DISPLAY) {
+      if (tryCopy("wl-copy")) return;
+    }
+    if (process.env.DISPLAY) {
+      if (tryCopy("xclip", ["-selection", "clipboard"])) return;
+      tryCopy("xsel", ["--clipboard", "--input"]);
+    }
+    // sem display → silent fallback
+  }
+});

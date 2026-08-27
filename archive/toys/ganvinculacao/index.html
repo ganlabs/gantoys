@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script>
+        (function () {
+            function syncThemeCss(cssText) {
+                try {
+                    const css = cssText || localStorage.getItem('gantoys_theme_css');
+                    if (!css || !document.head) return;
+
+                    const existingStyle = document.getElementById('gantoys-theme-inject');
+                    if (existingStyle) existingStyle.remove();
+
+                    const style = document.createElement('style');
+                    style.id = 'gantoys-theme-inject';
+                    style.textContent = css;
+                    document.head.appendChild(style);
+                } catch (e) {}
+            }
+
+            function applyTheme(theme, visual, cssText) {
+                if (theme) document.documentElement.setAttribute('data-theme', theme);
+                if (visual) document.documentElement.setAttribute('data-visual', visual);
+                if (cssText) {
+                    try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {}
+                }
+                syncThemeCss(cssText);
+            }
+
+            try {
+                applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
+            } catch (e) {}
+
+            document.addEventListener('DOMContentLoaded', function () {
+                syncThemeCss();
+            });
+
+            window.addEventListener('message', function (e) {
+                if (e.data && e.data.type === 'theme') {
+                    applyTheme(e.data.theme, e.data.visual, e.data.css);
+                }
+            });
+
+            function forwardPointer(e) {
+                try {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'toy-pointer', x: e.clientX, y: e.clientY }, '*');
+                    }
+                } catch (err) {}
+            }
+
+            window.addEventListener('pointermove', forwardPointer, { capture: true, passive: true });
+            window.addEventListener('mousemove', forwardPointer, { capture: true, passive: true });
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Vinculação</title>
+    
+    <!-- SQL.js local sem WASM para maior compatibilidade em file:// -->
+    <script src="../../vendor/sqljs/sql-asm.js"></script>
+    
+    <!-- SheetJS (XLSX) -->
+    <script src="../../vendor/xlsx/xlsx.full.min.js"></script>
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body>
+    <header class="toy-header">
+        <img src="../../favicon.png" alt="Logo" class="logo">
+        <h1>Gestor De Vinculação</h1>
+    </header>
+
+    <main class="glass-container">
+        <div class="main-card">
+        
+        <!-- Actions -->
+        <div class="actions-bar">
+            <div class="brand-title">
+                <button class="process-badge" onclick="clearAllFilters()" title="Limpar todos os filtros">Processos</button>
+            </div>
+            <div class="actions">
+                <button id="btn-verificar-arquivos" class="btn secondary" style="display:none;">
+                    <span class="icon">🔍</span> Verificar Arquivos
+                </button>
+
+                <div class="dropdown" id="div-copiar-group" style="display:none;">
+                    <button class="btn secondary" onclick="toggleDropdown('copiar-menu')">
+                        <span class="icon">📄</span> Copiar
+                    </button>
+                    <div id="copiar-menu" class="dropdown-content">
+                        <a href="#" id="btn-copiar-santander"><span class="icon-inline">🏦</span> Copiar Arquivos Santander</a>
+                        <a href="#" id="btn-copiar-bradesco"><span class="icon-inline">🏦</span> Copiar Arquivos Bradesco</a>
+                        <a href="#" id="btn-copiar-claro"><span class="icon-inline">📱</span> Mover Arquivos Claro</a>
+                        <a href="#" id="btn-copiar-repositorio"><span class="icon-inline">📁</span> Sincronizar Repositório</a>
+                    </div>
+                </div>
+
+                <div class="dropdown" id="div-import-export-group" style="display:none;">
+                    <button class="btn secondary" onclick="toggleDropdown('import-export-menu')">
+                        <span class="icon">🔄</span> Importar / Exportar
+                    </button>
+                    <div id="import-export-menu" class="dropdown-content">
+                        <a href="#" onclick="document.getElementById('file-upload').click()"><span class="icon-inline">📥</span> Importar Vinculação</a>
+                        <a href="#" id="btn-exportar-vinculacao"><span class="icon-inline">📤</span> Exportar Vinculação (.xlsx)</a>
+                    </div>
+                </div>
+                
+                <!-- Hidden inputs for file uploads -->
+                <input type="file" id="file-upload" hidden accept=".xlsx, .xls">
+                <input type="file" id="db-file-upload" hidden accept=".sqlite,.db,application/x-sqlite3">
+                
+                <button id="btn-new-record" class="btn primary" style="display:none;" onclick="openModal('modal-new')">
+                    <span class="icon">➕</span> Novo
+                </button>
+
+                <button id="btn-db-create" class="btn secondary">
+                    <span class="icon">✨</span> Criar Novo Banco
+                </button>
+                
+                <div class="dropdown" id="div-settings" style="display:none;">
+                    <button class="btn secondary" onclick="toggleDropdown('settings-menu')">
+                        <span class="icon">⚙️</span> Ajustes
+                    </button>
+                    <div id="settings-menu" class="dropdown-content">
+                        <a href="#" onclick="openModal('modal-cols')"><span class="icon-inline">👁️</span> Visibilidade de Colunas</a>
+                        <a href="#" onclick="openModal('modal-colors')"><span class="icon-inline">🎨</span> Cores das Observações</a>
+                        <a href="#" onclick="openSyncSettingsModal()"><span class="icon-inline">⚙️</span> Configurações de Pastas</a>
+                        <a href="#" onclick="redefinirPastasSync()"><span class="icon-inline">🔄</span> Redefinir Pastas de Sincronia</a>
+                    </div>
+                </div>
+
+                <button id="btn-db-open" class="btn primary">
+                    <span class="icon">📂</span> Abrir Banco
+                </button>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div id="db-status" class="status-indicator warning">
+                <span class="dot"></span>
+                <span>Banco de dados não carregado</span>
+            </div>
+            <div class="stats" style="display:flex; align-items:center; gap: 12px;">
+                <button id="btn-clear-filters" class="btn secondary-grey" style="display:none; padding:4px 8px; font-size:11px;" onclick="clearAllFilters()">
+                    Limpar Filtros
+                </button>
+                <span id="row-count">0 registros</span>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr id="table-headers">
+                        <!-- Headers gerados dinamicamente -->
+                    </tr>
+                    <tr id="table-filters" class="filters-row">
+                        <!-- Filtros gerados dinamicamente -->
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Linhas geradas dinamicamente -->
+                </tbody>
+            </table>
+            
+            <div id="empty-state" class="empty-state">
+                <div class="empty-icon">📂</div>
+                <h2>Nenhum dado para exibir</h2>
+                <p>Abra ou crie um banco de dados para começar.</p>
+            </div>
+        </main>
+    </div> <!-- Fim de main-card -->
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeAllModals()"></div>
+
+    <!-- Modal Novo Registro -->
+    <div id="modal-new" class="modal">
+        <div class="modal-header">
+            <h2>Novo Registro</h2>
+            <button class="btn-close" onclick="closeAllModals()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-new" class="modal-form">
+                <!-- Inputs dinâmicos -->
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn secondary" onclick="closeAllModals()">Cancelar</button>
+            <button class="btn primary" onclick="saveNewRecord()">Salvar Registro</button>
+        </div>
+    </div>
+
+    <!-- Modal Editar Registro -->
+    <div id="modal-edit" class="modal">
+        <div class="modal-header">
+            <h2>Editar Registro Completo</h2>
+            <button class="btn-close" onclick="closeAllModals()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-edit" class="modal-form">
+                <!-- Inputs dinâmicos -->
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn secondary" onclick="closeAllModals()">Cancelar</button>
+            <button class="btn primary" id="btn-update-record">Salvar Alterações</button>
+        </div>
+    </div>
+
+    <!-- Modal Colunas Visíveis -->
+    <div id="modal-cols" class="modal">
+        <div class="modal-header">
+            <h2>Colunas Visíveis</h2>
+            <button class="btn-close" onclick="closeAllModals()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="cols-list" class="checklist">
+                <!-- Checkboxes dinâmicos -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn primary" onclick="saveColVis(); closeAllModals()">Aplicar Alterações</button>
+        </div>
+    </div>
+
+    <!-- Modal Configurações de Sincronia -->
+    <div id="modal-sync-settings" class="modal">
+        <div class="modal-header">
+            <h2>Configurações de Pastas</h2>
+            <button class="btn-close" onclick="closeAllModals()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Repositório de PDFs (Origem)</label>
+                <div class="sync-path-container">
+                    <span id="path-repositorio" class="sync-path-display">Não configurado</span>
+                    <button class="btn secondary-grey" style="height: 32px; padding: 0 12px; font-size: 12px;" onclick="setRepositorioDir()">Alterar</button>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Pasta Base da Sincronização</label>
+                <div class="sync-path-container">
+                    <span id="path-repositorio-base" class="sync-path-display">Não configurado</span>
+                    <button class="btn secondary-grey" style="height: 32px; padding: 0 12px; font-size: 12px;" onclick="setRepositorioBaseDir()">Alterar</button>
+                </div>
+                <p style="margin-top: 8px; font-size: 0.78rem; color: var(--text-secondary);">
+                    Pasta pai que contém: REPOSITORIO, MANUELA e LEANDRO-BAIXADOS.
+                </p>
+            </div>
+            <div class="form-group">
+                <label>Pasta de Vinculação (Destino)</label>
+                <div class="sync-path-container">
+                    <span id="path-vinculacao" class="sync-path-display">Não configurado</span>
+                    <button class="btn secondary-grey" style="height: 32px; padding: 0 12px; font-size: 12px;" onclick="setVinculacaoDir()">Alterar</button>
+                </div>
+            </div>
+            <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-secondary);">
+                As pastas selecionadas são salvas no navegador para uso futuro.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn primary" onclick="closeAllModals()">Concluir</button>
+        </div>
+    </div>
+
+    <!-- Modal Cores de Status -->
+    <div id="modal-colors" class="modal">
+        <div class="modal-header">
+            <h2>Cores das Observações</h2>
+            <button class="btn-close" onclick="closeAllModals()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 12px; font-size: 0.85rem; color: var(--text-secondary);">Defina a cor para cada observação presente no banco. Observações sem cor definida (transparente) não recebem destaque.</p>
+            <div id="colors-list" class="color-list">
+                <!-- Color pickers dinâmicos -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn primary" onclick="saveColors(); closeAllModals()">Salvar Cores</button>
+        </div>
+    </div>
+
+    <!-- Hidden textarea bridge for clipboard paste fallback (file:// workaround) -->
+    <!-- DEVE estar ANTES do script.js para que getElementById o encontre -->
+    <textarea id="hidden-paste-bridge" style="display:none; position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0;" tabindex="-1" aria-hidden="true"></textarea>
+
+    <!-- App Scripts -->
+    <script src="script.js"></script>
+
+    <!-- Global datalists -->
+    <datalist id="obs-list"></datalist>
+
+    <!-- Context Menu for Paste (mantido para compatibilidade, mas não é mais o método principal) -->
+    <div id="custom-context-menu" class="custom-context-menu" style="display: none;">
+        <div class="context-menu-item" id="context-menu-paste">
+            <span class="icon-inline">📋</span> Colar
+        </div>
+    </div>
+
+    <!-- Toast de Progresso -->
+    <div id="toast-container" class="toast-container">
+        <!-- Gerado dinamicamente -->
+    </div>
+
+</body>
+</html>

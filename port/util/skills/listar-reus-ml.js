@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+// Lista todos os réus do Mercado Livre (deduplicado), um por linha
+const reus = [
+  "EBAZAR.COM.BR LTDA.",
+  "MERCADOLIVRE.COM ATIVIDADES DE INTERNET LTDA.",
+  "MERCADO CRÉDITO SOCIEDADE DE CREDITO, FINANCIAMENTO E INVESTIMENTO S.A.",
+  "MERCADO ENVIOS TRANSPORTE LTDA.",
+  "MERCADO PAGO INSTITUICAO DE PAGAMENTO LTDA",
+  "KANGU PARTICIPAÇÕES S.A.",
+  "K21 INTERMEDIACAO LTDA.",
+  "IBAZAR.COM ATIVIDADES DE INTERNET LTDA.",
+];
+for (const r of reus) console.log(r);
