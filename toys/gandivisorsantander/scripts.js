@@ -127,7 +127,7 @@ function atualizarResumoLote() {
     `;
 
     container.innerHTML = html;
-    container.style.display = 'block';
+    container.style.display = 'grid';
 }
 
 // Extrair número CNJ do nome do arquivo
@@ -170,8 +170,8 @@ async function carregarArquivoAtual() {
     document.getElementById('currentFileNumber').textContent = `${currentFileIndex + 1}/${filesQueue.length}`;
     document.getElementById('currentFileName').textContent = currentFile.name;
     document.getElementById('detectedCNJ').innerHTML = numeroCNJ 
-        ? `<span style="color: var(--success);">${numeroCNJ} ✓</span>`
-        : `<span style="color: var(--danger);">❌ Não detectado no nome do arquivo</span>`;
+        ? `<span style="color: var(--toy-success);">${numeroCNJ} ✓</span>`
+        : `<span style="color: var(--toy-danger);">❌ Não detectado no nome do arquivo</span>`;
     
     // Mostrar/esconder painel de CNJ manual
     if (!numeroCNJ) {
@@ -374,19 +374,19 @@ function atualizarPreview() {
     document.getElementById('previewInicial').innerHTML = `
         <strong>Páginas ${inicio}-${fim}</strong><br>
         ${paginasInicial} página(s)<br>
-            <small style="color: var(--toy-muted, var(--text-secondary));">Inicial${sufixoCNJ}.pdf</small>
+            <small style="color: var(--toy-muted);">Inicial${sufixoCNJ}.pdf</small>
     `;
     
     if (paginasDocs > 0) {
         document.getElementById('previewDocs').innerHTML = `
             <strong>${docsDescricao}</strong><br>
             ${paginasDocs} página(s)<br>
-            <small style="color: var(--toy-muted, var(--text-secondary));">Docs Inicial${sufixoCNJ}.pdf</small>
+            <small style="color: var(--toy-muted);">Docs Inicial${sufixoCNJ}.pdf</small>
         `;
     } else {
         document.getElementById('previewDocs').innerHTML = `
             <strong>Nenhuma página</strong><br>
-            <small style="color: var(--toy-muted, var(--text-secondary));">(Todas as páginas estão na "Inicial")</small>
+            <small style="color: var(--toy-muted);">(Todas as páginas estão na "Inicial")</small>
         `;
     }
     
@@ -594,7 +594,7 @@ function finalizarProcessamento() {
     const ignorados = fileStatuses.filter(status => status === 'skipped').length;
     
     document.getElementById('resultMessage').innerHTML = `
-        <h3 style="color: var(--success);">🎉 Processamento Concluído!</h3><br>
+        <h3 style="color: var(--toy-success);">🎉 Processamento Concluído!</h3><br>
         <strong>📊 Estatísticas:</strong><br><br>
         📁 Total de arquivos: ${total}<br>
         ✅ Processados com sucesso: ${concluidos}<br>
@@ -744,7 +744,7 @@ function aplicarCNJManual() {
     
     // Aplicar CNJ
     numeroCNJ = cnjFormatado;
-    document.getElementById('detectedCNJ').innerHTML = `<span style="color: var(--success);">${numeroCNJ} ✓ (Manual)</span>`;
+    document.getElementById('detectedCNJ').innerHTML = `<span style="color: var(--toy-success);">${numeroCNJ} ✓ (Manual)</span>`;
     document.getElementById('cnjWarning').style.display = 'none';
     
     // Atualizar preview
@@ -905,44 +905,40 @@ function renderizarListaDivisoes() {
     
     const sufixoCNJ = numeroCNJ ? ` - ${numeroCNJ}` : '';
     
-    let html = '<div class="list-group">';
+    let html = '<div class="stack">';
     
     customDivisions.forEach((div, index) => {
         html += `
-            <div class="list-group-item" style="border-left: 4px solid var(--gondim-primary);">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6 class="mb-1">
-                            <span class="badge bg-primary me-2">#${index + 1}</span>
-                            <i class="bi bi-file-pdf text-danger me-1"></i>
-                            <strong>${div.nome}${sufixoCNJ}.pdf</strong>
-                        </h6>
-                        <p class="mb-0 text-muted">
-                            <i class="bi bi-files me-1"></i>
-                            Páginas ${div.inicio}-${div.fim} (${div.paginas} ${div.paginas === 1 ? 'página' : 'páginas'})
-                        </p>
-                    </div>
-                    <div>
-                        <button class="btn btn-sm btn-danger" onclick="removerDivisaoCustom(${div.id})" title="Remover">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
+            <div class="division-row">
+                <div>
+                    <p class="division-title">
+                        <span class="division-index">#${index + 1}</span>
+                        <i class="bi bi-file-pdf"></i>
+                        <strong>${div.nome}${sufixoCNJ}.pdf</strong>
+                    </p>
+                    <p class="division-meta">
+                        <i class="bi bi-files"></i>
+                        Páginas ${div.inicio}-${div.fim} (${div.paginas} ${div.paginas === 1 ? 'página' : 'páginas'})
+                    </p>
                 </div>
+                <button class="btn btn-outline btn-small btn-danger" onclick="removerDivisaoCustom(${div.id})" title="Remover">
+                    <i class="bi bi-trash"></i>
+                </button>
             </div>
         `;
     });
     
-    html += '</div>';
-    
     // Adicionar resumo
     const totalPaginas = customDivisions.reduce((sum, div) => sum + div.paginas, 0);
     html += `
-        <div class="alert alert-info mt-3 mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            <strong>Total:</strong> ${customDivisions.length} ${customDivisions.length === 1 ? 'divisão' : 'divisões'} 
-            | ${totalPaginas} ${totalPaginas === 1 ? 'página' : 'páginas'}
+        <div class="notice">
+            <i class="bi bi-info-circle"></i>
+            <span><strong>Total:</strong> ${customDivisions.length} ${customDivisions.length === 1 ? 'divisão' : 'divisões'}
+            | ${totalPaginas} ${totalPaginas === 1 ? 'página' : 'páginas'}</span>
         </div>
     `;
+    
+    html += '</div>';
     
     container.innerHTML = html;
 }
@@ -1057,7 +1053,7 @@ async function processarDivisoesCustom() {
             
             // Resetar botão
             btnProcessar.disabled = false;
-            btnProcessar.innerHTML = '<i class="bi bi-scissors me-2"></i>Processar Todas as Divisões';
+            btnProcessar.innerHTML = '<i class="bi bi-scissors"></i>Processar todas as divisões';
             
             // Limpar divisões após processar
             customDivisions = [];
@@ -1080,6 +1076,6 @@ async function processarDivisoesCustom() {
         
         progressSection.style.display = 'none';
         btnProcessar.disabled = false;
-        btnProcessar.innerHTML = '<i class="bi bi-scissors me-2"></i>Processar Todas as Divisões';
+        btnProcessar.innerHTML = '<i class="bi bi-scissors"></i>Processar todas as divisões';
     }
 }

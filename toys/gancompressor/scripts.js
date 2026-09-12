@@ -59,12 +59,12 @@ function renderizarFilaArquivos() {
         }
 
         item.innerHTML = `
-            <div class="file-item-info w-100">
-                <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="file-item-info">
+                <div class="file-item-top">
                     <span class="file-item-name" title="${file.name}">${file.name}</span>
                     <span class="file-item-badge ${badgeClass}" id="badge-${index}">${badgeText}</span>
                 </div>
-                <span class="file-item-status text-muted" id="file-size-${index}" style="font-size: 0.8rem;">Original: ${formatBytes(file.size)}</span>
+                <span class="file-item-status" id="file-size-${index}">Original: ${formatBytes(file.size)}</span>
                 <div class="progress-micro" id="progress-container-${index}">
                     <div class="progress-micro-fill" id="progress-fill-${index}"></div>
                 </div>
@@ -144,19 +144,19 @@ async function iniciarCompressaoLote() {
             if (finalSize < originalSize) {
                 const percent = (((originalSize - finalSize) / originalSize) * 100).toFixed(1);
                 percentText = `(Redução de ${percent}%)`;
-                colorHelper = "color: var(--success); font-weight: bold;";
+                colorHelper = "color: var(--toy-success); font-weight: bold;";
             } else {
                 percentText = `(Já otimizado. Original mantido)`;
-                colorHelper = "color: var(--warning); font-weight: bold;";
+                colorHelper = "color: var(--toy-warning); font-weight: bold;";
                 bytesToDownload = await file.arrayBuffer(); // Mantém o backup original
             }
             
             const sizeSpan = document.getElementById(`file-size-${i}`);
             if (sizeSpan) {
                 if (finalSize < originalSize) {
-                    sizeSpan.innerHTML = `Original: ${formatBytes(originalSize)} <i class="bi bi-arrow-right mx-1"></i> Final: ${formatBytes(finalSize)} <span style="${colorHelper} ml-1">${percentText}</span>`;
+                    sizeSpan.innerHTML = `Original: ${formatBytes(originalSize)} <i class="bi bi-arrow-right file-item-arrow"></i> Final: ${formatBytes(finalSize)} <span class="file-item-delta" style="${colorHelper}">${percentText}</span>`;
                 } else {
-                    sizeSpan.innerHTML = `Original: ${formatBytes(originalSize)} <i class="bi bi-arrow-right mx-1"></i> Final: Mantido <span style="${colorHelper} ml-1">${percentText}</span>`;
+                    sizeSpan.innerHTML = `Original: ${formatBytes(originalSize)} <i class="bi bi-arrow-right file-item-arrow"></i> Final: Mantido <span class="file-item-delta" style="${colorHelper}">${percentText}</span>`;
                 }
             }
 
@@ -309,9 +309,9 @@ function showToast(title, message, type = 'info', duration = 3000) {
     const toast = document.createElement('div');
     toast.className = 'app-toast';
     
-    let borderColor = 'var(--gondim-gold)';
-    if (type === 'error') borderColor = 'var(--danger)';
-    if (type === 'success') borderColor = 'var(--success)';
+    let borderColor = 'var(--toy-accent)';
+    if (type === 'error') borderColor = 'var(--toy-danger)';
+    if (type === 'success') borderColor = 'var(--toy-success)';
     
     toast.style.borderLeftColor = borderColor;
     

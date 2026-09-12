@@ -28,7 +28,7 @@
             }
 
             try {
-                applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
+                applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
             } catch (e) {}
 
             document.addEventListener('DOMContentLoaded', function () {
@@ -55,249 +55,245 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divisor de PDF</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="../../vendor/bootstrap/css/bootstrap.min.css">
+    <title>Divisor Santander</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="stylesheet" href="../shared/toy.css">
     <link rel="stylesheet" href="../../vendor/bootstrap-icons/font/bootstrap-icons.css">
     <script src="../../vendor/pdfjs/pdf.min.js"></script>
     <script src="../../vendor/pdf-lib/pdf-lib.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="toy-header">
-        <img src="../../favicon.png" alt="Logo" class="logo">
-        <h1>Divisor De PDF</h1>
-    </header>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Divisor Santander</h1>
+            <p>Divida um lote de PDFs em “Inicial” e “Docs Inicial” por processo.</p>
+        </header>
 
-    <main class="main-content py-3 py-lg-4">
-        <div class="container-fluid px-3 px-lg-4 max-w-custom">
-            <section class="gondim-card compact-top-card" id="uploadSection">
-                <div class="card-header-gondim compact-card-header">
-                    <div class="step-badge"><span class="step-number">1</span></div>
-                    <div class="card-header-content">
-                        <h2 class="card-title">Arquivos do lote</h2>
-                        <p class="card-subtitle">Selecione os PDFs e acompanhe o andamento.</p>
-                    </div>
+        <section class="glass-card" id="uploadSection" aria-label="Arquivos do lote">
+            <div class="panel">
+                <div class="steps">
+                    <div class="step active"><span class="step-number">1</span>Arquivos do lote</div>
+                    <div class="step"><span class="step-number">2</span>Marcação e download</div>
                 </div>
-                <div class="card-body compact-top-body">
-                    <div class="top-grid">
-                        <div class="upload-panel">
-                            <input type="file" id="pdfInput" accept=".pdf" multiple hidden>
-                            <button class="btn-gondim btn-primary-gondim btn-lg w-100" onclick="document.getElementById('pdfInput').click()">
-                                <i class="bi bi-upload me-2"></i>Selecionar PDFs
-                            </button>
-                            <div class="upload-hint mt-2">Use Ctrl+Clique para selecionar vários arquivos.</div>
+
+                <div class="card-heading">
+                    <h2>Arquivos do lote</h2>
+                    <p>Selecione os PDFs e acompanhe o andamento.</p>
+                </div>
+
+                <div class="top-grid">
+                    <div class="folder-card">
+                        <input type="file" id="pdfInput" accept=".pdf" multiple hidden>
+                        <button class="btn btn-primary btn-block" type="button" onclick="document.getElementById('pdfInput').click()">
+                            <i class="bi bi-upload"></i>Selecionar PDFs
+                        </button>
+                        <p class="hint">Use Ctrl+Clique para selecionar vários arquivos.</p>
+                    </div>
+                    <div id="filesQueue" class="batch-summary-grid" style="display:none;"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-card" id="viewerSection" style="display:none;" aria-label="Processamento e marcação">
+            <div class="panel">
+                <div class="steps">
+                    <div class="step"><span class="step-number">1</span>Arquivos do lote</div>
+                    <div class="step active"><span class="step-number">2</span>Marcação e download</div>
+                </div>
+
+                <div class="card-heading">
+                    <h2>Processando arquivo <span id="currentFileNumber" class="accent">0/0</span></h2>
+                    <p>Visualização e marcação na mesma tela.</p>
+                </div>
+
+                <div class="workspace-grid">
+                    <aside class="left-panel">
+                        <div class="stack">
+                            <div class="mini-info-grid">
+                                <div class="info-box">
+                                    <div class="info-label">Arquivo atual</div>
+                                    <div class="info-value" id="currentFileName">-</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-label">CNJ</div>
+                                    <div class="info-value" id="detectedCNJ">-</div>
+                                </div>
+                            </div>
+
+                            <div class="control-card-surface" id="cnjWarning" style="display:none;">
+                                <div class="section-title warn"><i class="bi bi-exclamation-triangle"></i>CNJ não detectado</div>
+                                <div class="field-inline">
+                                    <input type="text" id="cnjManual" placeholder="57104727520258090051 ou formatado">
+                                    <button class="btn btn-primary btn-small" type="button" onclick="aplicarCNJManual()">Aplicar</button>
+                                </div>
+                            </div>
+
+                            <div class="control-card-surface">
+                                <div class="section-title"><i class="bi bi-toggles"></i>Modo de divisão</div>
+                                <div class="mode-choice-list">
+                                    <label class="mode-choice">
+                                        <input type="radio" name="modoDivisao" value="auto" checked onchange="alternarModoDivisao()">
+                                        <span><strong>Automático</strong><small>Gera “Inicial” e “Docs Inicial”.</small></span>
+                                    </label>
+                                    <label class="mode-choice">
+                                        <input type="radio" name="modoDivisao" value="custom" onchange="alternarModoDivisao()">
+                                        <span><strong>Personalizado</strong><small>Crie várias divisões com nome próprio.</small></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="modoDivisaoAuto">
+                                <div class="control-card-surface" id="selecaoPaginasAuto">
+                                    <div class="section-title"><i class="bi bi-bookmark-check"></i>Marcação da Inicial</div>
+                                    <div class="stack">
+                                        <div class="grid-2">
+                                            <div>
+                                                <label class="input-label" for="inicioInicial">Primeira página</label>
+                                                <input type="number" id="inicioInicial" min="1" value="1">
+                                            </div>
+                                            <div>
+                                                <label class="input-label" for="fimInicial">Última página</label>
+                                                <input type="number" id="fimInicial" min="1" value="1">
+                                            </div>
+                                        </div>
+                                        <div class="grid-2">
+                                            <button class="btn btn-outline btn-small" type="button" onclick="definirInicio()"><i class="bi bi-bookmark-check"></i>Marcar atual como 1ª</button>
+                                            <button class="btn btn-outline btn-small" type="button" onclick="definirFim()"><i class="bi bi-bookmark-check-fill"></i>Marcar atual como última</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="modoDivisaoPersonalizado" style="display:none;">
+                                <div class="control-card-surface" id="selecaoPaginasPersonalizado">
+                                    <div class="section-title"><i class="bi bi-pencil-square"></i>Nova divisão personalizada</div>
+                                    <div class="stack">
+                                        <div>
+                                            <label class="input-label" for="customFileName">Nome do arquivo</label>
+                                            <input type="text" id="customFileName" placeholder="Ex: Procuração, Citação, etc.">
+                                        </div>
+                                        <div class="grid-2">
+                                            <div>
+                                                <label class="input-label" for="customInicio">Início</label>
+                                                <div class="field-inline">
+                                                    <input type="number" id="customInicio" min="1" value="1">
+                                                    <button class="btn btn-outline btn-small" type="button" onclick="marcarPaginaAtualCustom('inicio')" title="Marcar página atual"><i class="bi bi-bookmark-check"></i></button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="input-label" for="customFim">Fim</label>
+                                                <div class="field-inline">
+                                                    <input type="number" id="customFim" min="1" value="1">
+                                                    <button class="btn btn-outline btn-small" type="button" onclick="marcarPaginaAtualCustom('fim')" title="Marcar página atual"><i class="bi bi-bookmark-check-fill"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-primary btn-block" type="button" onclick="adicionarDivisaoCustom()"><i class="bi bi-plus-circle"></i>Adicionar divisão</button>
+                                    </div>
+                                </div>
+
+                                <div class="control-card-surface" id="customDivisionsList" style="display:none;">
+                                    <div class="section-title"><i class="bi bi-list-ul"></i>Divisões criadas</div>
+                                    <div id="divisionsListContainer"></div>
+                                </div>
+                            </div>
+
+                            <div class="control-card-surface">
+                                <div id="actionButtonsAuto" class="grid-2">
+                                    <button class="btn btn-primary" type="button" onclick="processarDivisao()" id="btnProcessar">
+                                        <i class="bi bi-scissors"></i>Dividir e baixar PDFs
+                                    </button>
+                                    <button class="btn btn-outline" type="button" onclick="limparTudo()">
+                                        <i class="bi bi-arrow-clockwise"></i>Limpar e recomeçar
+                                    </button>
+                                </div>
+                                <div id="actionButtonsCustom" class="grid-2" style="display:none;">
+                                    <button class="btn btn-primary" type="button" onclick="processarDivisoesCustom()" id="btnProcessarCustom">
+                                        <i class="bi bi-scissors"></i>Processar todas as divisões
+                                    </button>
+                                    <button class="btn btn-outline" type="button" onclick="limparDivisoesCustom()">
+                                        <i class="bi bi-trash"></i>Limpar divisões
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="progressSection" class="control-card-surface" style="display:none;">
+                                <div class="section-title"><i class="bi bi-hourglass-split"></i>Processando</div>
+                                <div class="progress-wrap"><div class="progress-bar" id="progressFill"></div></div>
+                                <div class="progress-text" id="progressText">Preparando...</div>
+                            </div>
+
+                            <div id="resultSection" class="control-card-surface" style="display:none;">
+                                <div class="section-title"><i class="bi bi-check-circle"></i>Resultado</div>
+                                <div id="resultMessage"></div>
+                            </div>
                         </div>
-                        <div id="filesQueue" class="batch-summary-grid" style="display:none;"></div>
-                    </div>
-                </div>
-            </section>
+                    </aside>
 
-            <section class="gondim-card" id="viewerSection" style="display:none;">
-                <div class="card-header-gondim compact-card-header">
-                    <div class="step-badge"><span class="step-number">2</span></div>
-                    <div class="card-header-content">
-                        <h2 class="card-title">Processando arquivo <span id="currentFileNumber" class="text-gondim-gold">0/0</span></h2>
-                        <p class="card-subtitle">Visualização e marcação na mesma tela.</p>
-                    </div>
-                </div>
-
-                <div class="card-body workspace-body">
-                    <div class="workspace-grid">
-                        <aside class="left-panel">
-                            <div class="control-stack">
-                                <div class="mini-info-grid">
-                                    <div class="info-box wide">
-                                        <div class="info-label">Arquivo atual</div>
-                                        <div class="info-value" id="currentFileName">-</div>
+                    <section class="right-panel">
+                        <div class="viewer-shell">
+                            <div class="viewer-topbar">
+                                <span id="pageIndicator">Página 1 de 1</span>
+                            </div>
+                            <div class="pdf-canvas-container compact-viewer-area">
+                                <canvas id="pdfCanvas"></canvas>
+                            </div>
+                            <div class="viewer-controls-panel">
+                                <div class="controls-row">
+                                    <div class="row">
+                                        <button class="btn-control" id="btnFirstPage" type="button" title="Primeira página"><i class="bi bi-skip-start-fill"></i></button>
+                                        <button class="btn-control" id="btnPrevPage" type="button" title="Página anterior"><i class="bi bi-chevron-left"></i></button>
                                     </div>
-                                    <div class="info-box wide">
-                                        <div class="info-label">CNJ</div>
-                                        <div class="info-value" id="detectedCNJ">-</div>
+                                    <div class="page-input-wrap">
+                                        <input type="number" id="pageNumber" min="1" value="1">
+                                        <span id="pageCount" class="page-count">de 0</span>
                                     </div>
-                                </div>
-
-                                <div class="control-card-surface" id="cnjWarning" style="display:none;">
-                                    <div class="section-title text-warning-emphasis"><i class="bi bi-exclamation-triangle me-2"></i>CNJ não detectado</div>
-                                    <div class="input-group">
-                                        <input type="text" id="cnjManual" class="form-control" placeholder="57104727520258090051 ou formatado">
-                                        <button class="btn btn-warning" onclick="usarCNJManual()">Aplicar</button>
+                                    <div class="row">
+                                        <button class="btn-control" id="btnNextPage" type="button" title="Próxima página"><i class="bi bi-chevron-right"></i></button>
+                                        <button class="btn-control" id="btnLastPage" type="button" title="Última página"><i class="bi bi-skip-end-fill"></i></button>
+                                    </div>
+                                    <div class="zoom-wrap">
+                                        <button class="btn-control" id="btnZoomOut" type="button" title="Reduzir zoom"><i class="bi bi-dash-circle"></i></button>
+                                        <span id="zoomLevel" class="zoom-display">150%</span>
+                                        <button class="btn-control" id="btnZoomIn" type="button" title="Aumentar zoom"><i class="bi bi-plus-circle"></i></button>
                                     </div>
                                 </div>
-
-                                <div class="control-card-surface">
-                                    <div class="section-title"><i class="bi bi-toggles me-2"></i>Modo de divisão</div>
-                                    <div class="mode-choice-list">
-                                        <label class="mode-choice">
-                                            <input type="radio" name="modoDivisao" value="auto" checked onchange="alternarModoDivisao()">
-                                            <span><strong>Automático</strong><small>Gera “Inicial” e “Docs Inicial”.</small></span>
-                                        </label>
-                                        <label class="mode-choice">
-                                            <input type="radio" name="modoDivisao" value="custom" onchange="alternarModoDivisao()">
-                                            <span><strong>Personalizado</strong><small>Crie várias divisões com nome próprio.</small></span>
-                                        </label>
+                                <div class="controls-row">
+                                    <div class="field-inline search-field">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text" id="searchText" placeholder="Buscar palavra no PDF...">
+                                        <button class="btn btn-primary btn-small" type="button" onclick="buscarNoPDF()"><i class="bi bi-search"></i>Buscar</button>
                                     </div>
                                 </div>
+                                <div id="searchResults" class="search-results-modern"></div>
+                            </div>
+                        </div>
 
-                                <div id="modoDivisaoAuto">
-                                    <div class="control-card-surface" id="selecaoPaginasAuto">
-                                        <div class="section-title"><i class="bi bi-bookmark-check me-2"></i>Marcação da Inicial</div>
-                                        <div class="field-grid-two">
-                                            <div>
-                                                <label class="form-label">Primeira página</label>
-                                                <input type="number" id="inicioInicial" min="1" value="1" class="form-control">
-                                            </div>
-                                            <div>
-                                                <label class="form-label">Última página</label>
-                                                <input type="number" id="fimInicial" min="1" value="1" class="form-control">
-                                            </div>
-                                        </div>
-                                        <div class="button-grid-two mt-3">
-                                            <button class="btn btn-outline-success" onclick="definirInicio()"><i class="bi bi-bookmark-check me-1"></i>Marcar atual como 1ª</button>
-                                            <button class="btn btn-outline-success" onclick="definirFim()"><i class="bi bi-bookmark-check-fill me-1"></i>Marcar atual como última</button>
-                                        </div>
-                                    </div>
-
+                        <div class="control-card-surface division-preview-right" id="divisionPreview" style="display:none;">
+                            <div class="section-title"><i class="bi bi-eye"></i>Preview da divisão</div>
+                            <div class="preview-list preview-list-horizontal">
+                                <div class="preview-box-item">
+                                    <div class="preview-name">Inicial.pdf</div>
+                                    <div id="previewInicial">Páginas 1-1</div>
                                 </div>
-
-                                <div id="modoDivisaoPersonalizado" style="display:none;">
-                                    <div class="control-card-surface" id="selecaoPaginasPersonalizado">
-                                        <div class="section-title"><i class="bi bi-pencil-square me-2"></i>Nova divisão personalizada</div>
-                                        <div class="field-grid-one">
-                                            <div>
-                                                <label class="form-label">Nome do arquivo</label>
-                                                <input type="text" id="customFileName" class="form-control" placeholder="Ex: Procuração, Citação, etc.">
-                                            </div>
-                                        </div>
-                                        <div class="field-grid-two mt-3">
-                                            <div>
-                                                <label class="form-label">Início</label>
-                                                <div class="input-group">
-                                                    <input type="number" id="customInicio" min="1" value="1" class="form-control">
-                                                    <button class="btn btn-outline-success" onclick="marcarPaginaAtualCustom('inicio')"><i class="bi bi-bookmark-check"></i></button>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label class="form-label">Fim</label>
-                                                <div class="input-group">
-                                                    <input type="number" id="customFim" min="1" value="1" class="form-control">
-                                                    <button class="btn btn-outline-success" onclick="marcarPaginaAtualCustom('fim')"><i class="bi bi-bookmark-check-fill"></i></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3">
-                                            <button class="btn btn-primary w-100" onclick="adicionarDivisaoCustom()"><i class="bi bi-plus-circle me-2"></i>Adicionar divisão</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="control-card-surface" id="customDivisionsList" style="display:none;">
-                                        <div class="section-title"><i class="bi bi-list-ul me-2"></i>Divisões criadas</div>
-                                        <div id="divisionsListContainer"></div>
-                                    </div>
-                                </div>
-
-                                <div class="control-card-surface action-card-surface">
-                                    <div id="actionButtonsAuto" class="button-grid-two action-buttons-top">
-                                        <button class="btn-gondim btn-success-gondim" onclick="processarDivisao()" id="btnProcessar">
-                                            <i class="bi bi-scissors me-2"></i>Dividir e baixar PDFs
-                                        </button>
-                                        <button class="btn-gondim btn-secondary-gondim" onclick="limparTudo()">
-                                            <i class="bi bi-arrow-clockwise me-2"></i>Limpar e recomeçar
-                                        </button>
-                                    </div>
-                                    <div id="actionButtonsCustom" class="button-grid-two action-buttons-top" style="display:none;">
-                                        <button class="btn-gondim btn-success-gondim" onclick="processarDivisoesCustom()" id="btnProcessarCustom">
-                                            <i class="bi bi-scissors me-2"></i>Processar todas as divisões
-                                        </button>
-                                        <button class="btn-gondim btn-secondary-gondim" onclick="limparDivisoesCustom()">
-                                            <i class="bi bi-trash me-2"></i>Limpar divisões
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div id="progressSection" class="control-card-surface" style="display:none;">
-                                    <div class="section-title"><i class="bi bi-hourglass-split me-2"></i>Processando</div>
-                                    <div class="progress progress-modern">
-                                        <div class="progress-bar" id="progressFill" role="progressbar" style="width: 0%;"></div>
-                                    </div>
-                                    <div class="mt-2" id="progressText">Preparando...</div>
-                                </div>
-
-                                <div id="resultSection" class="control-card-surface" style="display:none;">
-                                    <div class="section-title"><i class="bi bi-check-circle me-2"></i>Resultado</div>
-                                    <div id="resultMessage"></div>
+                                <div class="preview-box-item">
+                                    <div class="preview-name">Docs Inicial.pdf</div>
+                                    <div id="previewDocs">Páginas restantes</div>
                                 </div>
                             </div>
-                        </aside>
-
-                        <section class="right-panel">
-                            <div class="viewer-shell">
-                                <div class="viewer-topbar">
-                                    <span id="pageIndicator">Página 1 de 1</span>
-                                </div>
-                                <div class="pdf-canvas-container compact-viewer-area">
-                                    <canvas id="pdfCanvas"></canvas>
-                                </div>
-                                <div class="viewer-controls-panel">
-                                    <div class="controls-row responsive-row">
-                                        <div class="btn-group" role="group">
-                                            <button class="btn-control" id="btnFirstPage" title="Primeira página"><i class="bi bi-skip-start-fill"></i></button>
-                                            <button class="btn-control" id="btnPrevPage" title="Página anterior"><i class="bi bi-chevron-left"></i></button>
-                                        </div>
-                                        <div class="page-input-wrap">
-                                            <input type="number" id="pageNumber" min="1" value="1" class="form-control">
-                                            <span id="pageCount">de 0</span>
-                                        </div>
-                                        <div class="btn-group" role="group">
-                                            <button class="btn-control" id="btnNextPage" title="Próxima página"><i class="bi bi-chevron-right"></i></button>
-                                            <button class="btn-control" id="btnLastPage" title="Última página"><i class="bi bi-skip-end-fill"></i></button>
-                                        </div>
-                                        <div class="zoom-wrap ms-lg-auto">
-                                            <button class="btn-control" id="btnZoomOut"><i class="bi bi-dash-circle"></i></button>
-                                            <span id="zoomLevel" class="zoom-display">150%</span>
-                                            <button class="btn-control" id="btnZoomIn"><i class="bi bi-plus-circle"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="controls-row search-row">
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-white"><i class="bi bi-search text-gondim-gold"></i></span>
-                                            <input type="text" id="searchText" class="form-control" placeholder="Buscar palavra no PDF...">
-                                            <button class="btn btn-gondim-gold" onclick="buscarNoPDF()"><i class="bi bi-search me-1"></i>Buscar</button>
-                                        </div>
-                                    </div>
-                                    <div id="searchResults" class="search-results-modern"></div>
-                                </div>
-                            </div>
-                            <div class="control-card-surface division-preview-right" id="divisionPreview" style="display:none;">
-                                <div class="section-title"><i class="bi bi-eye me-2"></i>Preview da divisão</div>
-                                <div class="preview-list preview-list-horizontal">
-                                    <div class="preview-box-item">
-                                        <div class="preview-name">Inicial.pdf</div>
-                                        <div id="previewInicial">Páginas 1-1</div>
-                                    </div>
-                                    <div class="preview-box-item">
-                                        <div class="preview-name">Docs Inicial.pdf</div>
-                                        <div id="previewDocs">Páginas restantes</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
+                        </div>
+                    </section>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <div id="processSection" style="display:none;"></div>
-        </div>
+        <div id="processSection" style="display:none;"></div>
     </main>
 
     <div id="toastContainer" class="toast-container-custom"></div>
 
     <script src="scripts.js"></script>
-<script>
-    (function() {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    })();
-</script>
 </body>
 </html>

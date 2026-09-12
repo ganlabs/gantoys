@@ -158,7 +158,10 @@ function runTool(type, text, settings) {
 }
 
 function normalizeAscii(text, allowed = ' _-') {
-    return String(text || '').normalize('NFKD').replace(new RegExp(`[^A-Za-z0-9${allowed}]`, 'g'), '').toUpperCase().trim();
+    // os caracteres permitidos entram numa classe de regex: escapa o que teria
+    // outro significado dentro dela (ex.: hífen criando range "_-")
+    const safeAllowed = allowed.replace(/[\\\]^/-]/g, '\\$&');
+    return String(text || '').normalize('NFKD').replace(new RegExp(`[^A-Za-z0-9${safeAllowed}]`, 'g'), '').toUpperCase().trim();
 }
 
 function classifyCourt(text) {
@@ -330,7 +333,10 @@ function normalizeDocuments(text) {
 function normalizeNameValue(raw) {
     const trimmed = String(raw || '').trim();
     if (!trimmed) return '';
-    let value = normalizeAscii(trimmed.split(/[;|]/)[0]);
+    // Novas diretrizes: nada é descartado a partir do ";", o valor segue completo.
+    // O "|" continua cortando como antes e as demais regras de normalização
+    // (maiúsculas, sem acentos, apenas [A-Z0-9 _-;]) seguem valendo.
+    let value = normalizeAscii(trimmed.split('|')[0], ' _-;');
     if (value === 'SEM ADV') value = 'SEM ADVOGADO';
     if (value === 'SEM OAB') value = '0';
     if (value === 'SEM UF') value = 'TJ';

@@ -28,7 +28,7 @@
             }
 
             try {
-                applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
+                applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
             } catch (e) {}
 
             document.addEventListener('DOMContentLoaded', function () {
@@ -56,215 +56,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compressor de PDF em Lote</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="../../vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="stylesheet" href="../shared/toy.css">
     <link rel="stylesheet" href="../../vendor/bootstrap-icons/font/bootstrap-icons.css">
-    
+
     <!-- PDF.js para renderizar páginas do PDF em Canvas -->
     <script src="../../vendor/pdfjs/pdf.min.js"></script>
     <!-- jsPDF para montar o novo PDF compactado -->
     <script src="../../vendor/jspdf/jspdf.umd.min.js"></script>
-    
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .file-list-modern {
-            background: var(--toy-surface, #fff);
-            border: 1px solid var(--toy-border, rgba(0,0,0,0.08));
-            border-radius: var(--toy-card-radius, 8px);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            background-color: var(--toy-border, rgba(0,0,0,0.08)); /* acts as border between items */
-        }
-        .file-item-modern {
-            padding: 1rem;
-            background: var(--toy-surface, #fff);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .file-item-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-            overflow: hidden;
-        }
-        .file-item-name {
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .file-item-status {
-            font-size: 0.85rem;
-            color: var(--gondim-gray);
-        }
-        .file-item-badge {
-            display: inline-block;
-            padding: 0.35rem 0.6rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .badge-pending { background: var(--toy-surface-alt, #e9ecef); color: var(--toy-text, #495057); }
-        .badge-processing { background: var(--gondim-light-gold); color: var(--gondim-dark-gold); }
-        .badge-completed { background: #d4edda; color: #155724; }
-        .badge-error { background: #f8d7da; color: #721c24; }
 
-        .progress-micro {
-            height: 4px;
-            border-radius: 2px;
-            background: var(--toy-surface-alt, #e9ecef);
-            overflow: hidden;
-            margin-top: 0.5rem;
-            display: none;
-        }
-        .progress-micro-fill {
-            height: 100%;
-            background: var(--gondim-gold);
-            width: 0%;
-            transition: width 0.2s;
-        }
-        
-        /* Oculta canvas usado para renderização invisível */
-        #renderCanvas {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="toy-header">
-        <img src="../../favicon.png" alt="Logo" class="logo">
-        <h1>Compressor De PDF Em Lote</h1>
-    </header>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Compressor de PDF em Lote</h1>
+            <p>Reduza o tamanho de vários PDFs de uma vez, sem enviar nada para a internet.</p>
+        </header>
 
-    <main class="main-content py-3 py-lg-4">
-        <div class="container-fluid px-3 px-lg-4 max-w-custom">
-            <section class="gondim-card compact-top-card" id="uploadSection">
-                <div class="card-header-gondim compact-card-header">
-                    <div class="step-badge"><span class="step-number">1</span></div>
-                    <div class="card-header-content">
-                        <h2 class="card-title">Arquivos do lote</h2>
-                        <p class="card-subtitle">Selecione os PDFs e acompanhe o andamento.</p>
-                    </div>
-                </div>
-                <div class="card-body compact-top-body">
-                    <div class="top-grid">
-                        <div class="upload-panel" id="uploadPanelContainer">
-                            <input type="file" id="pdfInput" accept=".pdf" multiple hidden>
-                            <button class="btn-gondim btn-primary-gondim btn-lg w-100" onclick="document.getElementById('pdfInput').click()">
-                                <i class="bi bi-upload me-2"></i>Selecionar PDFs
-                            </button>
-                            <div class="upload-hint mt-2">Use Ctrl+Clique para selecionar vários arquivos.</div>
-                        </div>
-                        <div id="filesQueue" class="batch-summary-grid" style="display:none;"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="gondim-card" id="settingsSection" style="display:none;">
-                <div class="card-header-gondim compact-card-header">
-                    <div class="step-badge"><span class="step-number">2</span></div>
-                    <div class="card-header-content">
-                        <h2 class="card-title">Configurações e Processamento</h2>
-                        <p class="card-subtitle">Ajuste a compressão e acompanhe o andamento.</p>
-                    </div>
+        <section class="glass-card" id="uploadSection" aria-label="Arquivos do lote">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2>Arquivos do lote</h2>
+                    <p>Selecione os PDFs e acompanhe o andamento.</p>
                 </div>
 
-                <div class="card-body workspace-body">
-                    <div class="workspace-grid">
-                        <aside class="left-panel">
-                            <div class="control-stack">
-                                
-                                <div class="control-card-surface">
-                                    <div class="section-title"><i class="bi bi-sliders me-2"></i>Qualidade da Compressão</div>
-                                    <div class="mode-choice-list">
-                                        <label class="mode-choice">
-                                            <input type="radio" name="qualidade" value="0.4">
-                                            <span><strong>Baixa (Maior Compressão)</strong><small>Ideal para arquivos muito grandes.</small></span>
-                                        </label>
-                                        <label class="mode-choice">
-                                            <input type="radio" name="qualidade" value="0.6" checked>
-                                            <span><strong>Média (Recomendado)</strong><small>Equilíbrio entre tamanho e nitidez.</small></span>
-                                        </label>
-                                        <label class="mode-choice">
-                                            <input type="radio" name="qualidade" value="0.8">
-                                            <span><strong>Alta (Menor Compressão)</strong><small>Preserva máxima qualidade.</small></span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="control-card-surface">
-                                    <div class="section-title"><i class="bi bi-aspect-ratio me-2"></i>Resolução (DPI)</div>
-                                    <div class="mode-choice-list">
-                                        <label class="mode-choice">
-                                            <input type="radio" name="dpi" value="50">
-                                            <span><strong>50 DPI (Extrema)</strong><small>Menor tamanho. Só para e-mail/web.</small></span>
-                                        </label>
-                                        <label class="mode-choice">
-                                            <input type="radio" name="dpi" value="72">
-                                            <span><strong>72 DPI (Baixa)</strong><small>Resolução de tela padrão.</small></span>
-                                        </label>
-                                        <label class="mode-choice">
-                                            <input type="radio" name="dpi" value="150" checked>
-                                            <span><strong>150 DPI (Média)</strong><small>Qualidade padrão para leitura.</small></span>
-                                        </label>
-                                        <label class="mode-choice">
-                                            <input type="radio" name="dpi" value="300">
-                                            <span><strong>300 DPI (Alta)</strong><small>Qualidade de impressão (arquivo pesado).</small></span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="control-card-surface action-card-surface">
-                                    <div class="button-grid-two action-buttons-top" style="grid-template-columns: 1fr;">
-                                        <button class="btn-gondim btn-success-gondim" onclick="iniciarCompressaoLote()" id="btnProcessar">
-                                            <i class="bi bi-file-zip me-2"></i>Comprimir PDFs
-                                        </button>
-                                        <button class="btn-gondim btn-secondary-gondim mt-2" onclick="limparTudo()" id="btnLimpar">
-                                            <i class="bi bi-arrow-clockwise me-2"></i>Limpar e Recomeçar
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div id="progressGlobalSection" class="control-card-surface" style="display:none;">
-                                    <div class="section-title"><i class="bi bi-hourglass-split me-2"></i>Progresso Geral</div>
-                                    <div class="progress progress-modern mb-2">
-                                        <div class="progress-bar" id="progressGlobalFill" role="progressbar" style="width: 0%;"></div>
-                                    </div>
-                                    <div class="text-center" id="progressGlobalText">0 / 0 concluídos</div>
-                                </div>
-                                
-                            </div>
-                        </aside>
-
-                        <section class="right-panel">
-                            <div class="viewer-shell p-3">
-                                <h4 class="mb-3" style="font-weight: 700; font-size: 1.1rem;"><i class="bi bi-list-task me-2"></i>Fila de Arquivos</h4>
-                                <div id="filesListContainer" class="file-list-modern">
-                                    <!-- Itens da lista serão inseridos via JS -->
-                                </div>
-                            </div>
-                        </section>
-                    </div>
+                <div class="steps">
+                    <div class="step active"><span class="step-number">1</span>Arquivos do lote</div>
+                    <div class="step"><span class="step-number">2</span>Configurações e processamento</div>
                 </div>
-            </section>
 
-            <div id="resultSection" style="display:none;" class="gondim-card mt-3">
-                <div class="card-body p-4 text-center">
-                                <h3 style="color: var(--success);"><i class="bi bi-check-circle-fill me-2"></i>Processamento Concluído!</h3>
-                    <p class="mt-3">A compressão foi finalizada.<br>Os arquivos foram baixados automaticamente.</p>
-                    <button class="btn-gondim btn-primary-gondim mt-3" onclick="limparTudo()">Processar Novos Arquivos</button>
+                <div>
+                    <input type="file" id="pdfInput" accept=".pdf" multiple hidden>
+                    <button class="btn btn-primary btn-block" type="button" onclick="document.getElementById('pdfInput').click()">
+                        <i class="bi bi-upload"></i>Selecionar PDFs
+                    </button>
+                    <p class="hint">Use Ctrl+Clique para selecionar vários arquivos.</p>
                 </div>
             </div>
+        </section>
 
-        </div>
+        <section class="glass-card" id="settingsSection" style="display:none;" aria-label="Configurações e processamento">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2>Configurações e processamento</h2>
+                    <p>Ajuste a compressão e acompanhe o andamento.</p>
+                </div>
+
+                <div class="steps">
+                    <div class="step"><span class="step-number">1</span>Arquivos do lote</div>
+                    <div class="step active"><span class="step-number">2</span>Configurações e processamento</div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="stack">
+                        <div class="control-card-surface">
+                            <div class="section-title"><i class="bi bi-sliders"></i>Qualidade da Compressão</div>
+                            <div class="mode-choice-list">
+                                <label class="mode-choice">
+                                    <input type="radio" name="qualidade" value="0.4">
+                                    <span><strong>Baixa (Maior Compressão)</strong><small>Ideal para arquivos muito grandes.</small></span>
+                                </label>
+                                <label class="mode-choice">
+                                    <input type="radio" name="qualidade" value="0.6" checked>
+                                    <span><strong>Média (Recomendado)</strong><small>Equilíbrio entre tamanho e nitidez.</small></span>
+                                </label>
+                                <label class="mode-choice">
+                                    <input type="radio" name="qualidade" value="0.8">
+                                    <span><strong>Alta (Menor Compressão)</strong><small>Preserva máxima qualidade.</small></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-card-surface">
+                            <div class="section-title"><i class="bi bi-aspect-ratio"></i>Resolução (DPI)</div>
+                            <div class="mode-choice-list">
+                                <label class="mode-choice">
+                                    <input type="radio" name="dpi" value="50">
+                                    <span><strong>50 DPI (Extrema)</strong><small>Menor tamanho. Só para e-mail/web.</small></span>
+                                </label>
+                                <label class="mode-choice">
+                                    <input type="radio" name="dpi" value="72">
+                                    <span><strong>72 DPI (Baixa)</strong><small>Resolução de tela padrão.</small></span>
+                                </label>
+                                <label class="mode-choice">
+                                    <input type="radio" name="dpi" value="150" checked>
+                                    <span><strong>150 DPI (Média)</strong><small>Qualidade padrão para leitura.</small></span>
+                                </label>
+                                <label class="mode-choice">
+                                    <input type="radio" name="dpi" value="300">
+                                    <span><strong>300 DPI (Alta)</strong><small>Qualidade de impressão (arquivo pesado).</small></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="stack">
+                            <button class="btn btn-primary btn-block" type="button" onclick="iniciarCompressaoLote()" id="btnProcessar">
+                                <i class="bi bi-file-zip"></i>Comprimir PDFs
+                            </button>
+                            <button class="btn btn-outline btn-block" type="button" onclick="limparTudo()" id="btnLimpar">
+                                <i class="bi bi-arrow-clockwise"></i>Limpar e Recomeçar
+                            </button>
+                        </div>
+
+                        <div id="progressGlobalSection" class="progress-global" style="display:none;">
+                            <div class="progress-top"><span>Progresso Geral</span><span id="progressGlobalText">0 / 0 concluídos</span></div>
+                            <div class="progress-wrap"><div class="progress-bar" id="progressGlobalFill"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="stack">
+                        <div class="card-heading">
+                            <h2><i class="bi bi-list-task"></i> Fila de Arquivos</h2>
+                            <p>Os arquivos são processados na ordem em que aparecem.</p>
+                        </div>
+                        <div id="filesListContainer" class="file-list-modern">
+                            <!-- Itens da lista serão inseridos via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-card" id="resultSection" style="display:none;" aria-label="Processamento concluído">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2><i class="bi bi-check-circle-fill" style="color: var(--toy-success);"></i> Processamento Concluído!</h2>
+                    <p>A compressão foi finalizada. Os arquivos foram baixados automaticamente.</p>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" type="button" onclick="limparTudo()">Processar Novos Arquivos</button>
+                </div>
+            </div>
+        </section>
     </main>
 
     <div id="toastContainer" class="toast-container-custom"></div>
-    
+
     <!-- Canvas Oculto para Renderização -->
     <canvas id="renderCanvas"></canvas>
 

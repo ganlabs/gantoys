@@ -1,136 +1,139 @@
-/* Toys use variáveis injetadas pelo app.js */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ==========================================================================
+   Juntar PDFs — regras específicas do toy.
+   A casca (corpo, cartão, botões, progresso) vem de ../shared/toy.css;
+   aqui ficam apenas os elementos próprios, sempre com tokens --toy-*.
+   ========================================================================== */
 
-body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--glass-bg);
-    color: var(--text-primary);
-    min-height: 100vh;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
+/* Modificador do botão de pasta: o script alterna `.selected` após a escolha. */
+.btn.selected {
+    border-color: var(--toy-accent);
+    background: var(--toy-accent-soft);
+    color: var(--toy-text);
 }
 
-.toy-header {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.folder-icon { font-size: 1.4rem; line-height: 1; }
+
+/* Resumo da pasta escolhida (`.visible` alternado pelo script). */
+.folder-info {
+    display: none;
+    padding: 14px 16px;
+    border: 1px solid var(--toy-border);
+    border-radius: var(--toy-control-radius);
+    background: var(--toy-accent-soft);
     text-align: center;
-    margin-bottom: 2.5rem;
 }
 
-.toy-header .logo {
-    height: 72px;
-    margin-bottom: 1.5rem;
-    object-fit: contain;
-}
-
-.toy-header h1 {
-    font-family: "Segoe UI", Arial, sans-serif;
-    font-size: 2.25rem;
-    font-weight: 800;
-    line-height: 1.1;
-    margin: 0;
-    color: var(--text-primary);
-    text-transform: none;
-}
-
-.container { width: 100%; max-width: 600px; }
-.logo-container { text-align: center; margin-bottom: 2rem; }
-.main-logo { height: 70px; object-fit: contain; }
-
-.card {
-    background: var(--glass-surface);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: var(--glass-shadow);
-}
-
-.section-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; margin-bottom: 1rem; }
-
-.folder-btn {
-    width: 100%;
-    padding: 1.25rem 1.5rem;
-    border: 2px dashed var(--glass-border);
-    border-radius: 12px;
-    background: transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: all 0.3s;
-}
-.folder-btn:hover { border-color: var(--egg-yellow); background: rgba(255, 215, 0, 0.08); }
-.folder-btn.selected { border-style: solid; border-color: var(--egg-yellow); background: rgba(255, 215, 0, 0.1); }
-
-.folder-info { display: none; text-align: center; margin-top: 1rem; }
 .folder-info.visible { display: block; }
 
-.folder-stats { display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; }
-.stat { display: flex; flex-direction: column; align-items: center; }
-.stat-value { font-size: 1.5rem; color: var(--egg-yellow); font-weight: 700; }
-.stat-label { font-size: 0.75rem; opacity: 0.6; }
-
-.subfolders-list { margin-top: 1rem; max-height: 200px; overflow-y: auto; display: none; }
-.subfolders-list.visible { display: block; }
-.subfolder-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0.75rem 1rem; border-radius: 10px;
-    margin-bottom: 0.5rem;
-    background: rgba(255, 255, 255, 0.04);
-}
-.subfolder-count {
-    font-size: 0.85rem;
-    background: var(--egg-yellow);
-    color: var(--lead-gray);
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
+.folder-path {
+    color: var(--toy-muted);
+    font-size: .88rem;
     font-weight: 600;
+    word-break: break-all;
 }
 
-.btn-gondim {
-    border: none;
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
+.folder-stats {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+/* Lista de subpastas (conteúdo e rótulo injetados por script.js). */
+.subfolders-list {
+    display: none;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.subfolders-list.visible { display: block; }
+
+.section-title {
+    margin-bottom: 10px;
+    color: var(--toy-muted);
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.subfolder-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--toy-border);
+    border-radius: var(--toy-control-radius);
+    background: var(--toy-surface-alt);
+    color: var(--toy-text);
+    font-size: .92rem;
 }
-.btn-primary-gondim {
-    background: var(--egg-yellow);
-    color: var(--lead-gray);
+
+.subfolder-item.selected {
+    border-color: var(--toy-accent);
+    background: var(--toy-accent-soft);
 }
-.btn-primary-gondim:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.progress-container { display: none; margin-top: 1.5rem; }
-.progress-container.visible { display: block; }
-.progress-header { display: flex; justify-content: space-between; margin-bottom: 0.75rem; }
-.progress-percent { font-weight: 700; color: var(--egg-yellow); }
-.progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--egg-yellow); transition: width 0.3s; }
-.progress-status { margin-top: 1rem; padding: 1rem; background: rgba(255, 215, 0, 0.08); border-radius: 10px; text-align: center; }
+.subfolder-name { font-weight: 500; }
 
+.subfolder-count {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--toy-accent);
+    color: var(--toy-accent-ink);
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+/* Detalhes do progresso (a área vem de ../shared/toy.css). */
+.progress-status {
+    padding: 12px;
+    border-radius: var(--toy-control-radius);
+    background: var(--toy-surface-alt);
+    text-align: center;
+}
+
+.progress-percent { color: var(--toy-accent); font-weight: 800; }
+.progress-current { font-weight: 700; }
+.progress-detail {
+    margin-top: 4px;
+    color: var(--toy-muted);
+    font-size: .85rem;
+    word-break: break-all;
+}
+
+/* Cartão de resultados (`.visible` alternado pelo script). */
 .results { display: none; }
 .results.visible { display: block; }
+
 .result-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem;
-    background: rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--toy-border);
+    border-left-width: 4px;
+    border-radius: var(--toy-control-radius);
+    background: var(--toy-surface-alt);
 }
-.result-item.success { border-left: 4px solid var(--success); }
-.result-item.error { border-left: 4px solid var(--error); }
-.result-status.success { color: var(--success); }
-.result-status.error { color: var(--error); }
+
+.result-item.success { border-left-color: var(--toy-success); }
+.result-item.error { border-left-color: var(--toy-danger); }
+
+.result-name {
+    color: var(--toy-text);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.result-name:hover { color: var(--toy-accent); }
+
+.result-count { color: var(--toy-muted); font-size: .85rem; }
+
+.result-status { font-weight: 800; }
+.result-status.success { color: var(--toy-success); }
+.result-status.error { color: var(--toy-danger); }

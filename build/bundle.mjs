@@ -4,7 +4,7 @@
  *
  * Lê a aplicação (index.html + app.js + styles.css + vendor/) e os toys
  * (toys\/{nome}\/index.html + scripts + estilos) e produz um único arquivo
- * autocontido em dist/gantoys.html:
+ * autocontido em dist/index.html:
  *
  *   - CSS e JS locais ficam embutidos (style/script);
  *   - imagens e fontes locais viram data: URLs (base64);
@@ -13,7 +13,7 @@
  *     (os toys usam window.parent.__ganPdfWorkerUrl).
  *
  * Uso: node build/bundle.mjs
- * Saída: dist/gantoys.html (um único arquivo).
+ * Saída: dist/index.html (um único arquivo).
  */
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'node:fs';
@@ -249,7 +249,10 @@ for (const name of toyNames) {
 
 const bundle = buildMain(toysMap, anyUsesPdfWorker);
 
-mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
-writeFileSync(path.join(ROOT, 'dist', 'gantoys.html'), bundle, 'utf8');
+// nome do entregável — mantido igual ao lido por build/check-bundle.mjs
+const OUTPUT_NAME = 'index.html';
 
-console.log(`[bundle] dist/gantoys.html: ${(bundle.length / 1024 / 1024).toFixed(2)} MB (${toyNames.length} toys embutidos)`);
+mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
+writeFileSync(path.join(ROOT, 'dist', OUTPUT_NAME), bundle, 'utf8');
+
+console.log(`[bundle] dist/${OUTPUT_NAME}: ${(bundle.length / 1024 / 1024).toFixed(2)} MB (${toyNames.length} toys embutidos)`);

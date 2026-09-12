@@ -28,7 +28,7 @@
             }
 
             try {
-                applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
+                applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css'));
             } catch (e) {}
 
             document.addEventListener('DOMContentLoaded', function () {
@@ -57,59 +57,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Padronizador CNJ</title>
     <link rel="icon" href="../../favicon.png" type="image/png">
+    <link rel="stylesheet" href="../shared/toy.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="toy-header">
-        <img src="../../favicon.png" alt="Logo" class="logo">
-        <h1>Padronizador CNJ</h1>
-        <p>Converta listas de processos entre formato pontuado e despontuado.</p>
-    </header>
+    <main class="shell">
+        <header class="brand">
+            <img src="../../favicon.png" alt="GAN" class="brand-logo">
+            <h1>Padronizador CNJ</h1>
+            <p>Converta listas de processos entre formato pontuado e despontuado.</p>
+        </header>
 
-    <main class="glass-container">
-        <section class="input-section">
-            <div class="section-heading">
-                <h2>Entrada</h2>
-                <span>Um processo por linha</span>
-            </div>
-
-            <label class="field-label" for="processInput">Lista de processos</label>
-            <textarea id="processInput" placeholder="00000018920238260100&#10;0000002-90.2024.8.26.0100"></textarea>
-        </section>
-
-        <section class="settings-section">
-            <div class="section-heading">
-                <h2>Modo</h2>
-                <span>Escolha como a saída deve ser gerada</span>
-            </div>
-
-            <div class="mode-selector" role="radiogroup" aria-label="Modo de padronização CNJ">
-                <label class="mode-option">
-                    <input type="radio" name="mode" value="pontuar" checked>
-                    <span>Pontuar</span>
-                </label>
-                <label class="mode-option">
-                    <input type="radio" name="mode" value="despontuar">
-                    <span>Despontuar</span>
-                </label>
-            </div>
-        </section>
-
-        <section class="actions-section">
-            <button id="processBtn" class="primary-btn" type="button">Processar Lista</button>
-        </section>
-
-        <section id="resultsSection" class="results-section hidden" aria-live="polite">
-            <div class="results-header">
-                <div>
-                    <h3>Resultado</h3>
-                    <p id="resultSummary">0 processos convertidos</p>
+        <section class="glass-card" aria-label="Padronizador de números CNJ">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2>Entrada</h2>
+                    <p>Um processo por linha</p>
                 </div>
-                <button id="copyBtn" class="secondary-btn" type="button">Copiar para a Memória</button>
-            </div>
 
-            <div id="emptyState" class="empty-state hidden">Nenhuma linha válida informada.</div>
-            <div id="resultsList" class="results-list"></div>
+                <div>
+                    <label class="input-label" for="processInput">Lista de processos</label>
+                    <textarea id="processInput" spellcheck="false" placeholder="00000018920238260100&#10;0000002-90.2024.8.26.0100"></textarea>
+                </div>
+
+                <div class="card-heading">
+                    <h2>Modo</h2>
+                    <p>Escolha como a saída deve ser gerada</p>
+                </div>
+
+                <div class="row" role="radiogroup" aria-label="Modo de padronização CNJ">
+                    <label class="check-row">
+                        <input type="radio" name="mode" value="pontuar" checked>
+                        <span>Pontuar</span>
+                    </label>
+                    <label class="check-row">
+                        <input type="radio" name="mode" value="despontuar">
+                        <span>Despontuar</span>
+                    </label>
+                </div>
+
+                <div class="actions">
+                    <button id="processBtn" class="btn btn-primary" type="button">Processar Lista</button>
+                </div>
+
+                <section id="resultsSection" class="stack hidden" aria-live="polite">
+                    <div class="card-heading results-header">
+                        <div>
+                            <h2>Resultado</h2>
+                            <p id="resultSummary">0 processos convertidos</p>
+                        </div>
+                        <button id="copyBtn" class="btn btn-outline btn-small" type="button">Copiar para a Memória</button>
+                    </div>
+
+                    <div id="emptyState" class="notice hidden">Nenhuma linha válida informada.</div>
+                    <div id="resultsList" class="results-list"></div>
+                </section>
+            </div>
         </section>
     </main>
 

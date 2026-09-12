@@ -9,38 +9,38 @@
 ## UI/UX Specification
 
 ### Layout Structure
-- Single page app with centered card container
-- No external dependencies (CDN for pdf-lib allowed for PDF processing)
+- Casca compartilhada de `../shared/toy.css`: `<main class="shell">` (máx. 1080px, centralizado)
+  com `<header class="brand">` (logo `../../favicon.png` em `.brand-logo`) e cartões
+  `<section class="glass-card"><div class="panel">…</div></section>`
+- CSS local (`styles.css`) só com o que é específico do toy, sempre via tokens `--toy-*`
+- Dependência local: `pdf-lib.min.js` (processamento de PDF)
 - Sections: Header, Folder Selection, Processing Status, Results
 
 ### Visual Design
-- **Theme**: Glassmorphism
+- **Theme**: Glassmorphism (tema e variante visual vêm do app; o toy apenas aplica `data-theme`/`data-visual`)
 - **Colors**:
-  - Primary: Egg yolk yellow (#FFD700 / #F7C500)
-  - Secondary: Lead gray (#4A4A4A / #2D2D2D)
-  - Background dark: #1A1A1A with transparency
-  - Background light: #F5F5F0 with transparency
-  - Accent: Bright yellow (#FFE44D)
+  - Todas as cores vêm dos tokens `--toy-*` do shared (ex.: destaque `--toy-accent` amarelo,
+    texto `--toy-text`, superfícies `--toy-surface`/`--toy-surface-alt`, bordas `--toy-border`)
+  - Estados semânticos: `--toy-success`, `--toy-warning`, `--toy-danger`
+  - Nenhuma cor fixa no `styles.css` local
 - **Typography**:
-  - Font: 'DM Sans' from Google Fonts (offline fallback: system sans-serif)
-  - Headings: Bold, 1.5rem-2rem
-  - Body: Regular, 1rem
+  - Fonte: pilha compartilhada `--toy-font` (Inter, com fallback de sistema); sem fontes locais
+  - Headings: peso 800; corpo: 1rem/1.5
 - **Effects**:
-  - Background blur on cards (backdrop-filter: blur(20px))
-  - Subtle shadows
-  - Smooth transitions (0.3s ease)
+  - Blur, sombras e raios vêm dos tokens (`--toy-backdrop`, `--toy-card-shadow`, `--toy-card-radius`)
+  - Transições suaves (0.18s–0.3s ease)
 
 ### Components
-1. **Theme Toggle**: Switch between light/dark (sun/moon icon)
-2. **Folder Selector**: Custom styled button to select directory
-3. **Folder Tree View**: Display selected folder structure
-4. **Progress Bar**: Visual progress during processing
-5. **Status Messages**: Step-by-step feedback
-6. **Results List**: Show merged files with status
+1. **Theme**: controlado pelo app (barra/tema do shell); o toy respeita `prefers-color-scheme` e `localStorage`
+2. **Folder Selector**: botão `.btn .btn-primary .btn-block` (estado `.selected` local)
+3. **Folder Tree View**: lista de subpastas (`.subfolders-list`, itens `.subfolder-item`)
+4. **Progress Bar**: `.progress-area`/`.progress-top`/`.progress-wrap`/`.progress-bar` (`.visible` alternado pelo script)
+5. **Status Messages**: `.progress-status` com pasta atual e arquivo em processamento
+6. **Results List**: cartão `.results` com `.result-item` (`.success`/`.error`)
 
 ### Responsive
 - Mobile-friendly (min-width: 320px)
-- Card max-width: 600px centered
+- Shell fluido até 1080px; o shared reduz paddings em `max-width: 720px`
 
 ## Functionality Specification
 
@@ -82,9 +82,9 @@
 
 ## Acceptance Criteria
 - [ ] Works offline via file://
-- [ ] Glassmorphism visual with yellow/gray colors
-- [ ] Theme toggle (light/dark) works
-- [ ] Custom folder selector (not OS native)
+- [ ] Casca glassmorphism do shared (`.shell`/`.brand`/`.glass-card`), cores só por tokens `--toy-*`
+- [ ] Tema claro/escuro aplicado pelo app (`data-theme`); abertura direta respeita `prefers-color-scheme`
+- [ ] Folder selector with fallback for browsers without File System Access API
 - [ ] Shows folder structure after selection
 - [ ] Merges PDFs per subfolder
 - [ ] Sorts files before merging

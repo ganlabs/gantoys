@@ -30,7 +30,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gantoys-html
-          path: dist/gantoys.html
+          path: dist/index.html
           if-no-files-found: error
 
       - name: Criar release no GitHub
@@ -40,7 +40,7 @@ jobs:
           set -euo pipefail
           SHA_SHORT="$(git rev-parse --short HEAD)"
           TAG="v$(date -u +%Y.%m.%d)-${SHA_SHORT}"
-          gh release create "${TAG}" dist/gantoys.html \
+          gh release create "${TAG}" dist/index.html \
             --repo "${GITHUB_REPOSITORY}" \
             --title "GAN Toys ${TAG}" \
             --notes "Bundle HTML único (imagens/fontes embutidas em base64) gerado automaticamente a partir de ${GITHUB_SHA}."

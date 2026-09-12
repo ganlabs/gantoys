@@ -27,13 +27,7 @@
             syncThemeCss(cssText);
         }
 
-        try {
-            applyTheme(
-                localStorage.getItem('theme') || 'dark',
-                localStorage.getItem('visual') || 'glassmorphism',
-                localStorage.getItem('gantoys_theme_css')
-            );
-        } catch (e) {}
+        try { applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
 
         document.addEventListener('DOMContentLoaded', function () {
             syncThemeCss();
@@ -50,331 +44,299 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Divisor Automático Santander</title>
 <link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="stylesheet" href="../shared/toy.css">
 <style>
-:root {
-    --gold: #FFC107;
-    --dark-gold: #FFA000;
-    --black: #1A1A1A;
-    --dark: #2f2a18;
-    --gray: #666;
-    --bg-light: #f8f9fa;
-    --success: #28a745;
-    --warning: #fd7e14;
-    --danger: #dc3545;
+/* ==========================================================================
+   CSS local do Divisor Automático Santander.
+   Só o que é específico deste toy: etapas, log de execução, auditoria e
+   visualizador de PDF. Cores exclusivamente por tokens --toy-*.
+   ========================================================================== */
+
+/* ------------------------------------------------------------- etapas -- */
+
+.step-label { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+
+.step.done .step-number { background: var(--toy-accent-soft); color: var(--toy-accent); }
+
+/* ------------------------------------------------------- fila e log -- */
+
+.file-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 1px solid var(--toy-border);
+    border-radius: 999px;
+    background: var(--toy-surface);
+    color: var(--toy-text);
+    font-size: .9rem;
+    font-weight: 600;
 }
-* { box-sizing: border-box; }
-body {
-    margin: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: radial-gradient(circle at 60% 100%, #d4b52b 0%, #685a21 40%, #2f2a18 100%);
-    background-attachment: fixed;
-    color: var(--black);
-    min-height: 100vh;
+
+.mini-log {
+    overflow: hidden;
+    padding: 10px 15px;
+    border: 1px solid var(--toy-border);
+    border-radius: var(--toy-control-radius);
+    background: var(--toy-input-bg);
+    color: var(--toy-success);
+    font-family: var(--toy-mono);
+    font-size: .8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.summary .stat.warn strong { color: var(--toy-warning); }
+
+/* --------------------------------------------------- auditoria (modal) -- */
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border: 1px solid var(--toy-border);
+    border-radius: 6px;
+    background: var(--toy-surface-alt);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.badge-green { border-color: var(--toy-success); color: var(--toy-success); }
+.badge-yellow { border-color: var(--toy-warning); color: var(--toy-warning); }
+.badge-red { border-color: var(--toy-danger); color: var(--toy-danger); }
+
+.btn-tiny {
+    padding: 4px 10px;
+    border: 1px solid var(--toy-border);
+    border-radius: 6px;
+    background: var(--toy-surface-alt);
+    color: var(--toy-text);
+    font: inherit;
+    font-size: .75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.btn-tiny:hover { border-color: var(--toy-accent); color: var(--toy-accent); }
+
+.btn-tiny.accent { border-color: var(--toy-accent); background: var(--toy-accent); color: var(--toy-accent-ink); }
+.btn-tiny.accent:hover { border-color: var(--toy-accent-hover); background: var(--toy-accent-hover); color: var(--toy-accent-ink); }
+
+.btn-tiny.warn { border-color: var(--toy-warning); color: var(--toy-warning); }
+.btn-tiny.warn:hover { border-color: var(--toy-warning); background: var(--toy-surface-alt); color: var(--toy-warning); }
+
+#reportTbody .btn-tiny { margin-right: 5px; }
+
+/* ------------------------------------------------------------- modais -- */
+
+/* O script abre/fecha com a classe .active (não .open). */
+.modal-overlay.active { display: grid; }
+
+/* Modais em coluna: cabeçalho fixo e corpo rolável. */
+.modal-shell {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.modal-viewer {
+    width: min(95%, 1400px);
+    height: 95%;
+    max-height: 95vh;
+}
+
+#pdfModal { z-index: 200; }
+
+.modal-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--toy-border);
+    background: var(--toy-surface-alt);
+}
+
+.modal-title { margin: 0; font-size: 1.1rem; font-weight: 800; }
+
+.modal-close {
+    border: 0;
+    padding: 0 4px;
+    background: none;
+    color: var(--toy-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.modal-close:hover { color: var(--toy-text); }
+
+.modal-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+/* ------------------------------------------------- visualizador de PDF -- */
+
+.viewer-frame { width: 100%; height: 100%; border: 0; }
+
+.viewer-canvas-area {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 20px;
-}
-.logo { margin-bottom: 20px; }
-.logo img { height: 60px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
-.title { color: white; font-weight: 800; font-size: 2rem; margin: 0 0 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-.subtitle { color: rgba(255,255,255,0.85); margin: 0 0 30px; font-weight: 500; font-size: 1.1rem; text-align: center; max-width: 600px; }
-
-.glass-card {
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 40px;
     width: 100%;
-    max-width: 800px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-    position: relative;
-    overflow: hidden;
+    height: 100%;
+    overflow-y: auto;
+    background: var(--toy-input-bg);
 }
 
-/* UI Helpers */
-.hidden { display: none !important; }
-.flex-center { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.flex-between { display: flex; align-items: center; justify-content: space-between; }
-.mt-20 { margin-top: 20px; }
-.mb-20 { margin-bottom: 20px; }
-.text-center { text-align: center; }
-
-/* Buttons */
-.btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    border: none; border-radius: 10px; padding: 14px 28px; font-size: 1rem;
-    font-weight: 700; cursor: pointer; transition: all 0.2s;
-}
-.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
-.btn-gold { background: linear-gradient(135deg, var(--gold), var(--dark-gold)); color: var(--black); }
-.btn-outline { background: transparent; border: 2px solid var(--gray); color: var(--gray); }
-.btn-outline:hover { border-color: var(--black); color: var(--black); }
-
-/* Stepper */
-.stepper { display: flex; justify-content: space-between; margin-bottom: 30px; position: relative; }
-.stepper::before {
-    content: ''; position: absolute; top: 15px; left: 10%; right: 10%;
-    height: 2px; background: #e9ecef; z-index: 1;
-}
-.step { position: relative; z-index: 2; text-align: center; flex: 1; }
-.step-circle {
-    width: 32px; height: 32px; border-radius: 50%; background: #e9ecef; color: var(--gray);
-    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;
-    margin: 0 auto 8px; transition: all 0.3s; border: 4px solid white;
-}
-.step.active .step-circle { background: var(--gold); color: var(--black); box-shadow: 0 0 0 4px rgba(255,193,7,0.2); }
-.step.done .step-circle { background: var(--black); color: var(--gold); }
-.step-label { font-size: 0.8rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; }
-.step.active .step-label { color: var(--black); }
-
-/* Step 1: Upload */
-.drop-zone {
-    border: 2px dashed #ccc;
-    border-radius: 16px;
-    padding: 50px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: var(--bg-light);
-}
-.drop-zone:hover, .drop-zone.dragover { border-color: var(--dark-gold); background: #fffcf5; }
-.drop-zone-icon { font-size: 3.5rem; color: var(--gold); margin-bottom: 15px; }
-.drop-zone-title { font-size: 1.3rem; font-weight: 700; color: var(--black); margin-bottom: 8px; }
-.drop-zone-desc { font-size: 0.95rem; color: var(--gray); }
-.file-badge {
-    display: inline-block; background: #e9ecef; color: #495057; font-weight: 600;
-    padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; margin-top: 20px;
+.viewer-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px;
+    border-bottom: 1px solid var(--toy-border);
+    background: var(--toy-surface);
+    color: var(--toy-text);
 }
 
-/* Step 2 & 3: Stats Dashboard */
-.stats-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px;
-}
-.stat-box {
-    background: var(--bg-light); border-radius: 14px; padding: 20px 10px; text-align: center;
-    border: 1px solid #e9ecef; transition: transform 0.2s;
-}
-.stat-box:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-.stat-value { font-size: 2.2rem; font-weight: 800; line-height: 1; margin-bottom: 5px; }
-.stat-label { font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--gray); letter-spacing: 0.5px; }
-.color-ok { color: var(--success); }
-.color-warn { color: var(--warning); }
-.color-err { color: var(--danger); }
-
-/* Progress Bar */
-.progress-container { margin: 30px 0; }
-.progress-wrap {
-    height: 28px; background: #e9ecef; border-radius: 14px; position: relative; overflow: hidden;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-}
-.progress-bar {
-    height: 100%; width: 0%; border-radius: 14px; transition: width 0.4s ease;
-    background: linear-gradient(90deg, #f5d142, #FFA000);
-    position: relative;
-}
-.progress-bar::after {
-    content: ""; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent);
-    background-size: 30px 30px; animation: moveStripes 1s linear infinite;
-}
-@keyframes moveStripes { 0% { background-position: 0 0; } 100% { background-position: 30px 0; } }
-.progress-text {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 0.95rem; color: #000; text-shadow: 0 1px 2px rgba(255,255,255,0.5);
-}
-.status-text { font-size: 0.95rem; color: var(--gray); font-weight: 500; text-align: center; margin-top: 10px; height: 20px; }
-
-/* Modal (Overlay) */
-.modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-}
-.modal-overlay.active { opacity: 1; pointer-events: auto; }
-.modal-content {
-    background: white; border-radius: 16px; width: 95%; max-width: 1200px; max-height: 85vh;
-    display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    transform: translateY(20px); transition: transform 0.3s;
-    overflow: hidden;
-}
-.modal-overlay.active .modal-content { transform: translateY(0); }
-.modal-header { padding: 20px 24px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fff; z-index: 10; }
-.modal-title { margin: 0; font-size: 1.2rem; font-weight: 800; }
-.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray); }
-.modal-body { padding: 0; overflow: auto; flex: 1; min-height: 0; }
-
-/* Report Table */
-.report-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.report-table th { background: var(--bg-light); padding: 12px 16px; text-align: left; font-weight: 700; position: sticky; top: 0; z-index: 1; box-shadow: 0 1px 0 #eee; }
-.report-table td { padding: 12px 16px; border-bottom: 1px solid #eee; }
-.report-table tr:hover { background: #fffcf5; }
-.badge { padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
-.badge-green { background: #d4edda; color: #155724; }
-.badge-yellow { background: #fff3cd; color: #856404; }
-.badge-red { background: #f8d7da; color: #721c24; }
-
-/* Buttons in Table */
-.btn-tiny {
-    background: #e9ecef; border: 1px solid #ccc; border-radius: 6px;
-    padding: 4px 10px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
-    font-weight: 700; color: var(--black); margin-right: 5px;
-}
-.btn-tiny:hover { background: var(--gold); border-color: var(--dark-gold); }
-
-/* Mini Log */
-.mini-log {
-    background: #1a1a1a; color: #4ade80; padding: 10px 15px; border-radius: 8px;
-    font-family: 'Courier New', monospace; font-size: 0.8rem; margin-top: 20px;
-    height: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.viewer-zoom {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--toy-control-radius);
+    background: var(--toy-surface-alt);
 }
 
-</style>
-<style id="gannovodiv-shell-style">
-:root {
-    --gold: var(--toy-accent, #ffd700);
-    --dark-gold: var(--toy-accent-hover, #e0b500);
-    --black: var(--toy-text, #e8e8ec);
-    --dark: var(--toy-page-bg, #2a2a2e);
-    --gray: var(--toy-muted, #a0a0a8);
-    --bg-light: var(--toy-surface-alt, rgba(255,255,255,.04));
-    --success: #4caf50;
-    --warning: #ff9800;
-    --danger: #f44336;
-    --novo-surface: var(--toy-surface, #323237);
-    --novo-border: var(--toy-border, rgba(255,255,255,.1));
-    --novo-control: var(--toy-input-bg, rgba(0,0,0,.2));
+.viewer-zoom .btn-tiny { border: 0; background: transparent; color: var(--toy-text); }
+.viewer-zoom .btn-tiny:hover { color: var(--toy-accent); }
+.viewer-zoom .btn-tiny.fit { width: 48px; }
+
+.viewer-page { display: flex; align-items: center; gap: 4px; font-size: .95rem; font-weight: 700; }
+.viewer-sep, .viewer-hint { color: var(--toy-muted); }
+.viewer-hint { font-size: .85rem; }
+
+.viewer-canvas { margin: 20px; max-width: 95%; box-shadow: var(--toy-card-shadow); }
+
+#manualSplitControls label { display: flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 700; }
+#manualStart, #manualEnd { width: 64px; padding: 4px 6px; text-align: center; }
+#inpCurrentPage { width: 64px; margin: 0 5px; padding: 4px 6px; text-align: center; border: 0; }
+
+@media (max-width: 720px) {
+    .modal-viewer { width: 100%; height: 100%; max-height: 100vh; }
+    #manualSplitControls { order: 3; width: 100%; justify-content: center; }
 }
-html, body { background: var(--toy-page-bg, #2a2a2e) !important; color: var(--toy-text, #e8e8ec) !important; }
-body { padding: 24px !important; }
-.logo { margin-bottom: 12px !important; }
-.logo img { height: 64px !important; }
-.title { color: var(--toy-text, #e8e8ec) !important; text-shadow: none !important; }
-.subtitle { color: var(--toy-muted, #a0a0a8) !important; }
-.glass-card, .modal-content { background: var(--novo-surface) !important; border: 1px solid var(--novo-border) !important; border-radius: var(--toy-card-radius, 16px) !important; box-shadow: var(--toy-card-shadow, 0 8px 32px rgba(0,0,0,.35)) !important; backdrop-filter: var(--toy-backdrop, none) !important; }
-.stepper::before { background: var(--novo-border) !important; }
-.step-circle { background: var(--toy-surface-alt, rgba(255,255,255,.04)) !important; color: var(--toy-muted, #a0a0a8) !important; border-color: var(--novo-surface) !important; }
-.step.active .step-circle { background: var(--gold) !important; color: var(--toy-accent-ink, #1a1a1a) !important; box-shadow: 0 0 0 4px var(--toy-accent-soft, rgba(255,215,0,.15)) !important; }
-.step.done .step-circle { background: var(--toy-text, #e8e8ec) !important; color: var(--toy-accent-ink, #1a1a1a) !important; }
-.step-label, .step.active .step-label, .drop-zone-desc, .status-text { color: var(--toy-muted, #a0a0a8) !important; }
-.drop-zone, .stat-box { background: var(--toy-surface-alt, rgba(255,255,255,.04)) !important; border-color: var(--novo-border) !important; border-radius: var(--toy-control-radius, 12px) !important; }
-.drop-zone:hover, .drop-zone.dragover, .report-table tr:hover { background: var(--toy-accent-soft, rgba(255,215,0,.1)) !important; border-color: var(--gold) !important; }
-.drop-zone-title, .modal-title, .report-table th, .report-table td, .btn-outline { color: var(--toy-text, #e8e8ec) !important; }
-.file-badge, .report-table th { background: var(--toy-surface-alt, rgba(255,255,255,.04)) !important; color: var(--toy-text, #e8e8ec) !important; }
-.btn { border-radius: var(--toy-control-radius, 12px) !important; }
-.btn-gold { background: var(--gold) !important; color: var(--toy-accent-ink, #1a1a1a) !important; box-shadow: var(--toy-secondary-shadow, none) !important; }
-.btn-outline { border-color: var(--novo-border) !important; background: var(--toy-surface-alt, rgba(255,255,255,.04)) !important; }
-.btn-outline:hover { border-color: var(--gold) !important; color: var(--gold) !important; }
-.progress-wrap { background: var(--toy-surface-alt, rgba(255,255,255,.04)) !important; }.progress-bar { background: var(--gold) !important; }.progress-text { color: var(--toy-accent-ink, #1a1a1a) !important; }
-.mini-log { background: var(--novo-control) !important; color: #4ade80 !important; border: 1px solid var(--novo-border); }
-.modal-header { background: var(--novo-surface) !important; border-bottom-color: var(--novo-border) !important; }.modal-close { color: var(--toy-muted, #a0a0a8) !important; }.report-table th { box-shadow: 0 1px 0 var(--novo-border) !important; }.report-table td { border-bottom-color: var(--novo-border) !important; }
-.btn-tiny { background: var(--toy-surface-alt, rgba(255,255,255,.04)) !important; border-color: var(--novo-border) !important; color: var(--toy-text, #e8e8ec) !important; border-radius: var(--toy-control-radius, 8px) !important; }.btn-tiny:hover { background: var(--gold) !important; color: var(--toy-accent-ink, #1a1a1a) !important; }
-.modal-overlay { background: rgba(0,0,0,.65) !important; }
-[data-visual="neobrutalism"] .glass-card, [data-visual="neobrutalism"] .modal-content { border-width: 2px !important; box-shadow: var(--toy-card-shadow) !important; }
-@media (max-width: 640px) { body { padding: 16px !important; }.glass-card { padding: 24px 18px !important; }.stats-grid { grid-template-columns: repeat(2, 1fr) !important; }.flex-center { flex-wrap: wrap; }.btn { width: 100%; }.title { font-size: 1.7rem !important; } }
 </style>
 </head>
 <body>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Divisor Automático Santander</h1>
+            <p>Divisor inteligente de PDFs. Extração local, privada e offline.</p>
+        </header>
 
-    <div class="logo"><img src="../../logo.png" alt="Gondim Logo"></div>
-    <h1 class="title">Divisor Automático Santander</h1>
-    <p class="subtitle">Divisor inteligente de PDFs. Extração local, privada e offline.</p>
+        <section class="glass-card">
+            <div class="panel">
 
-    <div class="glass-card" id="mainCard">
-        
-        <!-- STEPPER INDICATOR -->
-        <div class="stepper" id="stepper">
-            <div class="step active" id="stepIndicator1">
-                <div class="step-circle">1</div>
-                <div class="step-label">Arquivos</div>
-            </div>
-            <div class="step" id="stepIndicator2">
-                <div class="step-circle">2</div>
-                <div class="step-label">Processamento</div>
-            </div>
-            <div class="step" id="stepIndicator3">
-                <div class="step-circle">3</div>
-                <div class="step-label">Auditoria</div>
-            </div>
-        </div>
-
-        <!-- STEP 1: Upload -->
-        <div id="stepUpload">
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="margin: 0 0 10px; font-weight: 800;">Adicione os Processos Integrais</h2>
-                <p style="color: var(--gray); font-size: 0.95rem; margin: 0;">Selecione os PDFs baixados diretamente dos tribunais. O algoritmo buscará identificar a Petição Inicial de cada um deles e separá-la dos demais documentos.</p>
-            </div>
-
-            <div class="drop-zone" id="dropZone">
-                <div class="drop-zone-icon">📥</div>
-                <div class="drop-zone-title">Clique para selecionar ou arraste os PDFs aqui</div>
-                <div class="drop-zone-desc">Lembre-se: O nome original do arquivo (com o nº CNJ) deve ser mantido.</div>
-                <div id="fileBadge" class="file-badge hidden">0 arquivos na fila</div>
-            </div>
-            <input type="file" id="fileInput" accept=".pdf" multiple hidden>
-            
-            <div class="flex-center mt-20 hidden" id="actionUpload">
-                <button class="btn btn-gold" id="btnProcess">Avançar e Escolher Destino ➔</button>
-                <button class="btn btn-outline" id="btnClear">Refazer seleção</button>
-            </div>
-        </div>
-
-        <!-- STEP 2: Processando -->
-        <div id="stepDashboard" class="hidden">
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h2 id="dashTitle" style="margin: 0 0 10px; font-weight: 800;">Dividindo Processos...</h2>
-                <p style="color: var(--gray); font-size: 0.95rem; margin: 0;">Não feche esta aba. O processamento ocorre localmente na sua máquina.</p>
-            </div>
-            
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-value" id="statTotal">0</div>
-                    <div class="stat-label">Total</div>
+                <!-- STEPPER INDICATOR -->
+                <div class="steps" id="stepper">
+                    <div class="step active" id="stepIndicator1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Arquivos</div>
+                    </div>
+                    <div class="step" id="stepIndicator2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Processamento</div>
+                    </div>
+                    <div class="step" id="stepIndicator3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Auditoria</div>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-value color-ok" id="statOk">0</div>
-                    <div class="stat-label">Concluídos</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value color-warn" id="statReview">0</div>
-                    <div class="stat-label">A Revisar</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value color-err" id="statErr">0</div>
-                    <div class="stat-label">Erros</div>
-                </div>
-            </div>
 
-            <div id="progressSection">
-                <div class="progress-wrap">
-                    <div class="progress-bar" id="progressBar"></div>
-                    <div class="progress-text" id="progressText">0%</div>
-                </div>
-                <div class="status-text" id="statusText">Preparando ambiente...</div>
-                <div class="mini-log" id="miniLog">> Aguardando...</div>
-            </div>
+                <!-- STEP 1: Upload -->
+                <div id="stepUpload" class="stack">
+                    <div class="card-heading">
+                        <h2>Adicione os Processos Integrais</h2>
+                        <p>Selecione os PDFs baixados diretamente dos tribunais. O algoritmo buscará identificar a Petição Inicial de cada um deles e separá-la dos demais documentos.</p>
+                    </div>
 
-            <div id="doneSection" class="hidden mt-20">
-                <p class="text-center" style="color:var(--gray); margin-bottom:25px;" id="doneMessage"></p>
-                <div class="flex-center">
-                    <button class="btn btn-gold" id="btnRestart">🔄 Novo Processamento</button>
-                    <button class="btn btn-outline" id="btnViewReport">📊 Ver Relatório</button>
-                    <button class="btn btn-outline" id="btnExportCsv">📥 Exportar CSV</button>
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-zone-icon">📥</div>
+                        <div class="drop-zone-title">Clique para selecionar ou arraste os PDFs aqui</div>
+                        <div class="drop-zone-desc">Lembre-se: O nome original do arquivo (com o nº CNJ) deve ser mantido.</div>
+                        <div id="fileBadge" class="file-badge hidden">0 arquivos na fila</div>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf" multiple hidden>
+
+                    <div class="actions hidden" id="actionUpload">
+                        <button class="btn btn-primary" id="btnProcess">Avançar e Escolher Destino ➔</button>
+                        <button class="btn btn-outline" id="btnClear">Refazer seleção</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Processando -->
+                <div id="stepDashboard" class="stack hidden">
+                    <div class="card-heading">
+                        <h2 id="dashTitle">Dividindo Processos...</h2>
+                        <p>Não feche esta aba. O processamento ocorre localmente na sua máquina.</p>
+                    </div>
+
+                    <div class="summary visible">
+                        <div class="stat">
+                            <strong id="statTotal">0</strong>
+                            <span>Total</span>
+                        </div>
+                        <div class="stat ok">
+                            <strong id="statOk">0</strong>
+                            <span>Concluídos</span>
+                        </div>
+                        <div class="stat warn">
+                            <strong id="statReview">0</strong>
+                            <span>A Revisar</span>
+                        </div>
+                        <div class="stat fail">
+                            <strong id="statErr">0</strong>
+                            <span>Erros</span>
+                        </div>
+                    </div>
+
+                    <div id="progressSection" class="progress-area visible">
+                        <div class="progress-top">
+                            <span id="statusText">Preparando ambiente...</span>
+                            <span id="progressText">0%</span>
+                        </div>
+                        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+                        <div class="mini-log" id="miniLog">&gt; Aguardando...</div>
+                    </div>
+
+                    <div id="doneSection" class="stack hidden">
+                        <p class="muted" id="doneMessage"></p>
+                        <div class="actions">
+                            <button class="btn btn-primary" id="btnRestart">🔄 Novo Processamento</button>
+                            <button class="btn btn-outline" id="btnViewReport">📊 Ver Relatório</button>
+                            <button class="btn btn-outline" id="btnExportCsv">📥 Exportar CSV</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <!-- MODAL RELATORIO -->
     <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-content">
+        <div class="modal modal-shell">
             <div class="modal-header">
                 <h3 class="modal-title">Relatório Detalhado</h3>
                 <button class="modal-close" id="btnCloseModal">&times;</button>
             </div>
             <div class="modal-body">
-                <table class="report-table" id="reportTable">
+                <table class="results-table" id="reportTable">
                     <thead>
                         <tr><th>Arquivo</th><th>Páginas Iniciais</th><th>Visualizar</th><th>Status</th></tr>
                     </thead>
@@ -385,42 +347,41 @@ body { padding: 24px !important; }
     </div>
 
     <!-- MODAL VISUALIZADOR DE PDF -->
-    <div class="modal-overlay" id="pdfModal" style="z-index: 200;">
-        <div class="modal-content" style="width: 95%; height: 95%; max-width: 1400px; max-height: 95vh;">
+    <div class="modal-overlay" id="pdfModal">
+        <div class="modal modal-shell modal-viewer">
             <div class="modal-header">
                 <h3 class="modal-title" id="pdfModalTitle">Visualizador</h3>
-                
-                <div id="manualSplitControls" class="hidden flex-center">
-                    <button class="btn-tiny" style="background:#e9ecef;" id="btnMarkStart">📍 Marcar Início</button>
-                    <label style="font-size:0.85rem; font-weight:700;">Início: <input type="number" id="manualStart" style="width:60px; padding:4px; border:1px solid #ccc; border-radius:4px; text-align:center;" min="1"></label>
-                    
-                    <button class="btn-tiny" style="background:#e9ecef; margin-left:15px;" id="btnMarkEnd">📍 Marcar Fim</button>
-                    <label style="font-size:0.85rem; font-weight:700;">Fim: <input type="number" id="manualEnd" style="width:60px; padding:4px; border:1px solid #ccc; border-radius:4px; text-align:center;" min="1"></label>
-                    
-                    <button class="btn-tiny" style="background:var(--gold); border-color:var(--dark-gold); font-size:0.85rem; padding:6px 12px; margin-left:15px;" id="btnManualSplit">✂️ Dividir</button>
+
+                <div id="manualSplitControls" class="hidden row">
+                    <button class="btn-tiny" id="btnMarkStart">📍 Marcar Início</button>
+                    <label>Início: <input type="number" id="manualStart" min="1"></label>
+
+                    <button class="btn-tiny" id="btnMarkEnd">📍 Marcar Fim</button>
+                    <label>Fim: <input type="number" id="manualEnd" min="1"></label>
+
+                    <button class="btn-tiny accent" id="btnManualSplit">✂️ Dividir</button>
                 </div>
 
                 <button class="modal-close" id="btnClosePdfModal">&times;</button>
             </div>
-            <div class="modal-body" style="padding:0; overflow:hidden; position:relative;">
+            <div class="modal-body">
                 <!-- Visão Nativa Fluida -->
-                <iframe id="pdfViewer" style="width:100%; height:100%; border:none; display:none;" src=""></iframe>
-                
+                <iframe id="pdfViewer" class="viewer-frame" style="display:none" src=""></iframe>
+
                 <!-- Visão Controlada (Para Captura de Página) -->
-                <div id="customViewer" style="width:100%; height:100%; display:none; flex-direction:column; background:#525659; overflow-y:auto; align-items:center;">
-                    <div style="position:sticky; top:0; background:#323639; width:100%; padding:10px; display:flex; justify-content:center; gap:20px; color:white; z-index:10; box-shadow:0 2px 5px rgba(0,0,0,0.5); align-items:center;">
-                        
-                        <div style="display:flex; align-items:center; gap:5px; background:#202224; padding:4px 8px; border-radius:6px;">
-                            <button class="btn-tiny" style="border:none; background:transparent; color:#fff;" id="btnZoomOut">➖</button>
-                            <button class="btn-tiny" style="border:none; background:transparent; color:#fff; width:45px;" id="btnZoomFit" title="Ajustar à Tela">Fit</button>
-                            <button class="btn-tiny" style="border:none; background:transparent; color:#fff;" id="btnZoomIn">➕</button>
+                <div id="customViewer" class="viewer-canvas-area" style="display:none">
+                    <div class="viewer-toolbar">
+                        <div class="viewer-zoom">
+                            <button class="btn-tiny" id="btnZoomOut">➖</button>
+                            <button class="btn-tiny fit" id="btnZoomFit" title="Ajustar à Tela">Fit</button>
+                            <button class="btn-tiny" id="btnZoomIn">➕</button>
                         </div>
 
-                        <span style="font-size:0.95rem; font-weight:bold;">Pág <input type="number" id="inpCurrentPage" style="width:60px; text-align:center; padding:4px; border-radius:4px; border:none; margin:0 5px;" min="1"> de <span id="lblTotalPages"></span></span>
-                        <span style="color:#aaa;">|</span>
-                        <span style="font-size:0.85rem; color:#ccc;">⏬ Role o mouse para trocar de página</span>
+                        <span class="viewer-page">Pág <input type="number" id="inpCurrentPage" min="1"> de <span id="lblTotalPages"></span></span>
+                        <span class="viewer-sep">|</span>
+                        <span class="viewer-hint">⏬ Role o mouse para trocar de página</span>
                     </div>
-                    <canvas id="pdfCanvas" style="margin:20px; box-shadow:0 4px 12px rgba(0,0,0,0.4); max-width:95%;"></canvas>
+                    <canvas id="pdfCanvas" class="viewer-canvas"></canvas>
                 </div>
             </div>
         </div>
@@ -1236,7 +1197,7 @@ function renderReport() {
             const btnIni = `<button class="btn-tiny" onclick="viewPdf('Inicial', '${r.cnj}')">👁️ Inicial</button>`;
             const hasDocs = (r.start > 1 || r.end < r.total);
             const btnDocs = hasDocs ? `<button class="btn-tiny" onclick="viewPdf('Docs', '${r.cnj}')">👁️ Docs</button>` : '';
-            const btnCorrigir = `<button class="btn-tiny" style="background:#fff3cd; border-color:#ffecb5;" onclick="openManualSplit('${r.cnj}')">✏️ Corrigir</button>`;
+            const btnCorrigir = `<button class="btn-tiny warn" onclick="openManualSplit('${r.cnj}')">✏️ Corrigir</button>`;
 
             html += `<tr>
                 <td>📄 ${r.file}</td>

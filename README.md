@@ -17,10 +17,40 @@ python3 -m http.server 8000
 # http://localhost:8000
 ```
 
+## Padrão visual dos toys
+
+Todos os toys compartilham a mesma casca, definida em `toys/shared/toy.css`:
+
+```html
+<body>
+  <main class="shell">
+    <header class="brand">
+      <img class="brand-logo" src="../../favicon.png" alt="GAN">
+      <h1>Título do toy</h1>
+      <p>Uma linha explicando o que o toy faz.</p>
+    </header>
+    <section class="glass-card">
+      <div class="panel">...</div>
+    </section>
+  </main>
+</body>
+```
+
+- O CSS local de cada toy (`styles.css` ou `<style>` inline) cobre apenas o que é
+  específico daquele toy, sempre lendo os tokens `--toy-*`.
+- Nenhuma cor de tema é fixada no CSS local: tema claro/escuro e os seis visuais
+  (glassmorphism, neumorphism, neobrutalism, material, claymorphism, japandi)
+  chegam via `data-theme`/`data-visual` e do CSS que o app injeta no iframe.
+- O logo do cabeçalho é sempre `../../favicon.png`.
+- Aberto direto (`file://`) sem tema salvo, o toy cai no claro/escuro do sistema
+  via `prefers-color-scheme`.
+
+Referência: `toys/gancopy/index.html` é o toy exemplar do padrão.
+
 ## Bundle HTML único (entregável)
 
 O entregável oficial do projeto é um **único arquivo HTML autocontido**,
-`dist/gantoys.html`, que embute:
+`dist/index.html`, que embute:
 
 - todos os toys (como `<iframe srcdoc>`, com seus CSS/JS já inline);
 - CSS/JS locais de `vendor/` e `app.js`/`styles.css` da aplicação;
@@ -30,7 +60,7 @@ O entregável oficial do projeto é um **único arquivo HTML autocontido**,
 Gere localmente com Node (sem dependências externas):
 
 ```bash
-node build/bundle.mjs      # -> dist/gantoys.html
+node build/bundle.mjs      # -> dist/index.html
 node build/check-bundle.mjs  # valida integridade do bundle
 ```
 
@@ -42,10 +72,10 @@ node build/check-bundle.mjs  # valida integridade do bundle
 
 O workflow `.github/workflows/build-release.yml` roda em **push para `main`**:
 
-1. gera `dist/gantoys.html` com `node build/bundle.mjs`;
+1. gera `dist/index.html` com `node build/bundle.mjs`;
 2. valida o bundle;
 3. publica o artefato;
-4. cria uma **release** no GitHub com o `gantoys.html` anexado
+4. cria uma **release** no GitHub com o `index.html` anexado
    (tag `v<data>-<sha curto>`).
 
 Repositório destino: `ganlabs/gantoys`.

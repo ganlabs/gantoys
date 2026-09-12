@@ -21,7 +21,7 @@
                 if (cssText) { try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {} }
                 syncThemeCss(cssText);
             }
-            try { applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
+            try { applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
             document.addEventListener('DOMContentLoaded', function () { syncThemeCss(); });
             window.addEventListener('message', function (e) {
                 if (e.data && e.data.type === 'theme') applyTheme(e.data.theme, e.data.visual, e.data.css);
@@ -32,156 +32,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Renomeador em Massa</title>
     <link rel="icon" href="../../favicon.png" type="image/png">
+    <link rel="stylesheet" href="../shared/toy.css">
     <style>
-        :root {
-            --gold: #ffc107;
-            --dark-gold: #f0a000;
-            --ink: #1a1a1a;
-            --muted: #687078;
-            --surface: #f8f9fa;
-            --line: #e1e4e7;
-            --success: #1d8b50;
-            --danger: #c73d42;
-        }
-        * { box-sizing: border-box; }
-        body {
-            min-height: 100vh;
-            margin: 0;
-            padding: 24px;
-            color: var(--ink);
-            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: transparent;
-        }
-        .shell { width: min(100%, 1152px); margin: 0 auto; }
-        .brand { text-align: center; margin-bottom: 22px; }
-        .brand img { height: 64px; max-width: 100%; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .25)); }
-        h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.2rem); font-weight: 800; }
-        .brand p { margin: 8px auto 0; max-width: 620px; color: var(--muted); font-weight: 500; }
-
-        .glass-card {
-            overflow: hidden;
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            background: var(--surface);
-            box-shadow: 0 10px 34px rgba(0, 0, 0, .16);
-        }
-        .panel { padding: clamp(22px, 4vw, 36px); display: flex; flex-direction: column; gap: 22px; }
-        .folder-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .folder-card { padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
-        .folder-card label { display: block; margin-bottom: 10px; color: #4f565d; font-size: .78rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-        .folder-selected { min-height: 20px; margin: 10px 0 0; color: var(--muted); font-size: .84rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .folder-selected.ready { color: var(--success); }
-
-        button { font: inherit; }
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-            border: 0; border-radius: 10px; padding: 12px 18px;
-            font-weight: 800; cursor: pointer; transition: transform .2s, box-shadow .2s, opacity .2s;
-        }
-        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 13px rgba(0, 0, 0, .14); }
-        .btn:disabled { cursor: not-allowed; opacity: .5; }
-        .btn-outline { border: 2px solid #cbd0d4; color: #454b51; background: #fff; }
-        .btn-outline:hover:not(:disabled) { border-color: var(--dark-gold); }
-        .btn-gold { padding: 14px 22px; color: var(--ink); background: linear-gradient(135deg, var(--gold), var(--dark-gold)); }
-
-        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
-        .input-label { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 9px; font-size: .93rem; font-weight: 800; }
-        input[type="text"], select {
-            display: block; width: 100%;
-            border: 2px solid #dfe2e5; border-radius: 11px; padding: 12px 14px;
-            outline: none; color: var(--ink); background: #fff; font: 600 .94rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            transition: border-color .2s, box-shadow .2s;
-        }
-        input[type="text"]:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(255, 193, 7, .17); }
-        .hint { margin: 9px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
-        .hint code { background: #eef0f2; border-radius: 5px; padding: 1px 6px; }
-
-        .options { display: flex; flex-wrap: wrap; gap: 18px; }
-        .options label { display: flex; align-items: center; gap: 9px; font-size: .92rem; font-weight: 700; cursor: pointer; }
-        .options input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--gold); }
-
-        .actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
-
-        .preview { display: none; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; }
-        .preview.visible { display: block; }
-        .preview-title { padding: 12px 15px; color: #4d555c; background: #fff; border-bottom: 1px solid var(--line); font-size: .85rem; font-weight: 800; }
-        .preview-list { max-height: 300px; overflow: auto; }
-        .preview-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 10px 15px; border-top: 1px solid var(--line); font: 600 .82rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-        .preview-row:first-child { border-top: 0; }
-        .preview-row span:first-child { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .preview-row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .preview-row span:last-child::before { content: '→ '; color: var(--gold); font-weight: 800; }
-
-        .summary { display: none; grid-template-columns: repeat(3, 1fr); gap: 11px; }
-        .summary.visible { display: grid; }
-        .stat { padding: 14px 10px; border: 1px solid var(--line); border-radius: 11px; background: #fff; text-align: center; }
-        .stat strong { display: block; font-size: 1.5rem; line-height: 1.2; }
-        .stat span { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
-        .stat.ok strong { color: var(--success); }
-        .stat.fail strong { color: var(--danger); }
-
-        .report { display: none; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; }
-        .report.visible { display: block; }
-        .report-title { padding: 12px 15px; color: #4d555c; background: #fff; font-size: .82rem; font-weight: 800; }
-        .report-list { max-height: 240px; overflow: auto; }
-        .report-row { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; padding: 10px 15px; border-top: 1px solid var(--line); font-size: .83rem; }
-        .report-row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .report-status { font-weight: 850; }
-        .report-status.ok { color: var(--success); }
-        .report-status.fail { color: var(--danger); }
+        /* Prévia da renomeação: nome atual → novo nome, lado a lado. */
+        #previewList .report-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        #previewList .report-row span:first-child { color: var(--toy-muted); }
+        #previewList .report-row span:last-child::before { content: '→ '; color: var(--toy-accent); font-weight: 800; }
 
         @media (max-width: 720px) {
-            .field-grid { grid-template-columns: 1fr; }
-            .actions { flex-direction: column; align-items: stretch; }
-            .summary { grid-template-columns: 1fr; }
-            .preview-row { grid-template-columns: 1fr; }
-            .preview-row span:last-child::before { content: '↳ '; }
+            #previewList .report-row { grid-template-columns: 1fr; }
+            #previewList .report-row span:last-child::before { content: '↳ '; }
         }
-    </style>
-    <style id="ganrenomeador-shell-style">
-        :root {
-            --gold: var(--toy-accent, #ffd700);
-            --dark-gold: var(--toy-accent-hover, #e0b500);
-            --ink: var(--toy-text, #e8e8ec);
-            --muted: var(--toy-muted, #a0a0a8);
-            --surface: var(--toy-surface, #323237);
-            --line: var(--toy-border, rgba(255, 255, 255, .1));
-            --success: #4caf50;
-            --danger: #f44336;
-        }
-        html, body { background: var(--toy-page-bg, #2a2a2e) !important; color: var(--toy-text, #e8e8ec) !important; }
-        .brand p { color: var(--toy-muted, #a0a0a8) !important; }
-        .glass-card, .folder-card, .stat, .preview, .report { background: var(--toy-surface, #323237) !important; border-color: var(--toy-border, rgba(255, 255, 255, .1)) !important; }
-        .glass-card { border-radius: var(--toy-card-radius, 16px) !important; box-shadow: var(--toy-card-shadow, 0 8px 32px rgba(0, 0, 0, .35)) !important; backdrop-filter: var(--toy-backdrop, none) !important; }
-        .folder-card, .stat, .preview, .report, input[type="text"], .preview-title { border-radius: var(--toy-control-radius, 12px) !important; }
-        .folder-card label, .input-label, .preview-title, .preview-row span:last-child, .report-title, .report-row { color: var(--toy-text, #e8e8ec) !important; }
-        .folder-selected, .hint, .preview-row span:first-child, .report-title, .stat span { color: var(--toy-muted, #a0a0a8) !important; }
-        input[type="text"], select { background: var(--toy-input-bg, rgba(0, 0, 0, .2)) !important; color: var(--toy-text, #e8e8ec) !important; border-color: var(--toy-border, rgba(255, 255, 255, .1)) !important; }
-        input[type="text"]::placeholder { color: var(--toy-muted, #a0a0a8) !important; }
-        .hint code { background: var(--toy-surface-alt, rgba(255, 255, 255, .06)) !important; }
-        .btn { border-radius: var(--toy-control-radius, 12px) !important; }
-        .btn-gold { background: var(--toy-accent, #ffd700) !important; color: var(--toy-accent-ink, #1a1a1a) !important; }
-        .btn-outline { background: var(--toy-surface-alt, rgba(255, 255, 255, .04)) !important; color: var(--toy-text, #e8e8ec) !important; border-color: var(--toy-border, rgba(255, 255, 255, .1)) !important; }
-        .btn-outline:hover:not(:disabled) { border-color: var(--toy-accent, #ffd700) !important; background: var(--toy-accent-soft, rgba(255, 215, 0, .1)) !important; }
-        .preview-title, .report-title { background: var(--toy-surface-alt, rgba(255, 255, 255, .04)) !important; border-color: var(--toy-border, rgba(255, 255, 255, .1)) !important; }
-        .preview-row, .report-row { border-color: var(--toy-border, rgba(255, 255, 255, .1)) !important; }
-        [data-visual="neobrutalism"] .glass-card, [data-visual="neobrutalism"] .folder-card, [data-visual="neobrutalism"] input[type="text"], [data-visual="neobrutalism"] .btn { border-radius: 0 !important; }
     </style>
 </head>
 <body>
     <main class="shell">
         <header class="brand">
-            <img src="../../logo.png" alt="GAN" class="logo">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
             <h1>Renomeador em Massa</h1>
-            <p>Rename arquivos de uma pasta local usando padrões wildcard, com prévia antes de aplicar.</p>
+            <p>Renomeie arquivos de uma pasta local usando padrões wildcard, com prévia antes de aplicar.</p>
         </header>
 
         <section class="glass-card">
             <div class="panel">
-                <div class="folder-card">
-                    <label for="folderButton">Pasta dos arquivos</label>
-                    <button class="btn btn-outline" id="folderButton" type="button">Selecionar pasta</button>
-                    <p class="folder-selected" id="folderName">Nenhuma pasta selecionada</p>
+                <div class="stack">
+                    <div class="folder-card">
+                        <label for="folderButton">Pasta dos arquivos</label>
+                        <button class="btn btn-outline" id="folderButton" type="button">Selecionar pasta</button>
+                        <p class="folder-selected" id="folderName">Nenhuma pasta selecionada</p>
+                    </div>
                 </div>
 
                 <div>
@@ -207,19 +86,19 @@
                     </div>
                 </div>
 
-                <div class="options">
-                    <label><input type="checkbox" id="normalizeExtension"> Normalizar extensão (letras maiúsculas para minúsculas)</label>
-                    <label><input type="checkbox" id="includeSubfolders"> Incluir subpastas</label>
+                <div class="row">
+                    <label class="check-row"><input type="checkbox" id="normalizeExtension"> Normalizar extensão (letras maiúsculas para minúsculas)</label>
+                    <label class="check-row"><input type="checkbox" id="includeSubfolders"> Incluir subpastas</label>
                 </div>
 
                 <div class="actions">
                     <button class="btn btn-outline" id="previewButton" type="button" disabled>Visualizar</button>
-                    <button class="btn btn-gold" id="renameButton" type="button" disabled>Renomear</button>
+                    <button class="btn btn-primary" id="renameButton" type="button" disabled>Renomear</button>
                 </div>
 
-                <div class="preview" id="preview">
-                    <div class="preview-title" id="previewTitle">Prévia da renomeação</div>
-                    <div class="preview-list" id="previewList"></div>
+                <div class="report" id="preview">
+                    <div class="report-title" id="previewTitle">Prévia da renomeação</div>
+                    <div class="report-list" id="previewList"></div>
                 </div>
 
                 <div class="summary" id="summary">
@@ -334,7 +213,7 @@
                 $('previewTitle').textContent = `Prévia da renomeação — ${preview.rows.length} arquivo(s) de ${preview.total}`;
                 $('previewList').replaceChildren(...preview.rows.map((row) => {
                     const line = document.createElement('div');
-                    line.className = 'preview-row';
+                    line.className = 'report-row';
                     const original = document.createElement('span');
                     original.textContent = row.path;
                     const target = document.createElement('span');

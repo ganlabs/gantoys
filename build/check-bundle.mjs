@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-const html = readFileSync('dist/gantoys.html', 'utf8');
+const html = readFileSync('dist/index.html', 'utf8');
 const marker = '<script>window.GANTOYS_TOYS = ';
 const start = html.indexOf(marker) + marker.length;
 const end = html.indexOf('};</script>', start);
@@ -44,7 +44,23 @@ for (const t of Object.keys(map)) {
 }
 console.log('referências locais restantes nos toys:', leftover);
 
-// 3) estrutura principal
+// 3) contrato de layout: o markup de todo toy usa a casca canônica do shared
+// (o CSS embutido é removido antes da checagem: o contrato aparece comentado nele)
+const REQUIRED = ['<main class="shell">', '<header class="brand">', 'class="brand-logo"'];
+const FORBIDDEN = ['toy-header', 'tool-card', 'glass-container', 'gondim-card', 'btn-gold', 'primary-btn', 'secondary-btn'];
+const layoutFails = [];
+for (const t of Object.keys(map)) {
+    const markup = map[t].replace(/<style[\s\S]*?<\/style>/gi, '');
+    const missing = REQUIRED.filter((needle) => !markup.includes(needle));
+    const stale = FORBIDDEN.filter((needle) => markup.includes(needle));
+    if (missing.length || stale.length) {
+        layoutFails.push({ t, missing, stale });
+        console.log(`  srcdoc ${t}: faltando ${JSON.stringify(missing)} | legado ${JSON.stringify(stale)}`);
+    }
+}
+console.log('toys fora do contrato de layout:', layoutFails.length);
+
+// 4) estrutura principal
 console.log('worker b64 embutido:', html.includes('window.GANTOYS_PDF_WORKER_B64'));
 console.log('srcdoc usado no app.js:', html.includes('iframe.srcdoc = bundled'));
 console.log('tesseract CDN (externo, intencional):', html.includes('cdn.jsdelivr.net/npm/tesseract'));
@@ -54,6 +70,10 @@ console.log('tamanho total MB:', (html.length / 1024 / 1024).toFixed(2));
 
 if (leftover > 0) {
     console.error('FALHA: há referências locais quebradas no bundle.');
+    process.exit(1);
+}
+if (layoutFails.length > 0) {
+    console.error('FALHA: toys fora do contrato de layout (toys/shared/toy.css).');
     process.exit(1);
 }
 console.log('VALIDAÇÃO OK');

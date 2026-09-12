@@ -72,20 +72,20 @@ const GANTOYS = {
 
         try {
             const doc = iframe.contentDocument || iframe.contentWindow.document;
-            if (!doc.head) return;
+            if (doc && doc.head) {
+                const html = doc.documentElement;
 
-            const html = doc.documentElement;
+                html.setAttribute('data-theme', theme);
+                html.setAttribute('data-visual', visual);
 
-            html.setAttribute('data-theme', theme);
-            html.setAttribute('data-visual', visual);
+                const existingStyle = doc.getElementById('gantoys-theme-inject');
+                if (existingStyle) existingStyle.remove();
 
-            const existingStyle = doc.getElementById('gantoys-theme-inject');
-            if (existingStyle) existingStyle.remove();
-
-            const style = doc.createElement('style');
-            style.id = 'gantoys-theme-inject';
-            style.textContent = css;
-            doc.head.appendChild(style);
+                const style = doc.createElement('style');
+                style.id = 'gantoys-theme-inject';
+                style.textContent = css;
+                doc.head.appendChild(style);
+            }
         } catch (e) {
             console.warn('Cannot inject styles:', e);
         }
@@ -442,56 +442,6 @@ const GANTOYS = {
                 background-attachment: fixed !important;
                 color: var(--toy-text) !important;
             }
-
-            .theme-toggle,
-            #themeToggle {
-                display: none !important;
-            }
-
-            .main-logo,
-            .logo {
-                height: 72px !important;
-                max-width: 100% !important;
-                object-fit: contain !important;
-            }
-
-            .main-content {
-                padding-top: 24px !important;
-                padding-bottom: 24px !important;
-            }
-
-            .container {
-                width: 100% !important;
-                max-width: none !important;
-            }
-
-            /* Largura padrão: o container principal de cada toy acompanha o Divisor PDF. */
-            body > .glass-container,
-            body > .glass-card,
-            body > .tool-card,
-            body > .shell {
-                box-sizing: border-box !important;
-                width: min(100%, calc(100vw - 48px)) !important;
-                max-width: none !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
-            }
-
-            @media (max-width: 640px) {
-                body > .glass-container,
-                body > .glass-card,
-                body > .tool-card,
-                body > .shell {
-                    width: 100% !important;
-                }
-            }
-
-            .app-header,
-            .logo-container,
-            .logo-wrapper,
-            header {
-                margin-bottom: 20px !important;
-            }
         `;
     },
 
@@ -503,20 +453,25 @@ const GANTOYS = {
         this.persistThemePayload(theme, visual, css);
 
         document.querySelectorAll('.toy-iframe').forEach(iframe => {
+            // As duas vias são independentes: em iframes `srcdoc` abertos via
+            // `file://` o `postMessage` pode falhar ("Illegal invocation") e,
+            // se estivesse no mesmo try, derrubaria também a injeção direta.
             try {
                 const win = iframe.contentWindow;
-                const doc = iframe.contentDocument;
                 if (win && win.postMessage) {
                     win.postMessage({ type: 'theme', theme: theme, visual: visual, css: css }, '*');
                 }
+            } catch (e) {
+                console.warn('Cannot post theme message:', e);
+            }
 
-                if (!doc || !doc.documentElement) return;
+            try {
+                const doc = iframe.contentDocument;
+                if (!doc || !doc.documentElement || !doc.head) return;
 
-                // Set data attributes
                 doc.documentElement.setAttribute('data-theme', theme);
                 doc.documentElement.setAttribute('data-visual', visual);
 
-                // Inject theme CSS
                 const style = doc.getElementById('gantoys-theme-inject');
                 if (style) {
                     style.textContent = css;
@@ -526,8 +481,9 @@ const GANTOYS = {
                     newStyle.textContent = css;
                     doc.head.appendChild(newStyle);
                 }
-
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Cannot inject theme styles:', e);
+            }
         });
     },
 
@@ -713,9 +669,57 @@ async function requestDirectoryAccess(handle, writable) {
     return (await handle.requestPermission(options)) === 'granted';
 }
 
-function fileMatchesProcessName(fileName, process) {
-    const normalized = String(process).replace(/\D/g, '');
-    return fileName.toLowerCase().includes(String(process).toLowerCase()) || (normalized.length > 0 && fileName.replace(/\D/g, '').includes(normalized));
+/* ---------------------------------------------------------------------------
+ * Busca por processo
+ *
+ * Cada processo é normalizado uma única vez (minúsculas + somente dígitos) e
+ * todos os padrões viram um único RegExp alternativo, executado nativamente
+ * sobre o caminho já normalizado. Antes, as duas normalizações do caminho eram
+ * refeitas para cada processo de cada arquivo varrido (custo O(arquivos ×
+ * processos) com regex e alocação por célula), o que dominava a varredura.
+ * ------------------------------------------------------------------------- */
+
+function buildProcessTerm(process) {
+    const text = String(process);
+    return {
+        lower: text.toLowerCase(),
+        digits: text.replace(/\D/g, ''),
+        hasNonDigit: /[^\d]/.test(text)
+    };
+}
+
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function compileSearchRegExp(patterns) {
+    const unique = [...new Set(patterns)].filter(Boolean);
+    if (unique.length === 0) return null;
+    return new RegExp(unique.map(escapeRegExp).join('|'));
+}
+
+function createProcessSearch(processes) {
+    const terms = processes.map(buildProcessTerm);
+    return {
+        terms,
+        // processos só de dígitos já são cobertos pela busca por dígitos
+        byName: compileSearchRegExp(terms.filter((term) => term.hasNonDigit).map((term) => term.lower)),
+        byDigits: compileSearchRegExp(terms.map((term) => term.digits))
+    };
+}
+
+function pathForms(path) {
+    return { lower: path.toLowerCase(), digits: path.replace(/\D/g, '') };
+}
+
+function termMatchesForms(term, forms) {
+    return (term.hasNonDigit && forms.lower.includes(term.lower))
+        || (term.digits.length > 0 && forms.digits.includes(term.digits));
+}
+
+function searchMatchesForms(search, forms) {
+    return (search.byName !== null && search.byName.test(forms.lower))
+        || (search.byDigits !== null && search.byDigits.test(forms.digits));
 }
 
 async function fileExistsInDirectory(directory, name) {
@@ -728,14 +732,42 @@ async function fileExistsInDirectory(directory, name) {
     }
 }
 
-async function availableFileName(directory, name) {
-    if (!(await fileExistsInDirectory(directory, name))) return name;
-    const dot = name.lastIndexOf('.');
-    const base = dot > 0 ? name.slice(0, dot) : name;
-    const extension = dot > 0 ? name.slice(dot) : '';
-    let suffix = 2;
-    while (await fileExistsInDirectory(directory, `${base} (${suffix})${extension}`)) suffix += 1;
-    return `${base} (${suffix})${extension}`;
+// Consulta o diretório de destino no máximo uma vez por nome.
+function createDestinationRegistry(directory) {
+    const known = new Map();
+
+    async function exists(name) {
+        if (!known.has(name)) known.set(name, await fileExistsInDirectory(directory, name));
+        return known.get(name);
+    }
+
+    return {
+        async claim(name) {
+            if (await exists(name)) {
+                const dot = name.lastIndexOf('.');
+                const base = dot > 0 ? name.slice(0, dot) : name;
+                const extension = dot > 0 ? name.slice(dot) : '';
+                let suffix = 2;
+                while (await exists(`${base} (${suffix})${extension}`)) suffix += 1;
+                name = `${base} (${suffix})${extension}`;
+            }
+            known.set(name, true);
+            return name;
+        },
+        release(name) {
+            known.set(name, false);
+        }
+    };
+}
+
+function createProgressReporter(source, requestId) {
+    let lastSent = 0;
+    return (progress, force = false) => {
+        const now = Date.now();
+        if (!force && now - lastSent < 120) return;
+        lastSent = now;
+        respondToToyRequest(source, 'gantoys-copy-progress', requestId, { progress });
+    };
 }
 
 async function copyDirectoryFile(sourceHandle, destinationDirectory, destinationName) {
@@ -788,46 +820,101 @@ async function handleCopyRequest(source, request) {
             throw new Error('É necessário conceder permissão de leitura na origem e escrita no destino.');
         }
 
+        const reportProgress = createProgressReporter(source, request.requestId);
+
         if (request.mode === 'santander') {
+            const search = createProcessSearch(request.processes);
+            const registry = createDestinationRegistry(destinationDirectory);
             const results = [];
+            const resolved = new Set();
+            let scanned = 0;
             let found = 0;
+            let copied = 0;
+
             for await (const item of walkDirectoryFiles(sourceDirectory, true)) {
-                if (!request.processes.some((process) => fileMatchesProcessName(item.path, process))) continue;
+                scanned += 1;
+                const forms = pathForms(item.path);
+                if (!searchMatchesForms(search, forms)) {
+                    reportProgress({ scanned, found, copied });
+                    continue;
+                }
+
+                // Só nos arquivos aprovados pelo filtro rápido: descobre quais
+                // processos eles atendem, para depois listar os que ficaram sem arquivo.
+                const matchedProcesses = [];
+                search.terms.forEach((term, index) => {
+                    if (!termMatchesForms(term, forms)) return;
+                    resolved.add(index);
+                    matchedProcesses.push(request.processes[index]);
+                });
+
                 found += 1;
+                let name = null;
                 try {
-                    const name = await availableFileName(destinationDirectory, item.handle.name);
+                    name = await registry.claim(item.handle.name);
                     await copyDirectoryFile(item.handle, destinationDirectory, name);
+                    copied += 1;
                     results.push({ status: 'ok', message: name === item.handle.name ? item.path : `${item.path} → ${name}` });
                 } catch (error) {
-                    results.push({ status: 'fail', message: `${item.path}: ${error.message}` });
+                    if (name !== null) registry.release(name);
+                    // a lista copiada pelo toy leva só os números dos processos afetados
+                    results.push({ status: 'fail', reference: matchedProcesses.join('\n'), message: `${item.path}: ${error.message}` });
                 }
+                reportProgress({ scanned, found, copied });
             }
-            if (found === 0) results.push({ status: 'missing', message: 'Nenhum arquivo encontrado para os processos informados.' });
+
+            // "reference" alimenta a lista de não copiados exibida pelo toy.
+            request.processes.forEach((process, index) => {
+                if (resolved.has(index)) return;
+                results.push({ status: 'missing', reference: process, message: `${process}: nenhum arquivo localizado na origem.` });
+            });
+            if (results.length === 0) results.push({ status: 'missing', reference: '', message: 'Nenhum arquivo encontrado para os processos informados.' });
+
+            reportProgress({ scanned, found, copied }, true);
             respondToToyRequest(source, 'gantoys-copy-result', request.requestId, { result: { total: found, results } });
             return;
         }
 
         if (request.mode === 'bradesco') {
+            const search = createProcessSearch(request.processes);
             const results = Array(request.processes.length);
-            const copiedProcesses = new Set();
+            let scanned = 0;
+            let copied = 0;
+            let pending = request.processes.length;
+
             for await (const item of walkDirectoryFiles(sourceDirectory, true)) {
-                if (!item.handle.name.toLowerCase().endsWith('.pdf')) continue;
-                for (let index = 0; index < request.processes.length; index += 1) {
-                    if (copiedProcesses.has(index) || !fileMatchesProcessName(item.path, request.processes[index])) continue;
+                if (pending === 0) break;
+                scanned += 1;
+                if (!item.handle.name.toLowerCase().endsWith('.pdf')) {
+                    reportProgress({ scanned, copied, total: request.processes.length });
+                    continue;
+                }
+
+                const forms = pathForms(item.path);
+                if (!searchMatchesForms(search, forms)) {
+                    reportProgress({ scanned, copied, total: request.processes.length });
+                    continue;
+                }
+
+                for (let index = 0; index < search.terms.length; index += 1) {
+                    if (results[index] || !termMatchesForms(search.terms[index], forms)) continue;
                     const targetName = `INICIAL ${request.clients[index]}.pdf`;
                     try {
                         await copyDirectoryFile(item.handle, destinationDirectory, targetName);
-                        copiedProcesses.add(index);
+                        copied += 1;
                         results[index] = { status: 'ok', message: `${request.processes[index]} → ${targetName}` };
                     } catch (error) {
-                        copiedProcesses.add(index);
-                        results[index] = { status: 'fail', message: `${request.processes[index]}: ${error.message}` };
+                        results[index] = { status: 'fail', reference: request.processes[index], message: `${request.processes[index]}: ${error.message}` };
                     }
+                    pending -= 1;
                 }
+                reportProgress({ scanned, copied, total: request.processes.length });
             }
+
             for (let index = 0; index < request.processes.length; index += 1) {
-                if (!results[index]) results[index] = { status: 'missing', message: `${request.processes[index]}: nenhum PDF localizado.` };
+                if (!results[index]) results[index] = { status: 'missing', reference: request.processes[index], message: `${request.processes[index]}: nenhum PDF localizado.` };
             }
+            reportProgress({ scanned, copied, total: request.processes.length }, true);
             respondToToyRequest(source, 'gantoys-copy-result', request.requestId, { result: { total: request.processes.length, results } });
             return;
         }
