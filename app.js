@@ -580,11 +580,23 @@ const GANTOYS = {
 
 window.showGanToysDirectoryPicker = async (mode = 'readwrite') => {
     if (!('showDirectoryPicker' in window)) {
-        throw new Error('Este navegador não suporta a seleção de pastas. Abra o GAN Toys no Google Chrome ou Microsoft Edge.');
+        throw new Error('Este navegador não expõe o seletor de pastas. Use o Chrome ou o Edge.');
     }
 
     return window.showDirectoryPicker({ mode });
 };
+
+// A File System Access API é bloqueada em `file://` (origem opaca) e em navegadores
+// sem suporte; sem ela não há como escrever na pasta escolhida.
+const DIRETORIO_INDISPONIVEL =
+    'Não foi possível abrir o seletor de pastas. O navegador bloqueia o acesso a pastas ' +
+    'quando a página é aberta por file:// — sirva a pasta por um servidor local ' +
+    '(python3 -m http.server 8000) e abra http://localhost:8000.';
+
+function diretorioIndisponivel(error) {
+    if (error && error.name === 'AbortError') return null;
+    return error && error.message ? `${DIRETORIO_INDISPONIVEL} (${error.message})` : DIRETORIO_INDISPONIVEL;
+}
 
 let pendingDirectoryPickerRequest = null;
 const GAN_TOYS_DIRECTORY_HANDLES = new Map();
@@ -1028,17 +1040,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const request = pendingDirectoryPickerRequest;
         if (!request) return;
 
-        closeDirectoryPickerModal();
-        pendingDirectoryPickerRequest = null;
         try {
             const handle = await window.showGanToysDirectoryPicker(request.mode);
+            closeDirectoryPickerModal();
+            pendingDirectoryPickerRequest = null;
             const directoryId = crypto.randomUUID();
             GAN_TOYS_DIRECTORY_HANDLES.set(directoryId, handle);
             respondToDirectoryPickerRequest(request, { directory: { id: directoryId, name: handle.name } });
         } catch (error) {
+            const aviso = diretorioIndisponivel(error);
+            if (!aviso) {
+                respondToDirectoryPickerRequest(request, {
+                    error: { name: error.name, message: error.message }
+                });
+                closeDirectoryPickerModal();
+                pendingDirectoryPickerRequest = null;
+                return;
+            }
+            // Indisponível neste contexto: o diálogo explica e o toy recebe um
+            // AbortError para não abrir um alerta redundante por cima.
             respondToDirectoryPickerRequest(request, {
-                error: { name: error.name, message: error.message }
+                error: { name: 'AbortError', message: 'Seleção de pasta indisponível neste contexto.' }
             });
+            pendingDirectoryPickerRequest = null;
+            const message = document.getElementById('directoryPickerMessage');
+            if (message) message.textContent = aviso;
         }
     });
 });

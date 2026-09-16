@@ -52,10 +52,12 @@ async function selectFolder() {
         elements.mergeBtn.disabled = state.subfolders.length === 0;
 
     } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error('Erro ao selecionar pasta:', err);
-            alert('Erro ao selecionar pasta. Tente novamente.');
-        }
+        // Cancelar é escolha do usuário; qualquer outra falha (a API existe mas
+        // não está disponível, como em `file://`) cai no seletor clássico de
+        // pasta, que continua funcionando em modo offline (resultado por download).
+        if (err.name === 'AbortError') return;
+        console.warn('showDirectoryPicker indisponível, usando o seletor de pasta do navegador:', err);
+        elements.folderInput.click();
     }
 }
 
