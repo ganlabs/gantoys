@@ -53,19 +53,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') buscarNoPDF();
     });
     
-    // Roda do mouse troca de página: uma página por gesto, como sempre foi.
-    // Mouses de roda livre (inércia) emitem uma rajada de dezenas de eventos por
-    // giro — sem separar os gestos, um único giro pulava várias páginas. O gesto
-    // termina quando o fluxo de eventos para por GESTO_PAUSA_MS.
+    // Roda do mouse troca de página: uma página por vez, sempre página inteira.
+    // Roda livre (inércia) emite uma rajada de dezenas de eventos por giro; a
+    // regra separa o que é um giro novo do que é a continuação do mesmo giro:
+    //   - pausa de GESTO_PAUSA_MS sem eventos => giro novo (roda de catraca);
+    //   - giro contínuo (sem pausa) anda uma página a cada GIRO_INTERVALO_MS,
+    //     desde que o impulso ainda seja significativo (GIRO_DELTA_MIN), o que
+    //     deixa girar várias páginas sem nunca pular de uma vez.
     const GESTO_PAUSA_MS = 120;
+    const GIRO_INTERVALO_MS = 350;
+    const GIRO_DELTA_MIN = 40;
     let ultimoEventoGiro = 0;
+    let ultimaTroca = 0;
     canvas.addEventListener('wheel', (e) => {
         if (e.ctrlKey) return; // gesto de zoom do sistema
         e.preventDefault();
         const agora = Date.now();
-        const novoGesto = agora - ultimoEventoGiro >= GESTO_PAUSA_MS;
+        const pausa = agora - ultimoEventoGiro >= GESTO_PAUSA_MS;
         ultimoEventoGiro = agora;
-        if (!novoGesto || pageRendering) return;
+        if (pageRendering) return;
+        const giroContinuo = !pausa
+            && agora - ultimaTroca >= GIRO_INTERVALO_MS
+            && Math.abs(e.deltaY) >= GIRO_DELTA_MIN;
+        if (!pausa && !giroContinuo) return;
+        ultimaTroca = agora;
         irParaPagina(e.deltaY < 0 ? pageNum - 1 : pageNum + 1);
     }, { passive: false });
 
