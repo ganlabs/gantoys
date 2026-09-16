@@ -53,17 +53,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') buscarNoPDF();
     });
     
-    // Scroll do mouse no canvas
+    // Scroll do mouse no canvas: rola a página do PDF normalmente e só troca de
+    // página quando o container chega ao topo/fim. Mouses de roda livre (inércia)
+    // emitem dezenas de eventos por giro; trocar a cada evento pulava páginas.
+    const areaCanvas = canvas.closest('.compact-viewer-area') || canvas.parentElement;
+    let ultimoGiro = 0;
+    const INTERVALO_GIRO_MS = 200;
     canvas.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) return; // gesto de zoom do sistema
+        const descendo = e.deltaY > 0;
+        const rolavel = areaCanvas.scrollHeight > areaCanvas.clientHeight + 1;
+        const noTopo = areaCanvas.scrollTop <= 8;
+        const noFim = Math.ceil(areaCanvas.scrollTop + areaCanvas.clientHeight) >= areaCanvas.scrollHeight - 8;
+        if (rolavel && ((descendo && !noFim) || (!descendo && !noTopo))) return;
         e.preventDefault();
-        if (e.deltaY < 0) {
-            // Scroll up - página anterior
-            irParaPagina(pageNum - 1);
-        } else {
-            // Scroll down - próxima página
-            irParaPagina(pageNum + 1);
-        }
-    });
+        if (pageRendering) return;
+        const agora = Date.now();
+        if (agora - ultimoGiro < INTERVALO_GIRO_MS) return;
+        ultimoGiro = agora;
+        irParaPagina(descendo ? pageNum + 1 : pageNum - 1);
+        areaCanvas.scrollTop = descendo ? 0 : areaCanvas.scrollHeight;
+    }, { passive: false });
 
     alternarModoDivisao();
 });

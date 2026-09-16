@@ -24,8 +24,17 @@ const elements = {
     resultsList: document.getElementById('resultsList')
 };
 
+function podeUsarSeletorDePasta() {
+    if (!('showDirectoryPicker' in window)) return false;
+    // Em `file://` cada documento é uma origem opaca: dentro do iframe do app a
+    // File System Access API é barrada pela permissions policy (o app, na
+    // janela de cima, consegue usá-la). Nesse caso vale o seletor clássico.
+    if (location.protocol === 'file:' && window.parent !== window) return false;
+    return true;
+}
+
 async function selectFolder() {
-    if (!('showDirectoryPicker' in window)) {
+    if (!podeUsarSeletorDePasta()) {
         elements.folderInput.click();
         return;
     }
@@ -52,9 +61,9 @@ async function selectFolder() {
         elements.mergeBtn.disabled = state.subfolders.length === 0;
 
     } catch (err) {
-        // Cancelar é escolha do usuário; qualquer outra falha (a API existe mas
-        // não está disponível, como em `file://`) cai no seletor clássico de
-        // pasta, que continua funcionando em modo offline (resultado por download).
+        // Cancelar é escolha do usuário; qualquer outra falha cai no seletor
+        // clássico de pasta, que continua funcionando em modo offline
+        // (resultado por download).
         if (err.name === 'AbortError') return;
         console.warn('showDirectoryPicker indisponível, usando o seletor de pasta do navegador:', err);
         elements.folderInput.click();

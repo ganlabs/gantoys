@@ -586,16 +586,14 @@ window.showGanToysDirectoryPicker = async (mode = 'readwrite') => {
     return window.showDirectoryPicker({ mode });
 };
 
-// A File System Access API é bloqueada em `file://` (origem opaca) e em navegadores
-// sem suporte; sem ela não há como escrever na pasta escolhida.
-const DIRETORIO_INDISPONIVEL =
-    'Não foi possível abrir o seletor de pastas. O navegador bloqueia o acesso a pastas ' +
-    'quando a página é aberta por file:// — sirva a pasta por um servidor local ' +
-    '(python3 -m http.server 8000) e abra http://localhost:8000.';
+// Sem a File System Access API não há como escolher uma pasta para leitura/escrita.
+// A mensagem usa o erro do próprio navegador: o motivo varia por contexto
+// (navegador sem suporte, permissão negada, gesto do usuário ausente).
+const DIRETORIO_INDISPONIVEL = 'Não foi possível abrir o seletor de pastas.';
 
 function diretorioIndisponivel(error) {
     if (error && error.name === 'AbortError') return null;
-    return error && error.message ? `${DIRETORIO_INDISPONIVEL} (${error.message})` : DIRETORIO_INDISPONIVEL;
+    return error && error.message ? `${DIRETORIO_INDISPONIVEL} ${error.message}` : DIRETORIO_INDISPONIVEL;
 }
 
 let pendingDirectoryPickerRequest = null;

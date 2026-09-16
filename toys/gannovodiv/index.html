@@ -726,8 +726,9 @@ let lastWheelTime = 0;
 customViewer.addEventListener('wheel', async (e) => {
     if (isRenderingPage || !currentDoc) return;
     
-    // Cooldown ajustado para 120ms: permite deslize continuo para mouses de alta velocidade/inercia sem travar
-    if (Date.now() - lastWheelTime < 120) return;
+    // Cooldown de 200ms: mouses de roda livre (inércia) emitem dezenas de eventos
+    // por giro; sem ele a troca de página dispara várias vezes no mesmo gesto.
+    if (Date.now() - lastWheelTime < 200) return;
     
     const atTop = customViewer.scrollTop <= 10;
     const atBottom = Math.ceil(customViewer.scrollTop + customViewer.clientHeight) >= customViewer.scrollHeight - 10;
