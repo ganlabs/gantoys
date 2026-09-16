@@ -420,6 +420,7 @@ const GANTOYS = {
 
                 --toy-page-bg: ${pageBg};
                 --toy-surface: ${v.surfaceSolid};
+                --toy-surface-solid: ${v.surfaceSolid};
                 --toy-surface-alt: ${surfaceAlt};
                 --toy-border: ${v.border};
                 --toy-text: ${v.text};

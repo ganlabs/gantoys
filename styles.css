@@ -377,6 +377,29 @@ body {
     font-weight: 600;
 }
 
+/* Modo claro: o amarelo da marca não tem contraste como cor de texto sobre
+   superfície clara, então o item usa o texto principal e o amarelo fica na
+   barra de seleção. */
+[data-theme="light"] .nav-item {
+    /* O secundário de alguns visuais claros fica abaixo de 4.5:1 no menu:
+       aproxima do texto primário mantendo a hierarquia. */
+    color: var(--text-secondary);
+    color: color-mix(in srgb, var(--text-secondary) 55%, var(--text-primary));
+}
+
+[data-theme="light"] .nav-item:hover {
+    background: rgba(255, 215, 0, 0.20);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .nav-item.active {
+    background: rgba(255, 215, 0, 0.30);
+    color: var(--text-primary);
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+
+[data-theme="light"] .nav-item.active i { color: var(--accent); }
+
 [data-visual="neobrutalism"] .nav-item.active {
     background: var(--accent);
     color: #1a1a1a;

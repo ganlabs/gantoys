@@ -38,6 +38,7 @@
         radial-gradient(circle at 80% 100%, rgba(255, 255, 255, .05) 0%, transparent 34%),
         linear-gradient(180deg, #1c1c20 0%, #2a2a2e 100%);
     --toy-surface: rgba(50, 50, 55, .72);
+    --toy-surface-solid: #2a2a2e;
     --toy-surface-alt: rgba(255, 255, 255, .04);
     --toy-border: rgba(255, 255, 255, .10);
     --toy-text: #e8e8ec;
@@ -62,11 +63,16 @@
 
 /* Abertura direta em sistema claro: usa o claro do glassmorphism. */
 @media (prefers-color-scheme: light) {
+    html:not([data-theme]) select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235f5f6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5l4 4 4-4'/%3E%3C/svg%3E");
+    }
+
     html:not([data-theme]) {
         --toy-page-bg: radial-gradient(circle at 20% 0%, rgba(255, 215, 0, .14) 0%, transparent 28%),
             radial-gradient(circle at 80% 100%, rgba(255, 255, 255, .50) 0%, transparent 34%),
             linear-gradient(180deg, #edf1f6 0%, #d4d8e0 100%);
         --toy-surface: rgba(255, 255, 255, .70);
+        --toy-surface-solid: #ffffff;
         --toy-surface-alt: rgba(255, 255, 255, .42);
         --toy-border: rgba(0, 0, 0, .10);
         --toy-text: #2a2a30;
@@ -341,6 +347,29 @@ textarea {
 }
 
 input[type="file"] { padding: 10px 12px; }
+
+/* Combobox: o controle nativo muda de forma (e de cor) em cada sistema, então
+   desenhamos o campo e a seta com os tokens do tema. */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 42px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23c9c9d1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 12px 12px;
+    cursor: pointer;
+}
+
+/* A lista aberta é desenhada pelo sistema: força as cores do tema. */
+select option {
+    background: var(--toy-surface-solid);
+    color: var(--toy-text);
+}
+
+html[data-theme="light"] select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235f5f6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5l4 4 4-4'/%3E%3C/svg%3E");
+}
 
 textarea {
     min-height: 200px;

@@ -52,6 +52,9 @@ definidos em `toys/shared/toy.css`:
   modais `.modal-overlay.open` + `.modal-shell/-header/-body`, toasts
   `.toast-container`/`.toast`, log `.log-line`, progresso
   `.progress-*`, etapas `.steps`/`.step`.
+- **Campos:** entradas, combobox e textarea vêm do shared, sem aparência nativa
+  do sistema — o `select` usa `appearance: none` com seta desenhada pelo tema e
+  a lista (`option`) pintada por `--toy-surface-solid`.
 - O CSS local de cada toy (`styles.css` ou `<style>` inline) cobre apenas o que é
   específico daquele toy, sempre lendo os tokens `--toy-*`.
 - Nenhuma cor de tema é fixada no CSS local: tema claro/escuro e os seis visuais
