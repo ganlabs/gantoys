@@ -775,42 +775,71 @@ function searchMatchesForms(search, forms) {
         || (search.byDigits !== null && search.byDigits.test(forms.digits));
 }
 
-async function fileExistsInDirectory(directory, name) {
-    try {
-        await directory.getFileHandle(name);
-        return true;
-    } catch (error) {
-        if (error.name === 'NotFoundError') return false;
-        throw error;
+/**
+ * Compara dois arquivos sem carregar tudo na memória: tamanho primeiro, depois
+ * blocos de 1 MB (arquivos idênticos param no primeiro byte diferente).
+ */
+async function filesAreEqual(a, b) {
+    if (a.size !== b.size) return false;
+
+    const CHUNK = 1 << 20;
+    for (let offset = 0; offset < a.size; offset += CHUNK) {
+        const [bufferA, bufferB] = await Promise.all([
+            a.slice(offset, offset + CHUNK).arrayBuffer(),
+            b.slice(offset, offset + CHUNK).arrayBuffer()
+        ]);
+        const bytesA = new Uint8Array(bufferA);
+        const bytesB = new Uint8Array(bufferB);
+        for (let i = 0; i < bytesA.length; i += 1) {
+            if (bytesA[i] !== bytesB[i]) return false;
+        }
     }
+    return true;
 }
 
-// Consulta o diretório de destino no máximo uma vez por nome.
-function createDestinationRegistry(directory) {
-    const known = new Map();
+/**
+ * Decide o que fazer com um arquivo da origem no destino:
+ *  - 'same-file': origem e destino são o MESMO arquivo (nada a fazer);
+ *  - 'identical': já existe no destino com o mesmo conteúdo (nada a fazer);
+ *  - 'overwrite': já existe no destino com conteúdo diferente (sobrescreve);
+ *  - 'create':    não existe no destino (copia).
+ * Nada é renomeado: o nome no destino é sempre o nome final combinado.
+ */
+async function planFileCopy(sourceHandle, destinationDirectory, destinationName) {
+    const sourceFile = await sourceHandle.getFile();
 
-    async function exists(name) {
-        if (!known.has(name)) known.set(name, await fileExistsInDirectory(directory, name));
-        return known.get(name);
+    let destinationHandle = null;
+    try {
+        destinationHandle = await destinationDirectory.getFileHandle(destinationName);
+    } catch (error) {
+        if (error.name !== 'NotFoundError') throw error;
     }
 
-    return {
-        async claim(name) {
-            if (await exists(name)) {
-                const dot = name.lastIndexOf('.');
-                const base = dot > 0 ? name.slice(0, dot) : name;
-                const extension = dot > 0 ? name.slice(dot) : '';
-                let suffix = 2;
-                while (await exists(`${base} (${suffix})${extension}`)) suffix += 1;
-                name = `${base} (${suffix})${extension}`;
-            }
-            known.set(name, true);
-            return name;
-        },
-        release(name) {
-            known.set(name, false);
-        }
-    };
+    if (!destinationHandle) return { action: 'create', sourceFile };
+
+    if (typeof sourceHandle.isSameEntry === 'function' && await sourceHandle.isSameEntry(destinationHandle)) {
+        return { action: 'same-file', sourceFile };
+    }
+
+    const destinationFile = await destinationHandle.getFile();
+    if (await filesAreEqual(sourceFile, destinationFile)) return { action: 'identical', sourceFile };
+
+    return { action: 'overwrite', sourceFile };
+}
+
+/** Grava o arquivo no destino (createWritable trunca: sobrescreve quando existe). */
+async function writeDestinationFile(destinationDirectory, destinationName, sourceFile) {
+    const target = await destinationDirectory.getFileHandle(destinationName, { create: true });
+    const writable = await target.createWritable();
+    await writable.write(sourceFile);
+    await writable.close();
+}
+
+/** Resultado legível para um arquivo que não precisou ser copiado. */
+function skipReason(action) {
+    return action === 'same-file'
+        ? 'origem e destino são o mesmo arquivo'
+        : 'já existe no destino com o mesmo conteúdo';
 }
 
 function createProgressReporter(source, requestId) {
@@ -821,14 +850,6 @@ function createProgressReporter(source, requestId) {
         lastSent = now;
         respondToToyRequest(source, 'gantoys-copy-progress', requestId, { progress });
     };
-}
-
-async function copyDirectoryFile(sourceHandle, destinationDirectory, destinationName) {
-    const sourceFile = await sourceHandle.getFile();
-    const target = await destinationDirectory.getFileHandle(destinationName, { create: true });
-    const writable = await target.createWritable();
-    await writable.write(sourceFile);
-    await writable.close();
 }
 
 async function handleFileRequest(source, request) {
@@ -877,7 +898,6 @@ async function handleCopyRequest(source, request) {
 
         if (request.mode === 'santander') {
             const search = createProcessSearch(request.processes);
-            const registry = createDestinationRegistry(destinationDirectory);
             const results = [];
             const resolved = new Set();
             let scanned = 0;
@@ -902,14 +922,24 @@ async function handleCopyRequest(source, request) {
                 });
 
                 found += 1;
-                let name = null;
                 try {
-                    name = await registry.claim(item.handle.name);
-                    await copyDirectoryFile(item.handle, destinationDirectory, name);
-                    copied += 1;
-                    results.push({ status: 'ok', message: name === item.handle.name ? item.path : `${item.path} → ${name}` });
+                    const plan = await planFileCopy(item.handle, destinationDirectory, item.handle.name);
+                    if (plan.action === 'same-file' || plan.action === 'identical') {
+                        // Mesmo arquivo ou mesmo conteúdo: não copia nem renomeia.
+                        results.push({
+                            status: 'same',
+                            reference: matchedProcesses.join('\n'),
+                            message: `${item.path}: ${skipReason(plan.action)}`
+                        });
+                    } else {
+                        await writeDestinationFile(destinationDirectory, item.handle.name, plan.sourceFile);
+                        copied += 1;
+                        results.push({
+                            status: plan.action === 'overwrite' ? 'updated' : 'ok',
+                            message: plan.action === 'overwrite' ? `${item.path} (sobrescrito)` : item.path
+                        });
+                    }
                 } catch (error) {
-                    if (name !== null) registry.release(name);
                     // a lista copiada pelo toy leva só os números dos processos afetados
                     results.push({ status: 'fail', reference: matchedProcesses.join('\n'), message: `${item.path}: ${error.message}` });
                 }
@@ -953,9 +983,23 @@ async function handleCopyRequest(source, request) {
                     if (results[index] || !termMatchesForms(search.terms[index], forms)) continue;
                     const targetName = `INICIAL ${request.clients[index]}.pdf`;
                     try {
-                        await copyDirectoryFile(item.handle, destinationDirectory, targetName);
-                        copied += 1;
-                        results[index] = { status: 'ok', message: `${request.processes[index]} → ${targetName}` };
+                        const plan = await planFileCopy(item.handle, destinationDirectory, targetName);
+                        if (plan.action === 'same-file' || plan.action === 'identical') {
+                            results[index] = {
+                                status: 'same',
+                                reference: request.processes[index],
+                                message: `${request.processes[index]} → ${targetName}: ${skipReason(plan.action)}`
+                            };
+                        } else {
+                            await writeDestinationFile(destinationDirectory, targetName, plan.sourceFile);
+                            copied += 1;
+                            results[index] = {
+                                status: plan.action === 'overwrite' ? 'updated' : 'ok',
+                                message: plan.action === 'overwrite'
+                                    ? `${request.processes[index]} → ${targetName} (sobrescrito)`
+                                    : `${request.processes[index]} → ${targetName}`
+                            };
+                        }
                     } catch (error) {
                         results[index] = { status: 'fail', reference: request.processes[index], message: `${request.processes[index]}: ${error.message}` };
                     }

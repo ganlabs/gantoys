@@ -287,7 +287,7 @@
                 row.className = 'report-row';
                 const status = document.createElement('span');
                 status.className = `report-status ${result.status}`;
-                status.textContent = result.status === 'ok' ? 'COPIADO' : result.status === 'missing' ? 'NÃO LOCALIZADO' : 'ERRO';
+                status.textContent = STATUS_LABEL[result.status] || 'ERRO';
                 const message = document.createElement('span');
                 message.textContent = result.message;
                 row.append(status, message);
@@ -296,9 +296,13 @@
             $(`${bank}-${kind}`).classList.toggle('visible', results.length > 0);
         }
 
+        // 'ok' e 'updated' gravaram no destino; 'same' não precisou copiar.
+        const STATUS_LABEL = { ok: 'COPIADO', updated: 'ATUALIZADO', same: 'IGUAL', missing: 'NÃO LOCALIZADO', fail: 'ERRO' };
+        const COPIED_STATUSES = ['ok', 'updated'];
+
         function showResults(bank, results, totalLabel) {
-            const copied = results.filter((result) => result.status === 'ok');
-            const notCopied = results.filter((result) => result.status !== 'ok');
+            const copied = results.filter((result) => COPIED_STATUSES.includes(result.status));
+            const notCopied = results.filter((result) => !COPIED_STATUSES.includes(result.status));
 
             $(`${bank}-total`).textContent = totalLabel;
             $(`${bank}-success`).textContent = copied.length;
