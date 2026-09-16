@@ -721,33 +721,45 @@ pdfModal.addEventListener('click', e => { if(e.target === pdfModal) closePdfModa
 
 // Controles do Visualizador Customizado
 const customViewer = document.getElementById('customViewer');
-let lastWheelTime = 0;
+
+// Roda do mouse troca de página: sempre uma por vez e sempre página inteira
+// (mesma regra do Divisor Santander). Roda livre (inércia) emite uma rajada de
+// dezenas de eventos por giro, então a troca é decidida por IMPULSO acumulado:
+//   - pausa de GESTO_PAUSA_MS sem eventos => giro novo: troca na primeira rodada
+//     (roda de catraca vale uma página por giro);
+//   - dentro do mesmo giro, cada IMPULSO_PAGINA de delta acumulado vale uma
+//     página, com teto de uma troca a cada TROCA_INTERVALO_MS.
+// Assim girar mais anda mais (a inércia rende), a cauda fraca desacelera sozinha
+// e nunca troca duas páginas de uma vez.
+const GESTO_PAUSA_MS = 120;
+const IMPULSO_PAGINA = 400;
+const TROCA_INTERVALO_MS = 160;
+let ultimoEventoGiro = 0;
+let ultimaTroca = 0;
+let impulsoGesto = 0;
 
 customViewer.addEventListener('wheel', async (e) => {
+    if (e.ctrlKey) return; // gesto de zoom do sistema
+    e.preventDefault();
     if (isRenderingPage || !currentDoc) return;
-    
-    // Cooldown de 200ms: mouses de roda livre (inércia) emitem dezenas de eventos
-    // por giro; sem ele a troca de página dispara várias vezes no mesmo gesto.
-    if (Date.now() - lastWheelTime < 200) return;
-    
-    const atTop = customViewer.scrollTop <= 10;
-    const atBottom = Math.ceil(customViewer.scrollTop + customViewer.clientHeight) >= customViewer.scrollHeight - 10;
-    
-    if (e.deltaY > 0) { 
-        if (atBottom && currentPageNum < currentDoc.numPages) {
-            e.preventDefault();
-            lastWheelTime = Date.now();
-            await renderPage(currentPageNum + 1);
-            customViewer.scrollTop = 0;
-        }
-    } else if (e.deltaY < 0) {
-        if (atTop && currentPageNum > 1) {
-            e.preventDefault();
-            lastWheelTime = Date.now();
-            await renderPage(currentPageNum - 1);
-            customViewer.scrollTop = customViewer.scrollHeight; 
-        }
-    }
+
+    const agora = Date.now();
+    const novoGesto = agora - ultimoEventoGiro >= GESTO_PAUSA_MS;
+    if (novoGesto) impulsoGesto = 0;
+    ultimoEventoGiro = agora;
+    impulsoGesto += Math.abs(e.deltaY) || 1;
+
+    const limiar = novoGesto ? 1 : IMPULSO_PAGINA;
+    if (impulsoGesto < limiar || agora - ultimaTroca < TROCA_INTERVALO_MS) return;
+
+    const descendo = e.deltaY > 0;
+    if (descendo && currentPageNum >= currentDoc.numPages) return;
+    if (!descendo && currentPageNum <= 1) return;
+
+    impulsoGesto -= Math.min(impulsoGesto, limiar);
+    ultimaTroca = agora;
+    await renderPage(descendo ? currentPageNum + 1 : currentPageNum - 1);
+    customViewer.scrollTop = descendo ? 0 : customViewer.scrollHeight;
 });
 
 document.getElementById('inpCurrentPage').addEventListener('change', (e) => {
