@@ -68,7 +68,9 @@ function initTool(config) {
 
         summary.textContent = `${result.rows.length} ${result.rows.length === 1 ? 'linha processada' : 'linhas processadas'}.`;
         // Copiar somente os dados de saída: sem cabeçalho e sem eco da entrada (TSV).
-        const copyRows = config.type === 'resolve-carteira-reu'
+        // Tipos cuja primeira coluna é rótulo (Tipo/…) saem sem esse rótulo.
+        const skipFirstColumn = config.type === 'resolve-carteira-reu' || config.type === 'normalize-documents';
+        const copyRows = skipFirstColumn
             ? result.rows.map((row) => row.slice(1))
             : result.rows;
         copiedText = copyRows
