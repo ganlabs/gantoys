@@ -21,7 +21,8 @@
        </body>
 
    Regras:
-   - corpo com 24px de padding, `.shell` centralizado, cartões como
+   - corpo com 24px de respiro vertical e 80px nas laterais (28px até 1100px de
+     largura, 16px até 720px), `.shell` ocupando toda a largura, cartões como
      `.glass-card` + `.panel`;
    - identidade: o logo do toy é SEMPRE `../../favicon.png`;
    - ícones: apenas Bootstrap Icons (`<i class="bi bi-*">`), nunca emoji;
@@ -94,7 +95,8 @@ html { min-height: 100%; background: var(--toy-page-bg); }
 body {
     min-height: 100vh;
     margin: 0;
-    padding: 24px;
+    /* 80px de respiro lateral: o cartão ocupa o resto da largura disponível. */
+    padding: 24px 80px;
     background: var(--toy-page-bg);
     background-attachment: fixed;
     color: var(--toy-text);
@@ -129,7 +131,7 @@ code {
 .shell {
     display: grid;
     gap: 22px;
-    width: min(100%, 1080px);
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -944,6 +946,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--toy-accent); }
 [data-visual="neobrutalism"] .glass-card { box-shadow: var(--toy-card-shadow); }
 
 /* ---------------------------------------------------------- responsivo -- */
+
+@media (max-width: 1100px) {
+    /* Os 80px de respiro só cabem em tela larga. */
+    body { padding: 20px 28px; }
+}
 
 @media (max-width: 720px) {
     body { padding: 16px; }

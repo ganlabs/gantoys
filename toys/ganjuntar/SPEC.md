@@ -9,7 +9,7 @@
 ## UI/UX Specification
 
 ### Layout Structure
-- Casca compartilhada de `../shared/toy.css`: `<main class="shell">` (máx. 1080px, centralizado)
+- Casca compartilhada de `../shared/toy.css`: `<main class="shell">` (largura cheia, com 80px de respiro lateral)
   com `<header class="brand">` (logo `../../favicon.png` em `.brand-logo`) e cartões
   `<section class="glass-card"><div class="panel">…</div></section>`
 - CSS local (`styles.css`) só com o que é específico do toy, sempre via tokens `--toy-*`
@@ -41,7 +41,7 @@
 
 ### Responsive
 - Mobile-friendly (min-width: 320px)
-- Shell fluido até 1080px; o shared reduz paddings em `max-width: 720px`
+- Shell ocupa a largura disponível, com 80px de respiro lateral; o shared reduz o respiro em `max-width: 1100px` (28px) e `max-width: 720px` (16px)
 
 ## Functionality Specification
 
