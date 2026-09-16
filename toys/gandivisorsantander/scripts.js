@@ -53,26 +53,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') buscarNoPDF();
     });
     
-    // Scroll do mouse no canvas: rola a página do PDF normalmente e só troca de
-    // página quando o container chega ao topo/fim. Mouses de roda livre (inércia)
-    // emitem dezenas de eventos por giro; trocar a cada evento pulava páginas.
-    const areaCanvas = canvas.closest('.compact-viewer-area') || canvas.parentElement;
-    let ultimoGiro = 0;
-    const INTERVALO_GIRO_MS = 200;
+    // Roda do mouse troca de página: uma página por gesto, como sempre foi.
+    // Mouses de roda livre (inércia) emitem uma rajada de dezenas de eventos por
+    // giro — sem separar os gestos, um único giro pulava várias páginas. O gesto
+    // termina quando o fluxo de eventos para por GESTO_PAUSA_MS.
+    const GESTO_PAUSA_MS = 120;
+    let ultimoEventoGiro = 0;
     canvas.addEventListener('wheel', (e) => {
         if (e.ctrlKey) return; // gesto de zoom do sistema
-        const descendo = e.deltaY > 0;
-        const rolavel = areaCanvas.scrollHeight > areaCanvas.clientHeight + 1;
-        const noTopo = areaCanvas.scrollTop <= 8;
-        const noFim = Math.ceil(areaCanvas.scrollTop + areaCanvas.clientHeight) >= areaCanvas.scrollHeight - 8;
-        if (rolavel && ((descendo && !noFim) || (!descendo && !noTopo))) return;
         e.preventDefault();
-        if (pageRendering) return;
         const agora = Date.now();
-        if (agora - ultimoGiro < INTERVALO_GIRO_MS) return;
-        ultimoGiro = agora;
-        irParaPagina(descendo ? pageNum + 1 : pageNum - 1);
-        areaCanvas.scrollTop = descendo ? 0 : areaCanvas.scrollHeight;
+        const novoGesto = agora - ultimoEventoGiro >= GESTO_PAUSA_MS;
+        ultimoEventoGiro = agora;
+        if (!novoGesto || pageRendering) return;
+        irParaPagina(e.deltaY < 0 ? pageNum - 1 : pageNum + 1);
     }, { passive: false });
 
     alternarModoDivisao();
