@@ -506,9 +506,19 @@ const GANTOYS = {
             const state = {};
 
             doc.querySelectorAll('input, select, textarea').forEach(el => {
-                if (el.name) {
-                    state[el.name] = el.value;
+                if (!el.name) return;
+                // Radios formam UM valor por nome: guardar o value de cada um
+                // sobrescreveria o grupo (e o value do primeiro radio virava o
+                // do último escolhido, corrompendo o formulário).
+                if (el.type === 'radio') {
+                    if (el.checked) state[el.name] = el.value;
+                    return;
                 }
+                if (el.type === 'checkbox') {
+                    state[el.name] = el.checked;
+                    return;
+                }
+                state[el.name] = el.value;
             });
 
             localStorage.setItem('toy_state_' + toyName, JSON.stringify(state));
@@ -529,10 +539,37 @@ const GANTOYS = {
             const doc = iframe.contentDocument || iframe.contentWindow.document;
 
             Object.keys(state).forEach(key => {
-                const el = doc.querySelector(`[name="${key}"]`);
-                if (el) {
-                    el.value = state[key];
+                const fields = doc.querySelectorAll(`[name="${key}"]`);
+                if (!fields.length) return;
+
+                // Notifica o toy do valor restaurado: cada um mantém UI derivada
+                // (painéis condicionais, contadores) reagindo a input/change.
+                const notify = (el) => {
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                };
+
+                const first = fields[0];
+                if (first.type === 'radio') {
+                    const target = [...fields].find(el => el.type === 'radio' && el.value === String(state[key]));
+                    if (!target || target.checked) return;
+                    fields.forEach(el => { if (el.type === 'radio') el.checked = el === target; });
+                    notify(target);
+                    return;
                 }
+                if (first.type === 'checkbox') {
+                    const raw = state[key];
+                    const on = raw === true || raw === 'true' || raw === 'on' || raw === 1 || raw === '1';
+                    fields.forEach(el => {
+                        if (el.type !== 'checkbox' || el.checked === on) return;
+                        el.checked = on;
+                        notify(el);
+                    });
+                    return;
+                }
+                if (first.value === String(state[key])) return;
+                first.value = state[key];
+                notify(first);
             });
         } catch (e) {
             console.warn('Cannot restore state:', e);

@@ -795,44 +795,14 @@ function alternarModoDivisao() {
     const modo = document.querySelector('input[name="modoDivisao"]:checked')?.value || 'auto';
     const autoPanel = document.getElementById('modoDivisaoAuto');
     const customPanel = document.getElementById('modoDivisaoPersonalizado');
-    const btnAuto = document.getElementById('btnProcessar');
-    const btnCustom = document.getElementById('btnProcessarCustom');
+    // As ações vivem em contêineres próprios: mostrar o botão sem o contêiner
+    // deixaria o "Processar todas as divisões" inalcançável.
+    const autoActions = document.getElementById('actionButtonsAuto');
+    const customActions = document.getElementById('actionButtonsCustom');
     if (autoPanel) autoPanel.style.display = modo === 'auto' ? 'grid' : 'none';
     if (customPanel) customPanel.style.display = modo === 'custom' ? 'grid' : 'none';
-    if (btnAuto) btnAuto.style.display = modo === 'auto' ? 'inline-block' : 'none';
-    if (btnCustom) btnCustom.style.display = modo === 'custom' ? 'inline-block' : 'none';
-}
-
-// Alternar entre modos (legado, mantido por compatibilidade)
-function alternarModo(modo) {
-    const modoAuto = document.getElementById('modoAutomatico');
-    const modoPersonalizado = document.getElementById('modoPersonalizado');
-    const selecaoPaginasAuto = document.getElementById('selecaoPaginasAutomatico');
-    const selecaoPaginasPersonalizado = document.getElementById('selecaoPaginasPersonalizado');
-    
-    if (modo === 'auto') {
-        modoAuto.style.display = 'block';
-        modoPersonalizado.style.display = 'none';
-        // Mostrar campos do modo automático
-        if (selecaoPaginasAuto) {
-            selecaoPaginasAuto.style.display = 'block';
-        }
-        // Ocultar campos do modo personalizado
-        if (selecaoPaginasPersonalizado) {
-            selecaoPaginasPersonalizado.style.display = 'none';
-        }
-    } else {
-        modoAuto.style.display = 'none';
-        modoPersonalizado.style.display = 'block';
-        // Ocultar campos do modo automático
-        if (selecaoPaginasAuto) {
-            selecaoPaginasAuto.style.display = 'none';
-        }
-        // Mostrar campos do modo personalizado
-        if (selecaoPaginasPersonalizado) {
-            selecaoPaginasPersonalizado.style.display = 'block';
-        }
-    }
+    if (autoActions) autoActions.style.display = modo === 'auto' ? '' : 'none';
+    if (customActions) customActions.style.display = modo === 'custom' ? '' : 'none';
 }
 
 // Marcar página atual nos campos do modo personalizado

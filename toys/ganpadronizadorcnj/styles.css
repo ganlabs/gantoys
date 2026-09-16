@@ -5,6 +5,10 @@
    o cabeçalho da seção de resultados, que o shared não cobre.
    ========================================================================== */
 
+/* Lista de processos: entrada longa por natureza, pede mais altura que o campo
+   padrão do shared. */
+#processInput { min-height: 220px; }
+
 /* .card-heading em duas colunas: título + botão de copiar. A tipografia
    continua vindo do .card-heading do shared. */
 .results-header {

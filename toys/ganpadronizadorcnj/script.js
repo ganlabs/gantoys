@@ -82,12 +82,14 @@ function renderResults(items) {
         head.append(value, status);
         card.append(head);
 
-        // Convertidas: origem + o que foi feito. Recusadas: o motivo, em tom de falha.
-        const details = isOk ? [`Original: ${item.original}`, item.message] : [item.message];
+        // Convertidas: origem + o que foi feito. Recusadas: a linha original + o motivo, em tom de falha.
+        const details = isOk
+            ? [[`Original: ${item.original}`, 'result-meta'], [item.message, 'result-meta']]
+            : [[`Original: ${item.original}`, 'result-meta'], [item.message, 'result-meta error']];
 
-        details.forEach((text) => {
+        details.forEach(([text, className]) => {
             const meta = document.createElement('p');
-            meta.className = isOk ? 'result-meta' : 'result-meta error';
+            meta.className = className;
             meta.textContent = text;
             card.append(meta);
         });
