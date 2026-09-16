@@ -10,7 +10,7 @@
 
 ### Layout Structure
 - Casca compartilhada de `../shared/toy.css`: `<main class="shell">` (máx. 1080px, centralizado)
-  com `<header class="brand">` (logo `../../favicon.png` em `.brand-logo`) e cartões
+  com `<header class="brand">` (logo `../shared/logo.svg` em `.brand-logo`) e cartões
   `<section class="glass-card"><div class="panel">…</div></section>`
 - CSS local (`styles.css`) só com o que é específico do toy, sempre via tokens `--toy-*`
 - Dependência local: `pdf-lib.min.js` (processamento de PDF)
@@ -32,11 +32,12 @@
 
 ### Components
 1. **Theme**: controlado pelo app (barra/tema do shell); o toy respeita `prefers-color-scheme` e `localStorage`
-2. **Folder Selector**: botão `.btn .btn-primary .btn-block` (estado `.selected` local)
-3. **Folder Tree View**: lista de subpastas (`.subfolders-list`, itens `.subfolder-item`)
-4. **Progress Bar**: `.progress-area`/`.progress-top`/`.progress-wrap`/`.progress-bar` (`.visible` alternado pelo script)
-5. **Status Messages**: `.progress-status` com pasta atual e arquivo em processamento
-6. **Results List**: cartão `.results` com `.result-item` (`.success`/`.error`)
+2. **Folder Selector**: botão `.btn .btn-primary .btn-block` com `<i class="bi bi-folder2-open">` (estado `.selected` do shared no modo offline)
+3. **Folder Summary**: `.tile .tile-accent .stack` com os números em `.stat` dentro de `.row .row-center`
+4. **Folder Tree View**: `.subfolders-list` com um `.tile` por subpasta (nome à esquerda, `.badge .badge-accent` com a contagem à direita)
+5. **Progress Bar**: `.progress-area`/`.progress-top`/`.progress-wrap`/`.progress-bar` (`.visible` alternado pelo script) + `.progress-detail`
+6. **Results List**: cartão oculto por `.hidden` com `.result-list` de `.result-item` (+ `.ok`/`.fail`), cabeçalho `.result-item-head`, `.result-name`, `.result-status` e `.result-meta`
+7. **Ícones**: apenas Bootstrap Icons (`bi-folder2-open`, `bi-link-45deg`, `bi-file-earmark-pdf`, `bi-check-lg`, `bi-x-lg`)
 
 ### Responsive
 - Mobile-friendly (min-width: 320px)

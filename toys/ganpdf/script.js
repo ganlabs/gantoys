@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessage = document.getElementById('status-message');
     
     const resultsSection = document.getElementById('results-section');
-    const resultSummary = document.getElementById('result-summary');
+    const summaryText = document.getElementById('summary-text');
     const downloadBtn = document.getElementById('download-btn');
-    const individualFilesDiv = document.getElementById('individual-files');
+    const fileListDiv = document.getElementById('file-list');
 
     let selectedFile = null;
     let splitBlobs = [];
@@ -90,10 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // UI Reset
         processBtn.disabled = true;
-        statusSection.classList.remove('hidden');
+        statusSection.classList.add('visible');
         resultsSection.classList.add('hidden');
         splitBlobs = [];
-        individualFilesDiv.innerHTML = '';
+        fileListDiv.innerHTML = '';
 
         try {
             updateStatus("Lendo arquivo original...", 5);
@@ -167,18 +167,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update UI success
             updateStatus("Concluído!", 100);
             setTimeout(() => {
-                statusSection.classList.add('hidden');
+                statusSection.classList.remove('visible');
                 resultsSection.classList.remove('hidden');
                 
-                resultSummary.textContent = `O arquivo foi dividido em ${splitBlobs.length} parte(s) menores que ${maxMB} MB.`;
+                summaryText.textContent = `O arquivo foi dividido em ${splitBlobs.length} parte(s) menores que ${maxMB} MB.`;
                 
                 // List individual files for optional direct download
                 splitBlobs.forEach(fileObj => {
                     const link = document.createElement('a');
+                    link.className = 'tile download-item';
                     link.href = URL.createObjectURL(fileObj.blob);
                     link.download = fileObj.name;
-                    link.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg> ${fileObj.name} (${(fileObj.blob.size / (1024*1024)).toFixed(2)} MB)`;
-                    individualFilesDiv.appendChild(link);
+                    link.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> ${fileObj.name} (${(fileObj.blob.size / (1024*1024)).toFixed(2)} MB)`;
+                    fileListDiv.appendChild(link);
                 });
             }, 800);
 

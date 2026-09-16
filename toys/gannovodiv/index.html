@@ -43,135 +43,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Divisor Automático Santander</title>
-<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
 <link rel="stylesheet" href="../shared/toy.css">
+<link rel="stylesheet" href="../../vendor/bootstrap-icons/font/bootstrap-icons.css">
 <style>
 /* ==========================================================================
    CSS local do Divisor Automático Santander.
-   Só o que é específico deste toy: etapas, log de execução, auditoria e
-   visualizador de PDF. Cores exclusivamente por tokens --toy-*.
+   Só o que é específico deste toy: o visualizador de PDF e os campos
+   estreitos do divisor manual. Cores exclusivamente por tokens --toy-*.
    ========================================================================== */
-
-/* ------------------------------------------------------------- etapas -- */
-
-.step-label { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
-
-.step.done .step-number { background: var(--toy-accent-soft); color: var(--toy-accent); }
-
-/* ------------------------------------------------------- fila e log -- */
-
-.file-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    border: 1px solid var(--toy-border);
-    border-radius: 999px;
-    background: var(--toy-surface);
-    color: var(--toy-text);
-    font-size: .9rem;
-    font-weight: 600;
-}
-
-.mini-log {
-    overflow: hidden;
-    padding: 10px 15px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-input-bg);
-    color: var(--toy-success);
-    font-family: var(--toy-mono);
-    font-size: .8rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.summary .stat.warn strong { color: var(--toy-warning); }
-
-/* --------------------------------------------------- auditoria (modal) -- */
-
-.badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border: 1px solid var(--toy-border);
-    border-radius: 6px;
-    background: var(--toy-surface-alt);
-    font-size: .75rem;
-    font-weight: 700;
-}
-
-.badge-green { border-color: var(--toy-success); color: var(--toy-success); }
-.badge-yellow { border-color: var(--toy-warning); color: var(--toy-warning); }
-.badge-red { border-color: var(--toy-danger); color: var(--toy-danger); }
-
-.btn-tiny {
-    padding: 4px 10px;
-    border: 1px solid var(--toy-border);
-    border-radius: 6px;
-    background: var(--toy-surface-alt);
-    color: var(--toy-text);
-    font: inherit;
-    font-size: .75rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background .18s ease, border-color .18s ease, color .18s ease;
-}
-
-.btn-tiny:hover { border-color: var(--toy-accent); color: var(--toy-accent); }
-
-.btn-tiny.accent { border-color: var(--toy-accent); background: var(--toy-accent); color: var(--toy-accent-ink); }
-.btn-tiny.accent:hover { border-color: var(--toy-accent-hover); background: var(--toy-accent-hover); color: var(--toy-accent-ink); }
-
-.btn-tiny.warn { border-color: var(--toy-warning); color: var(--toy-warning); }
-.btn-tiny.warn:hover { border-color: var(--toy-warning); background: var(--toy-surface-alt); color: var(--toy-warning); }
-
-#reportTbody .btn-tiny { margin-right: 5px; }
-
-/* ------------------------------------------------------------- modais -- */
-
-/* O script abre/fecha com a classe .active (não .open). */
-.modal-overlay.active { display: grid; }
-
-/* Modais em coluna: cabeçalho fixo e corpo rolável. */
-.modal-shell {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    overflow: hidden;
-}
-
-.modal-viewer {
-    width: min(95%, 1400px);
-    height: 95%;
-    max-height: 95vh;
-}
-
-#pdfModal { z-index: 200; }
-
-.modal-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--toy-border);
-    background: var(--toy-surface-alt);
-}
-
-.modal-title { margin: 0; font-size: 1.1rem; font-weight: 800; }
-
-.modal-close {
-    border: 0;
-    padding: 0 4px;
-    background: none;
-    color: var(--toy-muted);
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.modal-close:hover { color: var(--toy-text); }
-
-.modal-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
 
 /* ------------------------------------------------- visualizador de PDF -- */
 
@@ -212,9 +92,10 @@
     background: var(--toy-surface-alt);
 }
 
-.viewer-zoom .btn-tiny { border: 0; background: transparent; color: var(--toy-text); }
-.viewer-zoom .btn-tiny:hover { color: var(--toy-accent); }
-.viewer-zoom .btn-tiny.fit { width: 48px; }
+/* Controle segmentado: os botões abrem mão da borda/fundo do shared. */
+.viewer-zoom .btn-small { border-color: transparent; background: transparent; color: var(--toy-text); }
+.viewer-zoom .btn-small:hover { border-color: transparent; background: transparent; color: var(--toy-accent); }
+.viewer-zoom .btn-small.fit { width: 56px; }
 
 .viewer-page { display: flex; align-items: center; gap: 4px; font-size: .95rem; font-weight: 700; }
 .viewer-sep, .viewer-hint { color: var(--toy-muted); }
@@ -222,9 +103,21 @@
 
 .viewer-canvas { margin: 20px; max-width: 95%; box-shadow: var(--toy-card-shadow); }
 
+/* O visualizador precisa ficar acima do modal de relatório. */
+#pdfModal { z-index: 200; }
+
+/* O relatório tem quatro colunas com botões de ação: não cabe na largura
+   padrão do modal do shared. */
+#modalOverlay .modal { width: min(96%, 920px); }
+
+/* Coluna de ações do relatório: os botões ficam na mesma linha. */
+#reportTbody td:nth-child(3) { white-space: nowrap; }
+
+/* Campos estreitos do divisor manual: aqui só largura e alinhamento — borda,
+   raio, fundo e sombra vêm dos inputs do shared. */
 #manualSplitControls label { display: flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 700; }
-#manualStart, #manualEnd { width: 64px; padding: 4px 6px; text-align: center; }
-#inpCurrentPage { width: 64px; margin: 0 5px; padding: 4px 6px; text-align: center; border: 0; }
+#manualStart, #manualEnd { width: 68px; padding: 6px 8px; text-align: center; }
+#inpCurrentPage { width: 68px; margin: 0 5px; padding: 6px 8px; text-align: center; }
 
 @media (max-width: 720px) {
     .modal-viewer { width: 100%; height: 100%; max-height: 100vh; }
@@ -235,7 +128,7 @@
 <body>
     <main class="shell">
         <header class="brand">
-            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <img class="brand-logo" src="../shared/logo.svg" alt="GAN Toys">
             <h1>Divisor Automático Santander</h1>
             <p>Divisor inteligente de PDFs. Extração local, privada e offline.</p>
         </header>
@@ -247,15 +140,15 @@
                 <div class="steps" id="stepper">
                     <div class="step active" id="stepIndicator1">
                         <div class="step-number">1</div>
-                        <div class="step-label">Arquivos</div>
+                        <span class="step-label">Arquivos</span>
                     </div>
                     <div class="step" id="stepIndicator2">
                         <div class="step-number">2</div>
-                        <div class="step-label">Processamento</div>
+                        <span class="step-label">Processamento</span>
                     </div>
                     <div class="step" id="stepIndicator3">
                         <div class="step-number">3</div>
-                        <div class="step-label">Auditoria</div>
+                        <span class="step-label">Auditoria</span>
                     </div>
                 </div>
 
@@ -267,15 +160,15 @@
                     </div>
 
                     <div class="drop-zone" id="dropZone">
-                        <div class="drop-zone-icon">📥</div>
+                        <div class="drop-zone-icon"><i class="bi bi-cloud-arrow-up"></i></div>
                         <div class="drop-zone-title">Clique para selecionar ou arraste os PDFs aqui</div>
                         <div class="drop-zone-desc">Lembre-se: O nome original do arquivo (com o nº CNJ) deve ser mantido.</div>
-                        <div id="fileBadge" class="file-badge hidden">0 arquivos na fila</div>
+                        <div id="fileBadge" class="badge hidden">0 arquivos na fila</div>
                     </div>
                     <input type="file" id="fileInput" accept=".pdf" multiple hidden>
 
                     <div class="actions hidden" id="actionUpload">
-                        <button class="btn btn-primary" id="btnProcess">Avançar e Escolher Destino ➔</button>
+                        <button class="btn btn-primary" id="btnProcess">Avançar e Escolher Destino <i class="bi bi-arrow-right"></i></button>
                         <button class="btn btn-outline" id="btnClear">Refazer seleção</button>
                     </div>
                 </div>
@@ -312,15 +205,15 @@
                             <span id="progressText">0%</span>
                         </div>
                         <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
-                        <div class="mini-log" id="miniLog">&gt; Aguardando...</div>
+                        <div class="log-line" id="miniLog">&gt; Aguardando...</div>
                     </div>
 
                     <div id="doneSection" class="stack hidden">
                         <p class="muted" id="doneMessage"></p>
                         <div class="actions">
-                            <button class="btn btn-primary" id="btnRestart">🔄 Novo Processamento</button>
-                            <button class="btn btn-outline" id="btnViewReport">📊 Ver Relatório</button>
-                            <button class="btn btn-outline" id="btnExportCsv">📥 Exportar CSV</button>
+                            <button class="btn btn-primary" id="btnRestart"><i class="bi bi-arrow-repeat"></i> Novo Processamento</button>
+                            <button class="btn btn-outline" id="btnViewReport"><i class="bi bi-bar-chart-line"></i> Ver Relatório</button>
+                            <button class="btn btn-outline" id="btnExportCsv"><i class="bi bi-download"></i> Exportar CSV</button>
                         </div>
                     </div>
                 </div>
@@ -333,7 +226,7 @@
         <div class="modal modal-shell">
             <div class="modal-header">
                 <h3 class="modal-title">Relatório Detalhado</h3>
-                <button class="modal-close" id="btnCloseModal">&times;</button>
+                <button class="modal-close" id="btnCloseModal" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="modal-body">
                 <table class="results-table" id="reportTable">
@@ -350,19 +243,19 @@
     <div class="modal-overlay" id="pdfModal">
         <div class="modal modal-shell modal-viewer">
             <div class="modal-header">
-                <h3 class="modal-title" id="pdfModalTitle">Visualizador</h3>
+                <h3 class="modal-title" id="pdfModalTitle"><i class="bi bi-file-earmark-pdf"></i> <span id="pdfModalName">Visualizador</span></h3>
 
                 <div id="manualSplitControls" class="hidden row">
-                    <button class="btn-tiny" id="btnMarkStart">📍 Marcar Início</button>
+                    <button class="btn btn-outline btn-small" id="btnMarkStart"><i class="bi bi-geo-alt"></i> Marcar Início</button>
                     <label>Início: <input type="number" id="manualStart" min="1"></label>
 
-                    <button class="btn-tiny" id="btnMarkEnd">📍 Marcar Fim</button>
+                    <button class="btn btn-outline btn-small" id="btnMarkEnd"><i class="bi bi-geo-alt"></i> Marcar Fim</button>
                     <label>Fim: <input type="number" id="manualEnd" min="1"></label>
 
-                    <button class="btn-tiny accent" id="btnManualSplit">✂️ Dividir</button>
+                    <button class="btn btn-primary btn-small" id="btnManualSplit"><i class="bi bi-scissors"></i> Dividir</button>
                 </div>
 
-                <button class="modal-close" id="btnClosePdfModal">&times;</button>
+                <button class="modal-close" id="btnClosePdfModal" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="modal-body">
                 <!-- Visão Nativa Fluida -->
@@ -372,14 +265,14 @@
                 <div id="customViewer" class="viewer-canvas-area" style="display:none">
                     <div class="viewer-toolbar">
                         <div class="viewer-zoom">
-                            <button class="btn-tiny" id="btnZoomOut">➖</button>
-                            <button class="btn-tiny fit" id="btnZoomFit" title="Ajustar à Tela">Fit</button>
-                            <button class="btn-tiny" id="btnZoomIn">➕</button>
+                            <button class="btn btn-outline btn-small" id="btnZoomOut" aria-label="Diminuir zoom"><i class="bi bi-dash-lg"></i></button>
+                            <button class="btn btn-outline btn-small fit" id="btnZoomFit" title="Ajustar à Tela">Fit</button>
+                            <button class="btn btn-outline btn-small" id="btnZoomIn" aria-label="Aumentar zoom"><i class="bi bi-plus-lg"></i></button>
                         </div>
 
                         <span class="viewer-page">Pág <input type="number" id="inpCurrentPage" min="1"> de <span id="lblTotalPages"></span></span>
                         <span class="viewer-sep">|</span>
-                        <span class="viewer-hint">⏬ Role o mouse para trocar de página</span>
+                        <span class="viewer-hint"><i class="bi bi-mouse"></i> Role o mouse para trocar de página</span>
                     </div>
                     <canvas id="pdfCanvas" class="viewer-canvas"></canvas>
                 </div>
@@ -803,7 +696,7 @@ const reportTbody = document.getElementById('reportTbody');
 const pdfModal = document.getElementById('pdfModal');
 const btnClosePdfModal = document.getElementById('btnClosePdfModal');
 const pdfViewer = document.getElementById('pdfViewer');
-const pdfModalTitle = document.getElementById('pdfModalTitle');
+const pdfModalName = document.getElementById('pdfModalName');
 
 const stepIndicator1 = document.getElementById('stepIndicator1');
 const stepIndicator2 = document.getElementById('stepIndicator2');
@@ -818,10 +711,10 @@ fileInput.addEventListener('change', () => handleFiles(Array.from(fileInput.file
 btnClear.addEventListener('click', limparTudo);
 btnRestart.addEventListener('click', limparTudo);
 btnProcess.addEventListener('click', processarTudo);
-btnViewReport.addEventListener('click', () => modalOverlay.classList.add('active'));
+btnViewReport.addEventListener('click', () => modalOverlay.classList.add('open'));
 btnExportCsv.addEventListener('click', exportToCsv);
-btnCloseModal.addEventListener('click', () => modalOverlay.classList.remove('active'));
-modalOverlay.addEventListener('click', e => { if(e.target === modalOverlay) modalOverlay.classList.remove('active'); });
+btnCloseModal.addEventListener('click', () => modalOverlay.classList.remove('open'));
+modalOverlay.addEventListener('click', e => { if(e.target === modalOverlay) modalOverlay.classList.remove('open'); });
 
 btnClosePdfModal.addEventListener('click', closePdfModal);
 pdfModal.addEventListener('click', e => { if(e.target === pdfModal) closePdfModal(); });
@@ -918,7 +811,7 @@ async function renderPage(num) {
 }
 
 function closePdfModal() {
-    pdfModal.classList.remove('active');
+    pdfModal.classList.remove('open');
     pdfViewer.src = '';
     currentDoc = null;
     if (currentPdfUrl) {
@@ -1171,7 +1064,7 @@ async function processarTudo() {
         
         let msg = `Os resultados foram guardados em <strong>${globalDestDir.name}</strong>.`;
         if (counts.review > 0) {
-            msg += `<br><span style="color:var(--warning); font-weight:bold;">Atenção: ${counts.review} processo(s) geraram dúvidas algorítmicas e requerem revisão humana.</span>`;
+            msg += `<br><span style="color:var(--toy-warning); font-weight:bold;">Atenção: ${counts.review} processo(s) geraram dúvidas algorítmicas e requerem revisão humana.</span>`;
         }
         doneMessage.innerHTML = msg;
         renderReport();
@@ -1183,24 +1076,24 @@ function renderReport() {
     for (const r of reportData) {
         if (r.error) {
             html += `<tr>
-                <td>📄 ${r.file}</td>
+                <td><i class="bi bi-file-earmark-pdf"></i> ${r.file}</td>
                 <td>-</td>
                 <td>-</td>
-                <td><span class="badge badge-red">Erro: ${r.error}</span></td>
+                <td><span class="badge badge-fail">Erro: ${r.error}</span></td>
             </tr>`;
         } else {
             const badge = r.needsReview 
-                ? '<span class="badge badge-yellow">👁️ Revisar</span>' 
-                : '<span class="badge badge-green">✅ OK</span>';
+                ? '<span class="badge badge-warn"><i class="bi bi-eye"></i> Revisar</span>' 
+                : '<span class="badge badge-ok"><i class="bi bi-check-lg"></i> OK</span>';
             const flags = r.flags.filter(f => f !== 'review').join(', ') || '-';
             
-            const btnIni = `<button class="btn-tiny" onclick="viewPdf('Inicial', '${r.cnj}')">👁️ Inicial</button>`;
+            const btnIni = `<button class="btn btn-outline btn-small" onclick="viewPdf('Inicial', '${r.cnj}')"><i class="bi bi-eye"></i> Inicial</button>`;
             const hasDocs = (r.start > 1 || r.end < r.total);
-            const btnDocs = hasDocs ? `<button class="btn-tiny" onclick="viewPdf('Docs', '${r.cnj}')">👁️ Docs</button>` : '';
-            const btnCorrigir = `<button class="btn-tiny warn" onclick="openManualSplit('${r.cnj}')">✏️ Corrigir</button>`;
+            const btnDocs = hasDocs ? `<button class="btn btn-outline btn-small" onclick="viewPdf('Docs', '${r.cnj}')"><i class="bi bi-eye"></i> Docs</button>` : '';
+            const btnCorrigir = `<button class="btn btn-warn btn-small" onclick="openManualSplit('${r.cnj}')"><i class="bi bi-pencil-square"></i> Corrigir</button>`;
 
             html += `<tr>
-                <td>📄 ${r.file}</td>
+                <td><i class="bi bi-file-earmark-pdf"></i> ${r.file}</td>
                 <td>${r.start} a ${r.end} (${r.pages}p)</td>
                 <td>${btnIni} ${btnDocs} ${btnCorrigir}</td>
                 <td>${badge}</td>
@@ -1229,9 +1122,9 @@ async function viewPdf(type, cnj) {
         if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
         currentPdfUrl = URL.createObjectURL(file);
         
-        pdfModalTitle.textContent = fileName;
+        pdfModalName.textContent = fileName;
         pdfViewer.src = currentPdfUrl;
-        pdfModal.classList.add('active');
+        pdfModal.classList.add('open');
     } catch (e) {
         alert("Não foi possível carregar o PDF gerado: " + e.message);
     }
@@ -1250,7 +1143,7 @@ async function openManualSplit(cnj) {
     document.getElementById('pdfViewer').style.display = 'none';
     document.getElementById('customViewer').style.display = 'flex';
     
-    pdfModalTitle.textContent = "✏️ " + fileObj.name;
+    pdfModalName.textContent = fileObj.name;
     
     const r = reportData.find(x => x.cnj === cnj);
     if (r) {
@@ -1258,7 +1151,7 @@ async function openManualSplit(cnj) {
         document.getElementById('manualEnd').value = r.end || r.total || 1;
     }
     
-    pdfModal.classList.add('active');
+    pdfModal.classList.add('open');
 
     try {
         const arrayBuffer = await fileObj.arrayBuffer();
@@ -1286,7 +1179,7 @@ document.getElementById('btnManualSplit').addEventListener('click', async () => 
     
     const btn = document.getElementById('btnManualSplit');
     btn.disabled = true;
-    btn.textContent = "⏳ Cortando...";
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Cortando...';
     
     try {
         await splitSavePDF(currentManualFile, start, end, globalDestDir, cnj);
@@ -1308,7 +1201,7 @@ document.getElementById('btnManualSplit').addEventListener('click', async () => 
         alert("Erro na divisão: " + e.message);
     } finally {
         btn.disabled = false;
-        btn.textContent = "✂️ Dividir";
+        btn.innerHTML = '<i class="bi bi-scissors"></i> Dividir';
     }
 });
 </script>

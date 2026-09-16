@@ -44,8 +44,8 @@ async function selectFolder() {
         await scanSubfolders(handle);
 
         elements.folderBtn.classList.add('selected');
-        elements.folderBtn.innerHTML = `<span class="folder-icon">📂</span><span>${handle.name}</span>`;
-        elements.folderInfo.classList.add('visible');
+        elements.folderBtn.innerHTML = `<i class="bi bi-folder2-open" aria-hidden="true"></i><span>${handle.name}</span>`;
+        elements.folderInfo.classList.remove('hidden');
         elements.folderPath.textContent = handle.name;
 
         renderSubfolders();
@@ -97,8 +97,8 @@ async function selectFolderFromFiles(fileList) {
     elements.folderCount.textContent = state.subfolders.length;
     elements.pdfCount.textContent = totalPdfs;
     elements.folderBtn.classList.add('selected');
-    elements.folderBtn.innerHTML = `<span class="folder-icon">📂</span><span>${rootName}</span>`;
-    elements.folderInfo.classList.add('visible');
+    elements.folderBtn.innerHTML = `<i class="bi bi-folder2-open" aria-hidden="true"></i><span>${rootName}</span>`;
+    elements.folderInfo.classList.remove('hidden');
     elements.folderPath.textContent = `${rootName} (modo offline)`;
     renderSubfolders();
     elements.mergeBtn.disabled = state.subfolders.length === 0;
@@ -143,22 +143,22 @@ async function scanSubfolders(dirHandle) {
 function renderSubfolders() {
     if (state.subfolders.length === 0) {
         elements.subfoldersList.innerHTML = '';
-        elements.subfoldersList.classList.remove('visible');
+        elements.subfoldersList.classList.add('hidden');
         return;
     }
 
     const html = state.subfolders.map(sf => `
-        <div class="subfolder-item">
-          <span class="subfolder-name">📁 ${sf.name}</span>
-          <span class="subfolder-count">${sf.files.length}</span>
+        <div class="tile">
+          <span><i class="bi bi-folder2-open" aria-hidden="true"></i> ${sf.name}</span>
+          <span class="badge badge-accent">${sf.files.length}</span>
         </div>
       `).join('');
 
     elements.subfoldersList.innerHTML = `
-        <div class="section-title" style="margin-top: 1.5rem;">Subpastas</div>
+        <div class="section-title"><i class="bi bi-folder2-open"></i>Subpastas</div>
         ${html}
       `;
-    elements.subfoldersList.classList.add('visible');
+    elements.subfoldersList.classList.remove('hidden');
 }
 
 async function mergePdfs() {
@@ -167,7 +167,7 @@ async function mergePdfs() {
     state.isProcessing = true;
     elements.mergeBtn.disabled = true;
     elements.progressContainer.classList.add('visible');
-    elements.results.classList.remove('visible');
+    elements.results.classList.add('hidden');
 
     const results = [];
     const totalFolders = state.subfolders.length;
@@ -256,33 +256,29 @@ async function renderResults(results) {
                 : await (await state.selectedDirHandle.getFileHandle(r.name)).getFile();
             const url = URL.createObjectURL(file);
             return `
-            <div class="result-item ${r.success ? 'success' : 'error'}">
-              <div>
-                <a href="${url}" target="_blank" class="result-name">📄 ${r.name}</a>
-                <div class="result-count">${r.pages} páginas</div>
+            <div class="result-item ok">
+              <div class="result-item-head">
+                <a href="${url}" target="_blank" class="result-name"><i class="bi bi-file-earmark-pdf"></i> ${r.name}</a>
+                <span class="result-status ok"><i class="bi bi-check-lg"></i> OK</span>
               </div>
-              <span class="result-status ${r.success ? 'success' : 'error'}">
-                ${r.success ? '✓' : '✗'}
-              </span>
+              <p class="result-meta">${r.pages} páginas</p>
             </div>
           `;
         } else {
             return `
-            <div class="result-item ${r.success ? 'success' : 'error'}">
-              <div>
-                <div class="result-name">📄 ${r.name}</div>
-                <div class="result-count">${r.error}</div>
+            <div class="result-item fail">
+              <div class="result-item-head">
+                <span class="result-name"><i class="bi bi-file-earmark-pdf"></i> ${r.name}</span>
+                <span class="result-status fail"><i class="bi bi-x-lg"></i> Falha</span>
               </div>
-              <span class="result-status ${r.success ? 'success' : 'error'}">
-                ${r.success ? '✓' : '✗'}
-              </span>
+              <p class="result-meta error">${r.error}</p>
             </div>
           `;
         }
     }));
 
     elements.resultsList.innerHTML = html.join('');
-    elements.results.classList.add('visible');
+    elements.results.classList.remove('hidden');
 
     const successfulResults = results.filter(r => r.success);
     for (const r of successfulResults) {

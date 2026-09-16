@@ -54,14 +54,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Juntar PDFs</title>
+  <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
   <link rel="stylesheet" href="../shared/toy.css">
+  <link rel="stylesheet" href="../../vendor/bootstrap-icons/font/bootstrap-icons.css">
   <link rel="stylesheet" href="styles.css">
   <script src="pdf-lib.min.js"></script>
 </head>
 <body>
   <main class="shell">
     <header class="brand">
-      <img class="brand-logo" src="../../favicon.png" alt="GAN">
+      <img class="brand-logo" src="../shared/logo.svg" alt="GAN Toys">
       <h1>Juntar PDFs</h1>
       <p>Una os PDFs de cada subpasta do diretório escolhido em um único arquivo.</p>
     </header>
@@ -74,14 +76,14 @@
         </div>
 
         <button class="btn btn-primary btn-block" id="folderBtn">
-          <span class="folder-icon" aria-hidden="true">📁</span>
+          <i class="bi bi-folder2-open" aria-hidden="true"></i>
           <span>Selecionar Pasta</span>
         </button>
         <input type="file" id="folderInput" hidden webkitdirectory directory multiple accept=".pdf,application/pdf">
 
-        <div class="folder-info" id="folderInfo">
-          <div class="folder-path" id="folderPath"></div>
-          <div class="folder-stats">
+        <div class="tile tile-accent stack hidden" id="folderInfo">
+          <div class="folder-path muted" id="folderPath"></div>
+          <div class="row row-center">
             <div class="stat">
               <strong id="folderCount">0</strong>
               <span>Pastas</span>
@@ -93,35 +95,32 @@
           </div>
         </div>
 
-        <div class="subfolders-list" id="subfoldersList"></div>
+        <div class="subfolders-list hidden" id="subfoldersList"></div>
 
         <button class="btn btn-primary btn-block" id="mergeBtn" disabled>
-          <span aria-hidden="true">🔗</span>
+          <i class="bi bi-link-45deg" aria-hidden="true"></i>
           <span>Juntar PDFs</span>
         </button>
 
         <div class="progress-area" id="progressContainer">
           <div class="progress-top">
-            <span>Processando...</span>
-            <span class="progress-percent" id="progressPercent">0%</span>
+            <span id="progressCurrent">-</span>
+            <span id="progressPercent">0%</span>
           </div>
           <div class="progress-wrap">
             <div class="progress-bar" id="progressFill"></div>
           </div>
-          <div class="progress-status">
-            <div class="progress-current" id="progressCurrent">-</div>
-            <div class="progress-detail" id="progressDetail">-</div>
-          </div>
+          <p class="progress-detail" id="progressDetail">-</p>
         </div>
       </div>
     </section>
 
-    <section class="glass-card results" id="results">
+    <section class="glass-card hidden" id="results">
       <div class="panel">
         <div class="card-heading">
           <h2>Resultados</h2>
         </div>
-        <div id="resultsList"></div>
+        <div class="result-list" id="resultsList"></div>
       </div>
     </section>
   </main>

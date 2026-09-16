@@ -34,9 +34,11 @@ for (const t of Object.keys(map)) {
 console.log('srcdocs com </script> cru:', rawTotal);
 
 // 2) referências locais quebradas (../../) que ficaram nos srcdoc
+// (blocos <style> saem da varredura: comentários de CSS não são referências)
 let leftover = 0;
 for (const t of Object.keys(map)) {
-    const refs = map[t].match(/(?:src|href)="(?:\.\.\/)+[^"]+"/g) || [];
+    const markup = map[t].replace(/<style[\s\S]*?<\/style>/gi, '');
+    const refs = markup.match(/(?:src|href)="(?:\.\.\/)+[^"]+"/g) || [];
     if (refs.length) {
         leftover += refs.length;
         console.log(`  srcdoc ${t}: referências locais restantes:`, refs.slice(0, 5));
@@ -47,12 +49,35 @@ console.log('referências locais restantes nos toys:', leftover);
 // 3) contrato de layout: o markup de todo toy usa a casca canônica do shared
 // (o CSS embutido é removido antes da checagem: o contrato aparece comentado nele)
 const REQUIRED = ['<main class="shell">', '<header class="brand">', 'class="brand-logo"'];
-const FORBIDDEN = ['toy-header', 'tool-card', 'glass-container', 'gondim-card', 'btn-gold', 'primary-btn', 'secondary-btn'];
+const FORBIDDEN = [
+    'toy-header', 'tool-card', 'glass-container', 'gondim-card', 'btn-gold', 'primary-btn', 'secondary-btn',
+    // vocabulários locais substituídos pelos componentes do shared
+    'btn-tiny', 'btn-control', 'control-card-surface', 'mode-choice', 'app-toast', 'toast-container-custom',
+    'mini-log', 'file-badge', 'file-item-badge', 'badge-green', 'badge-yellow', 'badge-red',
+    'panel active', 'modal-overlay active',
+    // sistemas de ícone concorrentes
+    'lucide', 'lucide-react',
+];
+
+// identidade: todo toy embute EXATAMENTE o mesmo logo compartilhado
+// (toys/shared/logo.svg como data URL, no cabeçalho e no <link rel="icon">)
+const logoDataUrl = `data:image/svg+xml;base64,${readFileSync('toys/shared/logo.svg').toString('base64')}`;
+const appFaviconDataUrl = `data:image/png;base64,${readFileSync('favicon.png').toString('base64')}`;
+
 const layoutFails = [];
 for (const t of Object.keys(map)) {
     const markup = map[t].replace(/<style[\s\S]*?<\/style>/gi, '');
     const missing = REQUIRED.filter((needle) => !markup.includes(needle));
     const stale = FORBIDDEN.filter((needle) => markup.includes(needle));
+
+    const logoUses = markup.split(logoDataUrl).length - 1;
+    if (logoUses < 2) missing.push(`logo compartilhado (usos: ${logoUses})`);
+    if (markup.includes(appFaviconDataUrl)) stale.push('favicon/logo do app');
+
+    // Emoji de verdade: apresentação padrão emoji (©/™/→ são pictográficos mas não emoji)
+    const emoji = map[t].match(/[\p{Emoji_Presentation}\uFE0F]/gu);
+    if (emoji) stale.push(`emoji: ${JSON.stringify([...new Set(emoji)].join(' '))}`);
+
     if (missing.length || stale.length) {
         layoutFails.push({ t, missing, stale });
         console.log(`  srcdoc ${t}: faltando ${JSON.stringify(missing)} | legado ${JSON.stringify(stale)}`);

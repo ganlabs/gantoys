@@ -78,12 +78,12 @@ function handleFilesSelect(event) {
     filesQueue = files.filter(f => f.type === 'application/pdf');
     
     if (filesQueue.length === 0) {
-        alert('⚠️ Por favor, selecione arquivos PDF válidos.');
+        alert('Por favor, selecione arquivos PDF válidos.');
         return;
     }
     
     if (filesQueue.length < files.length) {
-        alert(`⚠️ ${files.length - filesQueue.length} arquivo(s) não-PDF foram ignorados.`);
+        alert(`${files.length - filesQueue.length} arquivo(s) não-PDF foram ignorados.`);
     }
     
     fileStatuses = filesQueue.map(() => 'pending');
@@ -104,30 +104,30 @@ function atualizarResumoLote() {
     const arquivoAtual = currentFile && currentFile.name ? currentFile.name : '-';
 
     const html = `
-        <div class="batch-stat-card">
-            <div class="label">Total</div>
-            <div class="value">${total}</div>
+        <div class="stat">
+            <strong>${total}</strong>
+            <span>Total</span>
         </div>
-        <div class="batch-stat-card">
-            <div class="label">Processados</div>
-            <div class="value">${processados}</div>
+        <div class="stat">
+            <strong>${processados}</strong>
+            <span>Processados</span>
         </div>
-        <div class="batch-stat-card">
-            <div class="label">Faltando</div>
-            <div class="value">${faltando}</div>
+        <div class="stat">
+            <strong>${faltando}</strong>
+            <span>Faltando</span>
         </div>
-        <div class="batch-stat-card">
-            <div class="label">Em andamento</div>
-            <div class="value">${Math.min(processados + 1, total)}/${total}</div>
+        <div class="stat">
+            <strong>${Math.min(processados + 1, total)}/${total}</strong>
+            <span>Em andamento</span>
         </div>
-        <div class="batch-current-card">
-            <div class="label">Arquivo atual</div>
-            <div class="value current-file-name">${arquivoAtual}</div>
+        <div class="stat">
+            <strong class="nowrap">${arquivoAtual}</strong>
+            <span>Arquivo atual</span>
         </div>
     `;
 
     container.innerHTML = html;
-    container.style.display = 'grid';
+    container.classList.add('visible');
 }
 
 // Extrair número CNJ do nome do arquivo
@@ -169,9 +169,9 @@ async function carregarArquivoAtual() {
     // Atualizar UI
     document.getElementById('currentFileNumber').textContent = `${currentFileIndex + 1}/${filesQueue.length}`;
     document.getElementById('currentFileName').textContent = currentFile.name;
-    document.getElementById('detectedCNJ').innerHTML = numeroCNJ 
-        ? `<span style="color: var(--toy-success);">${numeroCNJ} ✓</span>`
-        : `<span style="color: var(--toy-danger);">❌ Não detectado no nome do arquivo</span>`;
+    document.getElementById('detectedCNJ').innerHTML = numeroCNJ
+        ? `<span class="badge badge-ok"><i class="bi bi-check-lg"></i>${numeroCNJ}</span>`
+        : `<span class="badge badge-fail"><i class="bi bi-x-lg"></i>Não detectado</span>`;
     
     // Mostrar/esconder painel de CNJ manual
     if (!numeroCNJ) {
@@ -220,12 +220,12 @@ async function carregarArquivoAtual() {
         document.getElementById('searchResults').textContent = '';
         
         // Marcar arquivo como em processamento
-        atualizarStatusFila(currentFileIndex, '🔄 Processando', 'processing');
+        atualizarStatusFila(currentFileIndex, 'Processando', 'processing');
         showToast('Arquivo carregado', `Pronto para marcar e dividir: ${currentFile.name}`, 'info', 1300);
         
     } catch (error) {
         console.error('Erro ao carregar PDF:', error);
-        alert(`❌ Erro ao carregar PDF!\n\nArquivo: ${currentFile.name}\n\n${error.message}`);
+        alert(`Erro ao carregar PDF!\n\nArquivo: ${currentFile.name}\n\n${error.message}`);
         
         // Marcar como erro e pular
         marcarArquivoComoErro(currentFileIndex, error.message);
@@ -244,12 +244,12 @@ function atualizarStatusFila(index, status, className = '') {
 
 // Marcar arquivo como ignorado
 function marcarArquivoComoIgnorado(index) {
-    atualizarStatusFila(index, '⏭️ Ignorado', 'skipped');
+    atualizarStatusFila(index, 'Ignorado', 'skipped');
 }
 
 // Marcar arquivo como erro
 function marcarArquivoComoErro(index, erro) {
-    atualizarStatusFila(index, '❌ Erro', 'error');
+    atualizarStatusFila(index, 'Erro', 'error');
 }
 
 // Renderizar página específica
@@ -337,8 +337,8 @@ function atualizarPreview() {
     
     // Validar
     if (inicio > fim) {
-        document.getElementById('inicioInicial').style.borderColor = 'red';
-        document.getElementById('fimInicial').style.borderColor = 'red';
+        document.getElementById('inicioInicial').style.borderColor = 'var(--toy-danger)';
+        document.getElementById('fimInicial').style.borderColor = 'var(--toy-danger)';
         return;
     } else {
         document.getElementById('inicioInicial').style.borderColor = '';
@@ -374,19 +374,19 @@ function atualizarPreview() {
     document.getElementById('previewInicial').innerHTML = `
         <strong>Páginas ${inicio}-${fim}</strong><br>
         ${paginasInicial} página(s)<br>
-            <small style="color: var(--toy-muted);">Inicial${sufixoCNJ}.pdf</small>
+        <small>Inicial${sufixoCNJ}.pdf</small>
     `;
     
     if (paginasDocs > 0) {
         document.getElementById('previewDocs').innerHTML = `
             <strong>${docsDescricao}</strong><br>
             ${paginasDocs} página(s)<br>
-            <small style="color: var(--toy-muted);">Docs Inicial${sufixoCNJ}.pdf</small>
+            <small>Docs Inicial${sufixoCNJ}.pdf</small>
         `;
     } else {
         document.getElementById('previewDocs').innerHTML = `
             <strong>Nenhuma página</strong><br>
-            <small style="color: var(--toy-muted);">(Todas as páginas estão na "Inicial")</small>
+            <small>(Todas as páginas estão na "Inicial")</small>
         `;
     }
     
@@ -401,7 +401,7 @@ async function processarDivisao() {
     
     // Validar
     if (inicio > fim) {
-        alert('❌ Erro: A primeira página não pode ser maior que a última página!');
+        alert('Erro: A primeira página não pode ser maior que a última página!');
         return;
     }
     
@@ -427,7 +427,7 @@ async function processarDivisao() {
     // Desabilitar botão
     const btnProcessar = document.getElementById('btnProcessar');
     btnProcessar.disabled = true;
-    btnProcessar.textContent = '⏳ Processando...';
+    btnProcessar.innerHTML = '<i class="bi bi-hourglass-split"></i>Processando...';
     
     const progressSection = document.getElementById('progressSection');
     const progressFill = document.getElementById('progressFill');
@@ -510,7 +510,7 @@ async function processarDivisao() {
         progressFill.style.width = '100%';
         
         // Marcar arquivo como processado
-        atualizarStatusFila(currentFileIndex, '✅ Concluído', 'completed');
+        atualizarStatusFila(currentFileIndex, 'Concluído', 'completed');
         
         // Mostrar resultado
         setTimeout(() => {
@@ -520,15 +520,15 @@ async function processarDivisao() {
             const numArquivos = (temPaginasAntes || temPaginasDepois) ? 2 : 1;
             document.getElementById('resultMessage').innerHTML = `
                 <strong>Arquivo ${currentFileIndex + 1}/${filesQueue.length} processado!</strong><br><br>
-                📄 ${numArquivos} PDF(s) baixado(s) com sucesso!<br><br>
+                <i class="bi bi-file-earmark-arrow-down"></i> ${numArquivos} PDF(s) baixado(s) com sucesso!<br><br>
                 ${currentFileIndex + 1 < filesQueue.length ? 
-                    '<strong>⏭️ Carregando próximo arquivo...</strong>' : 
-                    '<strong>🎉 Todos os arquivos foram processados!</strong>'}
+                    '<strong><i class="bi bi-arrow-right"></i> Carregando próximo arquivo...</strong>' : 
+                    '<strong><i class="bi bi-check2-circle"></i> Todos os arquivos foram processados!</strong>'}
             `;
             
             // Resetar botão
             btnProcessar.disabled = false;
-            btnProcessar.textContent = '✂️ Dividir e Baixar PDFs';
+            btnProcessar.innerHTML = '<i class="bi bi-scissors"></i>Dividir e baixar PDFs';
             
             // Carregar próximo arquivo após 2 segundos
             setTimeout(() => {
@@ -548,17 +548,17 @@ async function processarDivisao() {
         console.error('Erro ao processar PDF:', error);
         
         progressSection.style.display = 'none';
-        alert('❌ Erro ao processar PDF!\n\nDetalhes: ' + error.message);
+        alert('Erro ao processar PDF!\n\nDetalhes: ' + error.message);
         
         // Marcar como erro
         marcarArquivoComoErro(currentFileIndex, error.message);
         
         btnProcessar.disabled = false;
-        btnProcessar.textContent = '✂️ Dividir e Baixar PDFs';
+        btnProcessar.innerHTML = '<i class="bi bi-scissors"></i>Dividir e baixar PDFs';
         
         // Perguntar se quer continuar
         if (currentFileIndex + 1 < filesQueue.length) {
-            if (confirm('⚠️ Erro ao processar arquivo!\n\nDeseja continuar com o próximo arquivo?')) {
+            if (confirm('Erro ao processar arquivo!\n\nDeseja continuar com o próximo arquivo?')) {
                 currentFileIndex++;
                 carregarArquivoAtual();
             }
@@ -594,20 +594,20 @@ function finalizarProcessamento() {
     const ignorados = fileStatuses.filter(status => status === 'skipped').length;
     
     document.getElementById('resultMessage').innerHTML = `
-        <h3 style="color: var(--toy-success);">🎉 Processamento Concluído!</h3><br>
-        <strong>📊 Estatísticas:</strong><br><br>
-        📁 Total de arquivos: ${total}<br>
-        ✅ Processados com sucesso: ${concluidos}<br>
-        ❌ Erros: ${erros}<br>
-        ⏭️ Ignorados: ${ignorados}<br><br>
-        <strong>📥 Os arquivos foram baixados para sua pasta Downloads.</strong><br>
+        <h3 style="color: var(--toy-success);"><i class="bi bi-check2-circle"></i> Processamento concluído!</h3>
+        <strong><i class="bi bi-bar-chart-line"></i> Estatísticas:</strong><br><br>
+        <i class="bi bi-folder2-open"></i> Total de arquivos: ${total}<br>
+        <i class="bi bi-check-lg"></i> Processados com sucesso: ${concluidos}<br>
+        <i class="bi bi-x-lg"></i> Erros: ${erros}<br>
+        <i class="bi bi-skip-end-fill"></i> Ignorados: ${ignorados}<br><br>
+        <strong><i class="bi bi-download"></i> Os arquivos foram baixados para sua pasta Downloads.</strong><br>
         Você pode organizá-los na pasta de sua preferência.
     `;
 }
 
 // Limpar tudo e recomeçar
 function limparTudo() {
-    if (confirm('⚠️ Deseja limpar tudo e recomeçar?\n\nTodos os arquivos serão removidos da fila.')) {
+    if (confirm('Deseja limpar tudo e recomeçar?\n\nTodos os arquivos serão removidos da fila.')) {
         pdfDoc = null;
         pdfBytes = null;
         pageNum = 1;
@@ -620,7 +620,7 @@ function limparTudo() {
         numeroCNJ = '';
         
         document.getElementById('pdfInput').value = '';
-        document.getElementById('filesQueue').style.display = 'none';
+        document.getElementById('filesQueue').classList.remove('visible');
         document.getElementById('viewerSection').style.display = 'none';
         document.getElementById('processSection').style.display = 'none';
         document.getElementById('progressSection').style.display = 'none';
@@ -630,7 +630,7 @@ function limparTudo() {
         // Limpar canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        alert('✓ Tudo limpo! Selecione novos PDFs para começar.');
+        alert('Tudo limpo! Selecione novos PDFs para começar.');
     }
 }
 
@@ -639,12 +639,12 @@ async function buscarNoPDF() {
     const searchTerm = document.getElementById('searchText').value.trim().toLowerCase();
     
     if (!searchTerm) {
-        alert('⚠️ Digite uma palavra para buscar!');
+        alert('Digite uma palavra para buscar!');
         return;
     }
     
     if (!pdfDoc) {
-        alert('⚠️ Nenhum PDF carregado!');
+        alert('Nenhum PDF carregado!');
         return;
     }
     
@@ -652,7 +652,7 @@ async function buscarNoPDF() {
     currentSearchIndex = 0;
     
     // Mostrar progresso
-    document.getElementById('searchResults').textContent = '🔍 Buscando...';
+    document.getElementById('searchResults').innerHTML = '<i class="bi bi-hourglass-split"></i> Buscando...';
     
     // Buscar em todas as páginas
     for (let i = 1; i <= pageCount; i++) {
@@ -670,30 +670,30 @@ async function buscarNoPDF() {
     
     // Mostrar resultados
     if (searchResults.length > 0) {
-        document.getElementById('searchResults').textContent = 
-            `✅ ${searchResults.length} página(s) encontrada(s): ${searchResults.join(', ')}`;
+        document.getElementById('searchResults').innerHTML = 
+            `<i class="bi bi-check-lg"></i> ${searchResults.length} página(s) encontrada(s): ${searchResults.join(', ')}`;
         
         // Ir para primeira ocorrência
         irParaPagina(searchResults[0]);
-        alert(`✅ Encontrado em ${searchResults.length} página(s)!\n\nPáginas: ${searchResults.join(', ')}\n\nUse "Próxima ▶" para navegar entre resultados.`);
+        alert(`Encontrado em ${searchResults.length} página(s)!\n\nPáginas: ${searchResults.join(', ')}`);
     } else {
-        document.getElementById('searchResults').textContent = '❌ Palavra não encontrada';
-        alert('❌ Palavra não encontrada no documento.');
+        document.getElementById('searchResults').innerHTML = '<i class="bi bi-x-lg"></i> Palavra não encontrada';
+        alert('Palavra não encontrada no documento.');
     }
 }
 
 // Ir para próxima ocorrência
 function proximaOcorrencia() {
     if (searchResults.length === 0) {
-        alert('⚠️ Faça uma busca primeiro!');
+        alert('Faça uma busca primeiro!');
         return;
     }
     
     currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
     irParaPagina(searchResults[currentSearchIndex]);
     
-    document.getElementById('searchResults').textContent = 
-        `📄 Página ${searchResults[currentSearchIndex]} (${currentSearchIndex + 1}/${searchResults.length})`;
+    document.getElementById('searchResults').innerHTML = 
+        `<i class="bi bi-file-earmark-pdf"></i> Página ${searchResults[currentSearchIndex]} (${currentSearchIndex + 1}/${searchResults.length})`;
 }
 
 // Formatar número CNJ sem pontuação
@@ -718,7 +718,7 @@ function aplicarCNJManual() {
     const cnjInput = document.getElementById('cnjManual').value.trim();
     
     if (!cnjInput) {
-        alert('⚠️ Digite o número CNJ!');
+        alert('Digite o número CNJ!');
         return;
     }
     
@@ -729,28 +729,28 @@ function aplicarCNJManual() {
     if (/^\d{20}$/.test(cnjInput)) {
         cnjFormatado = formatarCNJ(cnjInput);
         if (!cnjFormatado) {
-            alert('❌ Número CNJ inválido! Deve ter 20 dígitos.');
+            alert('Número CNJ inválido! Deve ter 20 dígitos.');
             return;
         }
-        alert(`✅ CNJ formatado automaticamente:\n\n${cnjInput}\n↓\n${cnjFormatado}`);
+        alert(`CNJ formatado automaticamente:\n\n${cnjInput}\n↓\n${cnjFormatado}`);
     }
     
     // Validar formato CNJ
     const regexCNJ = /^\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2}\.\d{4}$/;
     if (!regexCNJ.test(cnjFormatado)) {
-        alert('❌ Formato CNJ inválido!\n\nFormato esperado: 0000000-00.0000.0.00.0000\nOu: 20 dígitos sem pontuação');
+        alert('Formato CNJ inválido!\n\nFormato esperado: 0000000-00.0000.0.00.0000\nOu: 20 dígitos sem pontuação');
         return;
     }
     
     // Aplicar CNJ
     numeroCNJ = cnjFormatado;
-    document.getElementById('detectedCNJ').innerHTML = `<span style="color: var(--toy-success);">${numeroCNJ} ✓ (Manual)</span>`;
+    document.getElementById('detectedCNJ').innerHTML = `<span class="badge badge-ok"><i class="bi bi-check-lg"></i>${numeroCNJ} (manual)</span>`;
     document.getElementById('cnjWarning').style.display = 'none';
     
     // Atualizar preview
     atualizarPreview();
     
-    alert(`✅ CNJ aplicado com sucesso!\n\n${numeroCNJ}\n\nOs PDFs serão nomeados com este número.`);
+    alert(`CNJ aplicado com sucesso!\n\n${numeroCNJ}\n\nOs PDFs serão nomeados com este número.`);
 }
 
 // Formatar bytes
@@ -772,11 +772,13 @@ function showToast(title, message, type = 'info', duration = 2200) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
 
+    // Tom do toast pelo tipo: o shared define a borda por .ok/.warn/.fail.
+    const tons = { success: 'ok', error: 'fail', warning: 'warn' };
     const toast = document.createElement('div');
-    toast.className = 'app-toast';
+    toast.className = 'toast' + (tons[type] ? ` ${tons[type]}` : '');
     toast.innerHTML = `
-        <div class="app-toast-title">${title}</div>
-        <div class="app-toast-body">${message}</div>
+        <div class="toast-title">${title}</div>
+        <div class="toast-body">${message}</div>
     `;
     container.appendChild(toast);
 
@@ -795,8 +797,8 @@ function alternarModoDivisao() {
     const customPanel = document.getElementById('modoDivisaoPersonalizado');
     const btnAuto = document.getElementById('btnProcessar');
     const btnCustom = document.getElementById('btnProcessarCustom');
-    if (autoPanel) autoPanel.style.display = modo === 'auto' ? 'block' : 'none';
-    if (customPanel) customPanel.style.display = modo === 'custom' ? 'block' : 'none';
+    if (autoPanel) autoPanel.style.display = modo === 'auto' ? 'grid' : 'none';
+    if (customPanel) customPanel.style.display = modo === 'custom' ? 'grid' : 'none';
     if (btnAuto) btnAuto.style.display = modo === 'auto' ? 'inline-block' : 'none';
     if (btnCustom) btnCustom.style.display = modo === 'custom' ? 'inline-block' : 'none';
 }
@@ -850,24 +852,24 @@ function adicionarDivisaoCustom() {
     
     // Validações
     if (!nome) {
-        alert('❌ Digite um nome para o arquivo!');
+        alert('Digite um nome para o arquivo!');
         return;
     }
     
     if (inicio > fim) {
-        alert('❌ A página inicial não pode ser maior que a final!');
+        alert('A página inicial não pode ser maior que a final!');
         return;
     }
     
     if (inicio < 1 || fim > pageCount) {
-        alert(`❌ Páginas devem estar entre 1 e ${pageCount}!`);
+        alert(`Páginas devem estar entre 1 e ${pageCount}!`);
         return;
     }
     
     // Verificar caracteres inválidos no nome
     const caracteresInvalidos = /[<>:"/\\|?*]/g;
     if (caracteresInvalidos.test(nome)) {
-        alert('❌ O nome do arquivo contém caracteres inválidos!\n\nNão use: < > : " / \\ | ? *');
+        alert('O nome do arquivo contém caracteres inválidos!\n\nNão use: < > : " / \\ | ? *');
         return;
     }
     
@@ -888,7 +890,7 @@ function adicionarDivisaoCustom() {
     document.getElementById('customInicio').value = '1';
     document.getElementById('customFim').value = '1';
     
-    alert(`✅ Divisão adicionada!\n\n${nome}\nPáginas ${inicio}-${fim} (${divisao.paginas} páginas)`);
+    alert(`Divisão adicionada!\n\n${nome}\nPáginas ${inicio}-${fim} (${divisao.paginas} páginas)`);
 }
 
 // Renderizar lista de divisões
@@ -909,21 +911,21 @@ function renderizarListaDivisoes() {
     
     customDivisions.forEach((div, index) => {
         html += `
-            <div class="division-row">
-                <div>
-                    <p class="division-title">
-                        <span class="division-index">#${index + 1}</span>
-                        <i class="bi bi-file-pdf"></i>
-                        <strong>${div.nome}${sufixoCNJ}.pdf</strong>
-                    </p>
-                    <p class="division-meta">
-                        <i class="bi bi-files"></i>
-                        Páginas ${div.inicio}-${div.fim} (${div.paginas} ${div.paginas === 1 ? 'página' : 'páginas'})
-                    </p>
+            <div class="tile">
+                <p class="row">
+                    <span class="badge badge-accent">#${index + 1}</span>
+                    <i class="bi bi-file-pdf"></i>
+                    <strong>${div.nome}${sufixoCNJ}.pdf</strong>
+                </p>
+                <p class="hint">
+                    <i class="bi bi-files"></i>
+                    Páginas ${div.inicio}-${div.fim} (${div.paginas} ${div.paginas === 1 ? 'página' : 'páginas'})
+                </p>
+                <div class="actions">
+                    <button class="btn btn-outline btn-small btn-icon btn-danger" onclick="removerDivisaoCustom(${div.id})" title="Remover">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </div>
-                <button class="btn btn-outline btn-small btn-danger" onclick="removerDivisaoCustom(${div.id})" title="Remover">
-                    <i class="bi bi-trash"></i>
-                </button>
             </div>
         `;
     });
@@ -945,7 +947,7 @@ function renderizarListaDivisoes() {
 
 // Remover divisão personalizada
 function removerDivisaoCustom(id) {
-    if (!confirm('❌ Deseja remover esta divisão?')) {
+    if (!confirm('Deseja remover esta divisão?')) {
         return;
     }
     
@@ -955,7 +957,7 @@ function removerDivisaoCustom(id) {
 
 // Limpar todas as divisões
 function limparDivisoesCustom() {
-    if (!confirm('❌ Deseja limpar todas as divisões criadas?')) {
+    if (!confirm('Deseja limpar todas as divisões criadas?')) {
         return;
     }
     
@@ -966,7 +968,7 @@ function limparDivisoesCustom() {
 // Processar divisões personalizadas
 async function processarDivisoesCustom() {
     if (customDivisions.length === 0) {
-        alert('❌ Nenhuma divisão criada!\n\nCrie ao menos uma divisão antes de processar.');
+        alert('Nenhuma divisão criada!\n\nCrie ao menos uma divisão antes de processar.');
         return;
     }
     
@@ -977,7 +979,7 @@ async function processarDivisoesCustom() {
     // Desabilitar botão
     const btnProcessar = document.getElementById('btnProcessarCustom');
     btnProcessar.disabled = true;
-    btnProcessar.textContent = '⏳ Processando...';
+    btnProcessar.innerHTML = '<i class="bi bi-hourglass-split"></i>Processando...';
     
     const progressSection = document.getElementById('progressSection');
     const progressFill = document.getElementById('progressFill');
@@ -1036,7 +1038,7 @@ async function processarDivisoesCustom() {
         progressFill.style.width = '100%';
         
         // Marcar arquivo como processado
-        atualizarStatusFila(currentFileIndex, '✅ Concluído', 'completed');
+        atualizarStatusFila(currentFileIndex, 'Concluído', 'completed');
         
         // Mostrar resultado
         setTimeout(() => {
@@ -1045,10 +1047,10 @@ async function processarDivisoesCustom() {
             
             document.getElementById('resultMessage').innerHTML = `
                 <strong>Arquivo ${currentFileIndex + 1}/${filesQueue.length} processado!</strong><br><br>
-                📄 ${totalDivisoes} PDF(s) criado(s) com sucesso!<br><br>
+                <i class="bi bi-file-earmark-arrow-down"></i> ${totalDivisoes} PDF(s) criado(s) com sucesso!<br><br>
                 ${currentFileIndex + 1 < filesQueue.length ? 
-                    '<strong>⏭️ Carregando próximo arquivo...</strong>' : 
-                    '<strong>🎉 Todos os arquivos foram processados!</strong>'}
+                    '<strong><i class="bi bi-arrow-right"></i> Carregando próximo arquivo...</strong>' : 
+                    '<strong><i class="bi bi-check2-circle"></i> Todos os arquivos foram processados!</strong>'}
             `;
             
             // Resetar botão
@@ -1072,7 +1074,7 @@ async function processarDivisoesCustom() {
         
     } catch (erro) {
         console.error('Erro ao processar divisões:', erro);
-        alert(`❌ Erro ao processar divisões!\n\n${erro.message}`);
+        alert(`Erro ao processar divisões!\n\n${erro.message}`);
         
         progressSection.style.display = 'none';
         btnProcessar.disabled = false;

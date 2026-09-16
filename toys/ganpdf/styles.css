@@ -1,32 +1,19 @@
 /* ==========================================================================
    Divisor de PDF — regras específicas do toy.
-   A casca (corpo, cartão, dropzone, progresso, botões) vem de ../shared/toy.css;
-   aqui ficam apenas os elementos próprios, sempre com tokens --toy-*.
+   A casca (corpo, cartão, dropzone, progresso, botões) e os blocos
+   .tile/.stack vêm de ../shared/toy.css; aqui fica apenas o layout de linha
+   do link de download individual, que o shared não cobre.
    ========================================================================== */
 
-#result-summary { color: var(--toy-success); }
-
-/* Lista das partes geradas (download individual de cada PDF). */
-.individual-files {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.individual-files a {
+/* Cada parte gerada é um .tile clicável dentro de .stack. Borda, raio e
+   fundo vêm do .tile; aqui só a linha (ícone + nome do arquivo). */
+a.download-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
     color: var(--toy-text);
     font-size: .88rem;
     text-decoration: none;
 }
 
-.individual-files a:hover {
-    border-color: var(--toy-accent);
-    background: var(--toy-accent-soft);
-}
+.download-item .bi { color: var(--toy-accent); }

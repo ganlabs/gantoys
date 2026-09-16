@@ -56,7 +56,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compressor de PDF em Lote</title>
-    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
     <link rel="stylesheet" href="../shared/toy.css">
     <link rel="stylesheet" href="../../vendor/bootstrap-icons/font/bootstrap-icons.css">
 
@@ -70,21 +70,21 @@
 <body>
     <main class="shell">
         <header class="brand">
-            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <img class="brand-logo" src="../shared/logo.svg" alt="GAN Toys">
             <h1>Compressor de PDF em Lote</h1>
             <p>Reduza o tamanho de vários PDFs de uma vez, sem enviar nada para a internet.</p>
         </header>
 
         <section class="glass-card" id="uploadSection" aria-label="Arquivos do lote">
             <div class="panel">
+                <div class="steps">
+                    <div class="step active"><span class="step-number">1</span><span class="step-label">Arquivos do lote</span></div>
+                    <div class="step"><span class="step-number">2</span><span class="step-label">Configurações e processamento</span></div>
+                </div>
+
                 <div class="card-heading">
                     <h2>Arquivos do lote</h2>
                     <p>Selecione os PDFs e acompanhe o andamento.</p>
-                </div>
-
-                <div class="steps">
-                    <div class="step active"><span class="step-number">1</span>Arquivos do lote</div>
-                    <div class="step"><span class="step-number">2</span>Configurações e processamento</div>
                 </div>
 
                 <div>
@@ -99,52 +99,52 @@
 
         <section class="glass-card" id="settingsSection" style="display:none;" aria-label="Configurações e processamento">
             <div class="panel">
+                <div class="steps">
+                    <div class="step"><span class="step-number">1</span><span class="step-label">Arquivos do lote</span></div>
+                    <div class="step active"><span class="step-number">2</span><span class="step-label">Configurações e processamento</span></div>
+                </div>
+
                 <div class="card-heading">
                     <h2>Configurações e processamento</h2>
                     <p>Ajuste a compressão e acompanhe o andamento.</p>
                 </div>
 
-                <div class="steps">
-                    <div class="step"><span class="step-number">1</span>Arquivos do lote</div>
-                    <div class="step active"><span class="step-number">2</span>Configurações e processamento</div>
-                </div>
-
                 <div class="grid-2">
                     <div class="stack">
-                        <div class="control-card-surface">
+                        <div class="tile">
                             <div class="section-title"><i class="bi bi-sliders"></i>Qualidade da Compressão</div>
-                            <div class="mode-choice-list">
-                                <label class="mode-choice">
+                            <div class="choice-list">
+                                <label class="choice">
                                     <input type="radio" name="qualidade" value="0.4">
                                     <span><strong>Baixa (Maior Compressão)</strong><small>Ideal para arquivos muito grandes.</small></span>
                                 </label>
-                                <label class="mode-choice">
+                                <label class="choice">
                                     <input type="radio" name="qualidade" value="0.6" checked>
                                     <span><strong>Média (Recomendado)</strong><small>Equilíbrio entre tamanho e nitidez.</small></span>
                                 </label>
-                                <label class="mode-choice">
+                                <label class="choice">
                                     <input type="radio" name="qualidade" value="0.8">
                                     <span><strong>Alta (Menor Compressão)</strong><small>Preserva máxima qualidade.</small></span>
                                 </label>
                             </div>
                         </div>
 
-                        <div class="control-card-surface">
+                        <div class="tile">
                             <div class="section-title"><i class="bi bi-aspect-ratio"></i>Resolução (DPI)</div>
-                            <div class="mode-choice-list">
-                                <label class="mode-choice">
+                            <div class="choice-list">
+                                <label class="choice">
                                     <input type="radio" name="dpi" value="50">
                                     <span><strong>50 DPI (Extrema)</strong><small>Menor tamanho. Só para e-mail/web.</small></span>
                                 </label>
-                                <label class="mode-choice">
+                                <label class="choice">
                                     <input type="radio" name="dpi" value="72">
                                     <span><strong>72 DPI (Baixa)</strong><small>Resolução de tela padrão.</small></span>
                                 </label>
-                                <label class="mode-choice">
+                                <label class="choice">
                                     <input type="radio" name="dpi" value="150" checked>
                                     <span><strong>150 DPI (Média)</strong><small>Qualidade padrão para leitura.</small></span>
                                 </label>
-                                <label class="mode-choice">
+                                <label class="choice">
                                     <input type="radio" name="dpi" value="300">
                                     <span><strong>300 DPI (Alta)</strong><small>Qualidade de impressão (arquivo pesado).</small></span>
                                 </label>
@@ -160,7 +160,7 @@
                             </button>
                         </div>
 
-                        <div id="progressGlobalSection" class="progress-global" style="display:none;">
+                        <div id="progressGlobalSection" class="progress-area">
                             <div class="progress-top"><span>Progresso Geral</span><span id="progressGlobalText">0 / 0 concluídos</span></div>
                             <div class="progress-wrap"><div class="progress-bar" id="progressGlobalFill"></div></div>
                         </div>
@@ -192,7 +192,7 @@
         </section>
     </main>
 
-    <div id="toastContainer" class="toast-container-custom"></div>
+    <div id="toastContainer" class="toast-container"></div>
 
     <!-- Canvas Oculto para Renderização -->
     <canvas id="renderCanvas"></canvas>

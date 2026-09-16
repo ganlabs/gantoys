@@ -95,32 +95,41 @@ function renderSettings(config, container) {
     if (!options.length) return;
     container.classList.remove('hidden');
     options.forEach((option) => {
-        const label = document.createElement('label');
         if (option.type === 'checkbox') {
-            label.className = 'check';
-            label.innerHTML = `<input type="checkbox" name="${option.key}"> ${option.label}`;
-        } else {
-            label.textContent = option.label;
-            let field;
-            if (option.type === 'select') {
-                field = document.createElement('select');
-                option.choices.forEach(([value, text]) => {
-                    const choice = document.createElement('option');
-                    choice.value = value;
-                    choice.textContent = text;
-                    field.appendChild(choice);
-                });
-            } else {
-                field = document.createElement('input');
-                field.type = 'text';
-            }
-            field.name = option.key;
-            field.value = option.value;
-            field.defaultValue = option.value;
-            label.appendChild(field);
-            if (option.conditionalOn) label.dataset.conditionalOn = option.conditionalOn;
+            const checkRow = document.createElement('label');
+            checkRow.className = 'check-row';
+            checkRow.innerHTML = `<input type="checkbox" name="${option.key}"> ${option.label}`;
+            container.appendChild(checkRow);
+            return;
         }
-        container.appendChild(label);
+        // Campo canônico do shared: rótulo ligado ao controle por "for"/"id" e o controle logo abaixo.
+        const fieldId = `${config.type}-${option.key}`;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'stack';
+        const label = document.createElement('label');
+        label.className = 'input-label';
+        label.htmlFor = fieldId;
+        label.textContent = option.label;
+        let field;
+        if (option.type === 'select') {
+            field = document.createElement('select');
+            option.choices.forEach(([value, text]) => {
+                const choice = document.createElement('option');
+                choice.value = value;
+                choice.textContent = text;
+                field.appendChild(choice);
+            });
+        } else {
+            field = document.createElement('input');
+            field.type = 'text';
+        }
+        field.id = fieldId;
+        field.name = option.key;
+        field.value = option.value;
+        field.defaultValue = option.value;
+        wrapper.append(label, field);
+        if (option.conditionalOn) wrapper.dataset.conditionalOn = option.conditionalOn;
+        container.appendChild(wrapper);
     });
 
     const mode = container.querySelector('[name="mode"]');
@@ -134,7 +143,6 @@ function renderSettings(config, container) {
         updateConditionalFields();
     }
 }
-
 function getSettings(container) {
     return Object.fromEntries([...container.querySelectorAll('[name]')].map((field) => [
         field.name,

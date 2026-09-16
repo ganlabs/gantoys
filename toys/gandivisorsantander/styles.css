@@ -1,10 +1,10 @@
 /* ==========================================================================
    Divisor de PDF — regras específicas deste toy.
 
-   Depende de ../shared/toy.css (casca, cartões, botões, campos, etapas,
-   progresso, avisos). Aqui ficam só as peças próprias: seleção de arquivos,
-   workspace do visualizador PDF, painéis de marcação, previews e toasts.
-   Toda cor vem dos tokens --toy-*.
+   Depende de ../shared/toy.css (casca, cartões, blocos .tile, botões, campos,
+   opções, títulos de seção, badges, etapas, progresso, avisos e toasts).
+   Aqui ficam só as peças próprias: o grid da seleção de arquivos e o
+   visualizador de PDF. Toda cor vem dos tokens --toy-*.
    ========================================================================== */
 
 /* --------------------------------------------------- seleção de arquivos -- */
@@ -15,37 +15,6 @@
     gap: 16px;
     align-items: start;
 }
-
-.batch-summary-grid {
-    grid-template-columns: repeat(4, minmax(120px, 1fr));
-    gap: 16px;
-}
-
-.batch-stat-card,
-.batch-current-card {
-    min-width: 0;
-    padding: 14px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-}
-
-.batch-current-card { grid-column: span 4; }
-
-.batch-stat-card .label,
-.batch-current-card .label {
-    margin-bottom: 4px;
-    color: var(--toy-muted);
-    font-size: .75rem;
-    font-weight: 800;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-}
-
-.batch-stat-card .value,
-.batch-current-card .value { color: var(--toy-text); font-weight: 800; }
-
-.current-file-name { word-break: break-word; }
 
 /* -------------------------------------------------------- workspace PDF -- */
 
@@ -63,66 +32,12 @@
     overflow-y: auto;
 }
 
-.mini-info-grid { display: grid; gap: 12px; }
-
-.info-box,
-.control-card-surface {
-    padding: 16px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-}
-
-.info-label {
-    color: var(--toy-muted);
-    font-size: .72rem;
-    font-weight: 800;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-}
-
+/* Valor de um painel de informação (o rótulo usa o título de seção do shared). */
 .info-value { margin-top: 4px; color: var(--toy-text); font-weight: 700; word-break: break-word; }
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    color: var(--toy-text);
-    font-size: 1.02rem;
-    font-weight: 800;
-}
-
-.section-title.warn { color: var(--toy-warning); }
-
-.mode-choice-list { display: grid; gap: 10px; }
-
-.mode-choice {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    padding: 12px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-    cursor: pointer;
-    transition: border-color .18s ease, background .18s ease;
-}
-
-.mode-choice:hover { border-color: var(--toy-accent); background: var(--toy-accent-soft); }
-
-.mode-choice input { width: auto; margin-top: 3px; }
-.mode-choice span { display: flex; flex-direction: column; }
-.mode-choice small { margin-top: 2px; color: var(--toy-muted); }
 
 .field-inline { display: flex; align-items: center; gap: 8px; }
 .field-inline input { flex: 1 1 auto; min-width: 0; }
 .field-inline .btn { flex: none; }
-
-.progress-text { margin-top: 10px; color: var(--toy-muted); font-weight: 600; }
-
-.btn-danger { color: var(--toy-danger); border-color: var(--toy-danger); }
-.btn-danger:hover:not(:disabled) { color: var(--toy-danger); border-color: var(--toy-danger); }
 
 /* ------------------------------------------------- visualizador de PDF -- */
 
@@ -181,107 +96,10 @@
 .page-count, .zoom-display { color: var(--toy-muted); font-weight: 800; }
 .zoom-display { min-width: 52px; text-align: center; }
 
-.btn-control {
-    min-width: 42px;
-    padding: 8px 12px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-    color: var(--toy-text);
-    font: inherit;
-    cursor: pointer;
-    transition: border-color .18s ease, background .18s ease, opacity .18s ease;
-}
-
-.btn-control:hover:not(:disabled) { border-color: var(--toy-accent); background: var(--toy-accent-soft); }
-.btn-control:disabled { opacity: .5; cursor: not-allowed; }
-
 .search-field { width: 100%; max-width: 620px; }
 .search-field > .bi-search { flex: none; color: var(--toy-muted); }
 
 .search-results-modern { margin-top: 8px; color: var(--toy-muted); font-size: .9rem; text-align: center; }
-
-/* ---------------------------------------------------- preview e divisões -- */
-
-.division-preview-right { margin-top: 16px; }
-
-.preview-list { display: grid; gap: 12px; }
-.preview-list-horizontal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-.preview-box-item {
-    padding: 12px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-}
-
-.preview-name { margin-bottom: 4px; color: var(--toy-text); font-weight: 800; }
-
-.division-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-}
-
-.division-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0;
-    color: var(--toy-text);
-    font-weight: 700;
-}
-
-.division-index {
-    flex: none;
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: var(--toy-accent);
-    color: var(--toy-accent-ink);
-    font-size: .75rem;
-    font-weight: 800;
-}
-
-.division-meta { margin: 4px 0 0; color: var(--toy-muted); font-size: .82rem; }
-
-/* ---------------------------------------------------------------- toasts -- */
-
-.toast-container-custom {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-}
-
-.app-toast {
-    min-width: 280px;
-    max-width: 420px;
-    padding: 16px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface);
-    color: var(--toy-text);
-    box-shadow: var(--toy-card-shadow);
-    backdrop-filter: var(--toy-backdrop);
-    -webkit-backdrop-filter: var(--toy-backdrop);
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity .2s ease, transform .2s ease;
-}
-
-.app-toast.show { opacity: 1; transform: translateY(0); }
-
-.app-toast-title { margin-bottom: 4px; color: var(--toy-text); font-weight: 800; }
-.app-toast-body { color: var(--toy-muted); font-size: .9rem; line-height: 1.4; }
 
 /* ----------------------------------------------------------- responsivo -- */
 
@@ -290,14 +108,4 @@
     .workspace-grid { grid-template-columns: 1fr; }
 
     .left-panel { position: static; max-height: none; overflow: visible; }
-}
-
-@media (max-width: 720px) {
-    .batch-summary-grid,
-    .preview-list-horizontal { grid-template-columns: 1fr; }
-
-    .batch-current-card { grid-column: auto; }
-
-    .toast-container-custom { right: 12px; bottom: 12px; left: 12px; }
-    .app-toast { width: 100%; min-width: 0; max-width: none; }
 }

@@ -62,24 +62,36 @@ function renderResults(items) {
     lastOutputLines = items.map((item) => item.value);
 
     items.forEach((item) => {
-        if (item.status === 'success') successCount += 1;
+        const isOk = item.status === 'success';
+        if (isOk) successCount += 1;
 
         const card = document.createElement('div');
-        card.className = `result-item ${item.status}`;
+        card.className = isOk ? 'result-item ok' : 'result-item fail';
 
-        const value = document.createElement('div');
+        const head = document.createElement('div');
+        head.className = 'result-item-head';
+
+        const value = document.createElement('span');
         value.className = 'result-value';
         value.textContent = item.value;
 
-        const meta = document.createElement('div');
-        meta.className = 'result-meta';
-        meta.textContent = `Original: ${item.original}`;
+        const status = document.createElement('span');
+        status.className = isOk ? 'result-status ok' : 'result-status fail';
+        status.textContent = isOk ? 'OK' : 'Inválido';
 
-        const message = document.createElement('div');
-        message.className = item.status === 'error' ? 'invalid-message' : 'result-meta';
-        message.textContent = item.message;
+        head.append(value, status);
+        card.append(head);
 
-        card.append(value, meta, message);
+        // Convertidas: origem + o que foi feito. Recusadas: o motivo, em tom de falha.
+        const details = isOk ? [`Original: ${item.original}`, item.message] : [item.message];
+
+        details.forEach((text) => {
+            const meta = document.createElement('p');
+            meta.className = isOk ? 'result-meta' : 'result-meta error';
+            meta.textContent = text;
+            card.append(meta);
+        });
+
         resultsList.appendChild(card);
     });
 

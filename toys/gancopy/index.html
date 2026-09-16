@@ -31,13 +31,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cópia Integral e Bradesco</title>
-    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
     <link rel="stylesheet" href="../shared/toy.css">
 </head>
 <body>
     <main class="shell">
         <header class="brand">
-            <img src="../../favicon.png" alt="GAN" class="brand-logo">
+            <img class="brand-logo" src="../shared/logo.svg" alt="GAN Toys">
             <h1>Cópia Integral e Bradesco</h1>
             <p>Copie documentos por processo, diretamente entre pastas locais.</p>
         </header>
@@ -48,7 +48,7 @@
                 <button class="tab" id="tab-bradesco" role="tab" aria-selected="false" aria-controls="panel-bradesco">Bradesco</button>
             </nav>
 
-            <section class="panel active" id="panel-santander" role="tabpanel" aria-labelledby="tab-santander">
+            <section class="panel" id="panel-santander" role="tabpanel" aria-labelledby="tab-santander">
                 <div class="card-heading">
                     <h2>Cópia por número de processo</h2>
                     <p>Localiza todos os arquivos cujo nome contenha um dos processos informados e os copia mantendo o nome original.</p>
@@ -56,12 +56,12 @@
 
                 <div class="folder-grid">
                     <div class="folder-card">
-                        <label for="santander-source">Pasta de origem</label>
+                        <label class="input-label" for="santander-source">Pasta de origem</label>
                         <button class="btn btn-outline" id="santander-source" type="button">Selecionar origem</button>
                         <p class="folder-selected" id="santander-source-name">Nenhuma pasta selecionada</p>
                     </div>
                     <div class="folder-card">
-                        <label for="santander-destination">Pasta de destino</label>
+                        <label class="input-label" for="santander-destination">Pasta de destino</label>
                         <button class="btn btn-outline" id="santander-destination" type="button">Selecionar destino</button>
                         <p class="folder-selected" id="santander-destination-name">Nenhuma pasta selecionada</p>
                     </div>
@@ -104,12 +104,12 @@
 
                 <div class="folder-grid">
                     <div class="folder-card">
-                        <label for="bradesco-source">Pasta de origem</label>
+                        <label class="input-label" for="bradesco-source">Pasta de origem</label>
                         <button class="btn btn-outline" id="bradesco-source" type="button">Selecionar origem</button>
                         <p class="folder-selected" id="bradesco-source-name">Nenhuma pasta selecionada</p>
                     </div>
                     <div class="folder-card">
-                        <label for="bradesco-destination">Pasta de destino</label>
+                        <label class="input-label" for="bradesco-destination">Pasta de destino</label>
                         <button class="btn btn-outline" id="bradesco-destination" type="button">Selecionar destino</button>
                         <p class="folder-selected" id="bradesco-destination-name">Nenhuma pasta selecionada</p>
                     </div>
@@ -474,7 +474,6 @@
             for (const current of ['santander', 'bradesco']) {
                 const active = current === bank;
                 $(`tab-${current}`).setAttribute('aria-selected', String(active));
-                $(`panel-${current}`).classList.toggle('active', active);
                 $(`panel-${current}`).hidden = !active;
             }
         }

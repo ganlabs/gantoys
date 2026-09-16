@@ -435,6 +435,11 @@ const GANTOYS = {
                 --toy-secondary-shadow: ${secondaryShadow};
                 --toy-input-shadow: ${inputShadow};
                 --toy-backdrop: ${backdrop};
+                --toy-success: #4CAF50;
+                --toy-warning: #FF9800;
+                --toy-danger: #F44336;
+                --toy-font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                --toy-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
             }
 
             html, body {

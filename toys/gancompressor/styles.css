@@ -1,10 +1,10 @@
 /* ==========================================================================
    gancompressor — estilos específicos deste toy.
 
-   A casca (`.shell`/`.brand`/`.glass-card`/`.panel`), botões, campos,
-   progresso e utilitários vêm de ../shared/toy.css. Aqui ficam somente:
-   a fila de arquivos, as opções de compressão e os toasts.
-   Cores sempre pelos tokens `--toy-*`.
+   A casca (`.shell`/`.brand`/`.glass-card`/`.panel`), botões, campos, blocos
+   `.tile`, títulos de seção, opções, badges, progresso e toasts vêm de
+   ../shared/toy.css. Aqui ficam somente a fila de arquivos e o canvas oculto
+   de renderização. Cores sempre pelos tokens `--toy-*`.
    ========================================================================== */
 
 /* ----------------------------------------------------- fila de arquivos -- */
@@ -18,13 +18,12 @@
     background: var(--toy-border);
 }
 
-.file-item-modern {
+/* Cada arquivo é um `.tile` do shared; o que resta local é o layout de linha. */
+.file-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
-    background: var(--toy-surface);
 }
 
 .file-item-info {
@@ -63,170 +62,13 @@
     margin: 0 4px;
 }
 
-.file-item-badge {
-    flex: none;
-    padding: 4px 9px;
-    border: 1px solid var(--toy-border);
-    border-radius: 999px;
-    font-size: .72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.badge-pending {
-    background: var(--toy-surface-alt);
-    color: var(--toy-muted);
-}
-
-.badge-processing {
-    border-color: var(--toy-accent);
-    background: var(--toy-accent-soft);
-    color: var(--toy-accent);
-}
-
-.badge-completed {
-    border-color: var(--toy-success);
-    color: var(--toy-success);
-}
-
-.badge-error {
-    border-color: var(--toy-danger);
-    color: var(--toy-danger);
-}
-
-.progress-micro {
-    display: none;
+/* Progresso por página dentro da linha do arquivo: mesma `.progress-wrap`
+   do shared, apenas mais fina. */
+.file-item .progress-wrap {
     height: 4px;
     margin-top: 6px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: var(--toy-surface-alt);
-}
-
-.progress-micro-fill {
-    width: 0;
-    height: 100%;
-    background: var(--toy-accent);
-    transition: width .2s ease;
-}
-
-/* -------------------------------------------------- opções de compressão -- */
-
-.control-card-surface {
-    display: grid;
-    gap: 12px;
-    padding: 16px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-}
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--toy-text);
-    font-size: 1rem;
-    font-weight: 800;
-}
-
-.mode-choice-list { display: grid; gap: 10px; }
-
-.mode-choice {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px 14px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface);
-    cursor: pointer;
-    transition: border-color .18s ease, background .18s ease;
-}
-
-.mode-choice:hover {
-    border-color: var(--toy-accent);
-    background: var(--toy-accent-soft);
-}
-
-.mode-choice input { margin-top: 3px; }
-
-.mode-choice span {
-    display: flex;
-    flex-direction: column;
-}
-
-.mode-choice small {
-    margin-top: 2px;
-    color: var(--toy-muted);
-}
-
-/* ------------------------------------------------- progresso do lote -- */
-
-.progress-global { display: none; }
-
-.progress-global > .progress-wrap { margin-top: 10px; }
-
-/* --------------------------------------------------------------- toasts -- */
-
-.toast-container-custom {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    z-index: 100;
-    display: grid;
-    gap: 10px;
-}
-
-.app-toast {
-    min-width: 280px;
-    max-width: 420px;
-    padding: 14px 16px;
-    border: 1px solid var(--toy-border);
-    border-left: 4px solid var(--toy-accent);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface);
-    box-shadow: var(--toy-card-shadow);
-    color: var(--toy-text);
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity .2s ease, transform .2s ease;
-}
-
-.app-toast.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.app-toast-title {
-    margin-bottom: .3rem;
-    color: var(--toy-text);
-    font-weight: 800;
-}
-
-.app-toast-body {
-    color: var(--toy-muted);
-    font-size: .92rem;
-    line-height: 1.4;
 }
 
 /* ---------------------------------------------- canvas de renderização -- */
 
 #renderCanvas { display: none; }
-
-/* ---------------------------------------------------------- responsivo -- */
-
-@media (max-width: 720px) {
-    .toast-container-custom {
-        left: 12px;
-        right: 12px;
-        bottom: 12px;
-    }
-
-    .app-toast {
-        width: 100%;
-        min-width: 0;
-        max-width: none;
-    }
-}

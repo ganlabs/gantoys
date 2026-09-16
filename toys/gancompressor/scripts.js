@@ -21,7 +21,7 @@ function handleFilesSelect(event) {
     const newFiles = files.filter(f => f.type === 'application/pdf');
     
     if (newFiles.length === 0) {
-        showToast('Aviso', 'Selecione arquivos PDF válidos.', 'warning');
+        showToast('Aviso', 'Selecione arquivos PDF válidos.', 'warn');
         return;
     }
     
@@ -35,38 +35,34 @@ function handleFilesSelect(event) {
     renderizarFilaArquivos();
 }
 
+// Badge de estado do arquivo: sempre o `.badge` do shared, com o tom do estado.
+function badgeDoEstado(status) {
+    if (status === 'processing') return { classe: 'badge badge-accent', texto: 'Processando...' };
+    if (status === 'completed') return { classe: 'badge badge-ok', texto: 'Concluído' };
+    if (status === 'error') return { classe: 'badge badge-fail', texto: 'Erro' };
+    return { classe: 'badge', texto: 'Aguardando' };
+}
+
 function renderizarFilaArquivos() {
     const container = document.getElementById('filesListContainer');
     container.innerHTML = '';
     
     filesQueue.forEach((file, index) => {
         const item = document.createElement('div');
-        item.className = 'file-item-modern';
+        item.className = 'tile file-item';
         item.id = `file-item-${index}`;
         
-        let badgeClass = 'badge-pending';
-        let badgeText = 'Aguardando';
-        
-        if (fileStatuses[index] === 'processing') {
-            badgeClass = 'badge-processing';
-            badgeText = 'Processando...';
-        } else if (fileStatuses[index] === 'completed') {
-            badgeClass = 'badge-completed';
-            badgeText = 'Concluído';
-        } else if (fileStatuses[index] === 'error') {
-            badgeClass = 'badge-error';
-            badgeText = 'Erro';
-        }
+        const badge = badgeDoEstado(fileStatuses[index]);
 
         item.innerHTML = `
             <div class="file-item-info">
                 <div class="file-item-top">
                     <span class="file-item-name" title="${file.name}">${file.name}</span>
-                    <span class="file-item-badge ${badgeClass}" id="badge-${index}">${badgeText}</span>
+                    <span class="${badge.classe}" id="badge-${index}">${badge.texto}</span>
                 </div>
                 <span class="file-item-status" id="file-size-${index}">Original: ${formatBytes(file.size)}</span>
-                <div class="progress-micro" id="progress-container-${index}">
-                    <div class="progress-micro-fill" id="progress-fill-${index}"></div>
+                <div class="progress-wrap hidden" id="progress-container-${index}">
+                    <div class="progress-bar" id="progress-fill-${index}"></div>
                 </div>
             </div>
         `;
@@ -83,19 +79,14 @@ function atualizarStatusArquivo(index, status, progresso = null) {
     
     if (!badge) return;
 
-    if (status === 'processing') {
-        badge.className = 'file-item-badge badge-processing';
-        badge.textContent = 'Processando...';
-        progressContainer.style.display = 'block';
-        if (progresso !== null) progressFill.style.width = `${progresso}%`;
-    } else if (status === 'completed') {
-        badge.className = 'file-item-badge badge-completed';
-        badge.textContent = 'Concluído';
-        progressContainer.style.display = 'none';
-    } else if (status === 'error') {
-        badge.className = 'file-item-badge badge-error';
-        badge.textContent = 'Erro';
-        progressContainer.style.display = 'none';
+    const estado = badgeDoEstado(status);
+    badge.className = estado.classe;
+    badge.textContent = estado.texto;
+
+    // A barra fina do arquivo só aparece enquanto ele está sendo processado.
+    progressContainer.classList.toggle('hidden', status !== 'processing');
+    if (status === 'processing' && progresso !== null) {
+        progressFill.style.width = `${progresso}%`;
     }
 }
 
@@ -116,11 +107,11 @@ async function iniciarCompressaoLote() {
     // Então scale = DPI desjada / 72.
     const renderScale = dpi / 72;
     
-    // Global progress
+    // Progresso geral: `.progress-area` do shared, visível pela classe `.visible`.
     const globalSection = document.getElementById('progressGlobalSection');
     const globalFill = document.getElementById('progressGlobalFill');
     const globalText = document.getElementById('progressGlobalText');
-    globalSection.style.display = 'block';
+    globalSection.classList.add('visible');
     
     let concluidos = 0;
     
@@ -172,7 +163,7 @@ async function iniciarCompressaoLote() {
         } catch (err) {
             console.error('Erro comprimindo arquivo', file.name, err);
             atualizarStatusArquivo(i, 'error');
-            showToast('Erro', `Falha ao comprimir ${file.name}`, 'error');
+            showToast('Erro', `Falha ao comprimir ${file.name}`, 'fail');
         }
         
         // Update global progress
@@ -190,7 +181,7 @@ async function iniciarCompressaoLote() {
     btnProcessar.disabled = false;
     btnLimpar.disabled = false;
     
-    showToast('Sucesso', 'Processamento do lote concluído!', 'info', 3000);
+    showToast('Sucesso', 'Processamento do lote concluído!', 'ok', 3000);
 }
 
 /**
@@ -282,7 +273,7 @@ function limparTudo() {
     document.getElementById('uploadSection').style.display = 'block';
     document.getElementById('settingsSection').style.display = 'none';
     document.getElementById('resultSection').style.display = 'none';
-    document.getElementById('progressGlobalSection').style.display = 'none';
+    document.getElementById('progressGlobalSection').classList.remove('visible');
     
     const btnProcessar = document.getElementById('btnProcessar');
     const btnLimpar = document.getElementById('btnLimpar');
@@ -301,23 +292,18 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// Pequeno helper de Toast reaproveitado do CSS existente
-function showToast(title, message, type = 'info', duration = 3000) {
+// Pequeno helper de Toast apoiado no `.toast` do shared.
+// tone: '' (accent padrão), 'ok', 'warn' ou 'fail'.
+function showToast(title, message, tone = '', duration = 3000) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
 
     const toast = document.createElement('div');
-    toast.className = 'app-toast';
-    
-    let borderColor = 'var(--toy-accent)';
-    if (type === 'error') borderColor = 'var(--toy-danger)';
-    if (type === 'success') borderColor = 'var(--toy-success)';
-    
-    toast.style.borderLeftColor = borderColor;
-    
+    toast.className = tone ? `toast ${tone}` : 'toast';
+
     toast.innerHTML = `
-        <div class="app-toast-title">${title}</div>
-        <div class="app-toast-body">${message}</div>
+        <div class="toast-title">${title}</div>
+        <div class="toast-body">${message}</div>
     `;
     container.appendChild(toast);
 

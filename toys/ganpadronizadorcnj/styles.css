@@ -1,9 +1,12 @@
 /* ==========================================================================
    Padronizador CNJ — regras específicas do toy.
-   A casca (corpo, cartão, campos, botões, avisos) vem de ../shared/toy.css;
-   aqui ficam apenas os itens de resultado, sempre com tokens --toy-*.
+   A casca (corpo, cartão, campos, botões, avisos) e a lista de resultados
+   (.result-list/.result-item/...) vêm de ../shared/toy.css; aqui fica apenas
+   o cabeçalho da seção de resultados, que o shared não cobre.
    ========================================================================== */
 
+/* .card-heading em duas colunas: título + botão de copiar. A tipografia
+   continua vindo do .card-heading do shared. */
 .results-header {
     display: flex;
     flex-wrap: wrap;
@@ -11,43 +14,3 @@
     justify-content: space-between;
     gap: 16px;
 }
-
-#processInput { min-height: 220px; }
-
-.results-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.result-item {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px;
-    border: 1px solid var(--toy-border);
-    border-left-width: 4px;
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-}
-
-.result-item.success { border-left-color: var(--toy-success); }
-.result-item.error { border-left-color: var(--toy-danger); }
-
-.result-value {
-    word-break: break-word;
-    color: var(--toy-text);
-    font-family: var(--toy-mono);
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.result-meta,
-.invalid-message {
-    word-break: break-word;
-    font-size: .85rem;
-}
-
-.result-meta { color: var(--toy-muted); }
-
-.invalid-message { color: var(--toy-danger); }

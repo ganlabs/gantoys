@@ -1,139 +1,30 @@
 /* ==========================================================================
    Juntar PDFs — regras específicas do toy.
-   A casca (corpo, cartão, botões, progresso) vem de ../shared/toy.css;
-   aqui ficam apenas os elementos próprios, sempre com tokens --toy-*.
+   A casca (corpo, cartão, botões, tiles, badges, progresso e resultados) vem de
+   ../shared/toy.css; aqui ficam apenas os elementos próprios, sempre com tokens
+   --toy-*.
    ========================================================================== */
 
-/* Modificador do botão de pasta: o script alterna `.selected` após a escolha. */
-.btn.selected {
-    border-color: var(--toy-accent);
-    background: var(--toy-accent-soft);
-    color: var(--toy-text);
-}
-
-.folder-icon { font-size: 1.4rem; line-height: 1; }
-
-/* Resumo da pasta escolhida (`.visible` alternado pelo script). */
-.folder-info {
-    display: none;
-    padding: 14px 16px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-accent-soft);
-    text-align: center;
-}
-
-.folder-info.visible { display: block; }
-
+/* Caminho da pasta escolhida: precisa quebrar em qualquer ponto. */
 .folder-path {
-    color: var(--toy-muted);
     font-size: .88rem;
     font-weight: 600;
     word-break: break-all;
+    text-align: center;
 }
 
-.folder-stats {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    margin-top: 14px;
-}
-
-/* Lista de subpastas (conteúdo e rótulo injetados por script.js). */
+/* Lista de subpastas (rótulo e itens injetados por script.js). Cada item é um
+   .tile em linha: nome à esquerda, contagem à direita. */
 .subfolders-list {
-    display: none;
+    display: grid;
+    gap: 10px;
     max-height: 220px;
     overflow-y: auto;
 }
 
-.subfolders-list.visible { display: block; }
-
-.section-title {
-    margin-bottom: 10px;
-    color: var(--toy-muted);
-    font-size: .78rem;
-    font-weight: 800;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-}
-
-.subfolder-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    border: 1px solid var(--toy-border);
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-    color: var(--toy-text);
-    font-size: .92rem;
-}
-
-.subfolder-item.selected {
-    border-color: var(--toy-accent);
-    background: var(--toy-accent-soft);
-}
-
-.subfolder-name { font-weight: 500; }
-
-.subfolder-count {
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: var(--toy-accent);
-    color: var(--toy-accent-ink);
-    font-size: .78rem;
-    font-weight: 800;
-}
-
-/* Detalhes do progresso (a área vem de ../shared/toy.css). */
-.progress-status {
-    padding: 12px;
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
-    text-align: center;
-}
-
-.progress-percent { color: var(--toy-accent); font-weight: 800; }
-.progress-current { font-weight: 700; }
-.progress-detail {
-    margin-top: 4px;
-    color: var(--toy-muted);
-    font-size: .85rem;
-    word-break: break-all;
-}
-
-/* Cartão de resultados (`.visible` alternado pelo script). */
-.results { display: none; }
-.results.visible { display: block; }
-
-.result-item {
+.subfolders-list .tile {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 8px;
-    padding: 12px 14px;
-    border: 1px solid var(--toy-border);
-    border-left-width: 4px;
-    border-radius: var(--toy-control-radius);
-    background: var(--toy-surface-alt);
 }
-
-.result-item.success { border-left-color: var(--toy-success); }
-.result-item.error { border-left-color: var(--toy-danger); }
-
-.result-name {
-    color: var(--toy-text);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.result-name:hover { color: var(--toy-accent); }
-
-.result-count { color: var(--toy-muted); font-size: .85rem; }
-
-.result-status { font-weight: 800; }
-.result-status.success { color: var(--toy-success); }
-.result-status.error { color: var(--toy-danger); }
