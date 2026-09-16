@@ -6,11 +6,21 @@ pela página principal (`index.html`).
 
 ## Desenvolvimento
 
-Abra `index.html` diretamente no navegador (ou sirva a pasta com qualquer servidor
-estático). Os toys são carregados de `toys/<nome>/index.html` e a troca de temas é
-feita via `postMessage` + variáveis CSS.
+**`file://` é requisito, não conveniência.** O app (`index.html`), cada toy e o
+bundle (`dist/index.html`) têm de funcionar abertos direto do disco, sem servidor.
+Isso vale para abrir por duplo clique e para uso offline na máquina do usuário.
+Consequências para quem mexe no código:
 
-Atalho:
+- só caminhos relativos (`../shared/toy.css`, `../../vendor/...`); nada de URL
+  absoluta de projeto nem `fetch`/`XHR` para arquivos locais;
+- scripts clássicos (`<script src>`), nunca módulos ES (`type="module"`), que o
+  navegador bloqueia em `file://`;
+- recursos compartilhados ficam em `toys/shared/` e são carregados por caminho
+  relativo (`../shared/toy.css`, `../shared/toy.js`); o bundle embute os dois;
+- nada de Service Worker nem de `Worker` a partir de arquivo local;
+- a única dependência de rede é o `tesseract.js` por CDN no `gannovodiv` (OCR).
+
+Servir por HTTP continua valendo como atalho de desenvolvimento:
 
 ```bash
 python3 -m http.server 8000
@@ -53,8 +63,11 @@ definidos em `toys/shared/toy.css`:
   `.toast-container`/`.toast`, log `.log-line`, progresso
   `.progress-*`, etapas `.steps`/`.step`.
 - **Campos:** entradas, combobox e textarea vêm do shared, sem aparência nativa
-  do sistema — o `select` usa `appearance: none` com seta desenhada pelo tema e
-  a lista (`option`) pintada por `--toy-surface-solid`.
+  do sistema. O `<select>` do toy é convertido por `toys/shared/toy.js` num
+  combobox próprio (`.combo`/`.combo-button`/`.combo-list`): o popup nativo ignora
+  o CSS do produto, então a lista é desenhada pelo tema. O `<select>` original
+  permanece no DOM, escondido, como fonte do valor (`name`, `value` e `change`
+  continuam valendo para o script do toy).
 - O CSS local de cada toy (`styles.css` ou `<style>` inline) cobre apenas o que é
   específico daquele toy, sempre lendo os tokens `--toy-*`.
 - Nenhuma cor de tema é fixada no CSS local: tema claro/escuro e os seis visuais

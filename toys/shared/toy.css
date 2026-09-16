@@ -371,6 +371,110 @@ html[data-theme="light"] select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235f5f6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5l4 4 4-4'/%3E%3C/svg%3E");
 }
 
+/* Combobox próprio (toys/shared/toy.js): o popup nativo não aceita o CSS do
+   produto, então a lista é desenhada aqui. O <select> original fica escondido
+   no DOM e continua sendo a fonte do valor. */
+.combo-native {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+}
+
+.combo { position: relative; width: 100%; }
+
+.combo-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    border: 1px solid var(--toy-border);
+    border-radius: var(--toy-control-radius);
+    padding: 12px 14px;
+    background: var(--toy-input-bg);
+    box-shadow: var(--toy-input-shadow);
+    color: var(--toy-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.combo-button:hover { border-color: var(--toy-accent); }
+
+.combo.is-open .combo-button {
+    border-color: var(--toy-accent);
+    box-shadow: 0 0 0 3px var(--toy-accent-soft);
+}
+
+.combo-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.combo-arrow {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23c9c9d1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px 12px;
+    transition: transform .18s ease;
+}
+
+.combo.is-open .combo-arrow { transform: rotate(180deg); }
+
+.combo-list {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    display: none;
+    max-height: 260px;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid var(--toy-border);
+    border-radius: var(--toy-control-radius);
+    background: var(--toy-surface-solid);
+    box-shadow: var(--toy-card-shadow);
+}
+
+.combo.is-open .combo-list { display: block; border-color: var(--toy-accent); }
+
+.combo-option {
+    padding: 10px 12px;
+    border-radius: calc(var(--toy-control-radius) - 4px);
+    color: var(--toy-text);
+    cursor: pointer;
+}
+
+.combo-option.is-highlighted { background: var(--toy-accent-soft); }
+
+/* Selecionado: o amarelo fica na barra, não no texto (em tema claro o
+   amarelo sobre a própria superfície não tem contraste). */
+.combo-option[aria-selected="true"] {
+    color: var(--toy-text);
+    font-weight: 800;
+    box-shadow: inset 3px 0 0 var(--toy-accent);
+}
+
+.combo-option.is-disabled { opacity: .5; cursor: not-allowed; }
+
+html[data-theme="light"] .combo-arrow {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235f5f6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5l4 4 4-4'/%3E%3C/svg%3E");
+}
+
 textarea {
     min-height: 200px;
     resize: vertical;
