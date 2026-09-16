@@ -59,10 +59,8 @@ const FORBIDDEN = [
     'lucide', 'lucide-react',
 ];
 
-// identidade: todo toy embute EXATAMENTE o mesmo logo compartilhado
-// (toys/shared/logo.svg como data URL, no cabeçalho e no <link rel="icon">)
-const logoDataUrl = `data:image/svg+xml;base64,${readFileSync('toys/shared/logo.svg').toString('base64')}`;
-const appFaviconDataUrl = `data:image/png;base64,${readFileSync('favicon.png').toString('base64')}`;
+// identidade: o logo do toy é o favicon.png (mesmo asset nos 15 toys)
+const toyLogoDataUrl = `data:image/png;base64,${readFileSync('favicon.png').toString('base64')}`;
 
 const layoutFails = [];
 for (const t of Object.keys(map)) {
@@ -70,9 +68,7 @@ for (const t of Object.keys(map)) {
     const missing = REQUIRED.filter((needle) => !markup.includes(needle));
     const stale = FORBIDDEN.filter((needle) => markup.includes(needle));
 
-    const logoUses = markup.split(logoDataUrl).length - 1;
-    if (logoUses < 2) missing.push(`logo compartilhado (usos: ${logoUses})`);
-    if (markup.includes(appFaviconDataUrl)) stale.push('favicon/logo do app');
+    if (!markup.includes(toyLogoDataUrl)) missing.push('logo (favicon.png)');
 
     // Emoji de verdade: apresentação padrão emoji (©/™/→ são pictográficos mas não emoji)
     const emoji = map[t].match(/[\p{Emoji_Presentation}\uFE0F]/gu);

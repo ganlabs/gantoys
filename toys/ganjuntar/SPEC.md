@@ -10,7 +10,7 @@
 
 ### Layout Structure
 - Casca compartilhada de `../shared/toy.css`: `<main class="shell">` (máx. 1080px, centralizado)
-  com `<header class="brand">` (logo `../shared/logo.svg` em `.brand-logo`) e cartões
+  com `<header class="brand">` (logo `../../favicon.png` em `.brand-logo`) e cartões
   `<section class="glass-card"><div class="panel">…</div></section>`
 - CSS local (`styles.css`) só com o que é específico do toy, sempre via tokens `--toy-*`
 - Dependência local: `pdf-lib.min.js` (processamento de PDF)

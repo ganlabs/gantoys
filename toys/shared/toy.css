@@ -4,13 +4,13 @@
    Contrato de layout (todo toy deve seguir):
 
        <head>
-         <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
+         <link rel="icon" type="image/png" href="../../favicon.png">
          <link rel="stylesheet" href="../shared/toy.css">
        </head>
        <body>
          <main class="shell">
            <header class="brand">
-             <img class="brand-logo" src="../shared/logo.svg" alt="GAN Toys">
+             <img class="brand-logo" src="../../favicon.png" alt="GAN">
              <h1>Título</h1>
              <p>Uma linha explicando o toy.</p>
            </header>
@@ -23,8 +23,7 @@
    Regras:
    - corpo com 24px de padding, `.shell` centralizado, cartões como
      `.glass-card` + `.panel`;
-   - identidade: o logo do toy é SEMPRE `../shared/logo.svg` (nunca o favicon
-     ou o logo do app);
+   - identidade: o logo do toy é SEMPRE `../../favicon.png`;
    - ícones: apenas Bootstrap Icons (`<i class="bi bi-*">`), nunca emoji;
    - cores SEMPRE pelos tokens `--toy-*` (injetados pelo app em
      `data-theme`/`data-visual`); nunca fixe cores claras no CSS local;

@@ -24,13 +24,13 @@ definidos em `toys/shared/toy.css`:
 
 ```html
 <head>
-  <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
+  <link rel="icon" type="image/png" href="../../favicon.png">
   <link rel="stylesheet" href="../shared/toy.css">
 </head>
 <body>
   <main class="shell">
     <header class="brand">
-      <img class="brand-logo" src="../shared/logo.svg" alt="GAN Toys">
+      <img class="brand-logo" src="../../favicon.png" alt="GAN">
       <h1>Título do toy</h1>
       <p>Uma linha explicando o que o toy faz.</p>
     </header>
@@ -41,9 +41,8 @@ definidos em `toys/shared/toy.css`:
 </body>
 ```
 
-- **Identidade:** o logo do toy é sempre `toys/shared/logo.svg` (lockup GAN Toys),
-  no cabeçalho e no `<link rel="icon">`. `favicon.png`/`logo.png` da raiz são a
-  identidade do app e nunca aparecem dentro de um toy.
+- **Identidade:** o logo do toy é sempre `favicon.png` (o mesmo nos 15 toys), no
+  cabeçalho e no `<link rel="icon">`.
 - **Ícones:** apenas Bootstrap Icons (`<i class="bi bi-*">`). Emoji é proibido.
 - **Componentes:** blocos internos são `.tile` (variação `.tile-accent`), rótulos
   de grupo `.section-title`, pílulas `.badge` (+ `.badge-accent/-ok/-warn/-fail`),
@@ -64,8 +63,8 @@ definidos em `toys/shared/toy.css`:
 Referência: `toys/gancopy/index.html` é o toy exemplar do padrão.
 
 `node build/check-bundle.mjs` valida esse contrato em todos os toys: casca
-canônica, logo compartilhado embutido (e nenhum asset do app), ausência de
-classes legadas e ausência de emoji.
+canônica, logo (`favicon.png`) embutido, ausência de classes legadas e ausência
+de emoji.
 
 ## Bundle HTML único (entregável)
 
@@ -74,8 +73,8 @@ O entregável oficial do projeto é um **único arquivo HTML autocontido**,
 
 - todos os toys (como `<iframe srcdoc>`, com seus CSS/JS já inline);
 - CSS/JS locais de `vendor/` e `app.js`/`styles.css` da aplicação;
-- imagens e fontes (`logo.svg` dos toys, `logo.png`/`favicon.png` do app,
-  bootstrap-icons, fonts do vendor) em base64;
+- imagens e fontes (`logo.png`, `favicon.png`, bootstrap-icons, fonts do vendor)
+  em base64;
 - o worker do pdf.js como `Blob URL` criado pelo documento pai.
 
 Gere localmente com Node (sem dependências externas):
