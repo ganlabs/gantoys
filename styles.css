@@ -292,6 +292,12 @@ body {
     max-width: 100%;
     height: 50px;
     object-fit: contain;
+    transition: filter 0.3s ease;
+}
+
+[data-theme="light"] .sidebar-logo,
+[data-theme="light"] .topbar-logo {
+    filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeColorMatrix type='matrix' values='1.0 0 -0.71 0 0  0 1.05 -0.74 0 0  0 0 0.29 0 0  0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#f");
 }
 
 .sidebar-title {
@@ -311,6 +317,10 @@ body {
     scrollbar-color: var(--accent) var(--surface-color);
 }
 
+[data-theme="light"] .sidebar-nav {
+    scrollbar-color: var(--lead-gray) var(--surface-color);
+}
+
 .sidebar-nav::-webkit-scrollbar {
     width: 10px;
 }
@@ -325,6 +335,10 @@ body {
     background: var(--accent);
     border: 2px solid var(--surface-color);
     border-radius: var(--card-radius);
+}
+
+[data-theme="light"] .sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--lead-gray);
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
@@ -362,6 +376,11 @@ body {
     color: var(--accent);
 }
 
+[data-theme="light"] .nav-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
 [data-visual="neumorphism"] .nav-item:hover {
     box-shadow: inset 3px 3px 6px var(--shadow), inset -3px -3px 6px var(--highlight);
 }
@@ -377,12 +396,7 @@ body {
     font-weight: 600;
 }
 
-/* Modo claro: o amarelo da marca não tem contraste como cor de texto sobre
-   superfície clara, então o item usa o texto principal e o amarelo fica na
-   barra de seleção. */
 [data-theme="light"] .nav-item {
-    /* O secundário de alguns visuais claros fica abaixo de 4.5:1 no menu:
-       aproxima do texto primário mantendo a hierarquia. */
     color: var(--text-secondary);
     color: color-mix(in srgb, var(--text-secondary) 55%, var(--text-primary));
 }
@@ -393,12 +407,14 @@ body {
 }
 
 [data-theme="light"] .nav-item.active {
-    background: rgba(255, 215, 0, 0.30);
-    color: var(--text-primary);
-    box-shadow: inset 3px 0 0 var(--accent);
+    background: var(--accent);
+    color: #1a1a1a;
+    font-weight: 700;
 }
 
-[data-theme="light"] .nav-item.active i { color: var(--accent); }
+[data-theme="light"] .nav-item.active i {
+    color: #1a1a1a;
+}
 
 [data-visual="neobrutalism"] .nav-item.active {
     background: var(--accent);
@@ -741,6 +757,34 @@ body {
     font-size: 4rem;
     color: var(--accent);
     margin-bottom: 1rem;
+}
+
+.welcome-version {
+    position: fixed;
+    bottom: 12px;
+    right: 16px;
+    font-size: 0.72rem;
+    font-family: var(--toy-mono, monospace);
+    color: var(--text-secondary);
+    opacity: 0.55;
+    letter-spacing: 0.04em;
+    user-select: text;
+    pointer-events: auto;
+    z-index: 5;
+    transition: opacity 0.2s ease;
+}
+
+.welcome-version:hover {
+    opacity: 0.9;
+}
+
+[data-theme="light"] .welcome-version {
+    color: var(--lead-gray);
+    opacity: 0.65;
+}
+
+[data-theme="light"] .welcome-version:hover {
+    opacity: 1;
 }
 
 .welcome-panel h2 {

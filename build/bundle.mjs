@@ -17,10 +17,10 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -60,6 +60,23 @@ function dataUrl(relPath) {
 function escapeScript(text) {
     return String(text).replace(/<\/script/gi, '<\\/script');
 }
+function getReleaseTag() {
+    const now = new Date();
+    const y = now.getUTCFullYear();
+    const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(now.getUTCDate()).padStart(2, '0');
+    const todayUtc = `${y}.${m}.${d}`;
+
+    let sha = '';
+    try {
+        sha = execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
+    } catch (e) {
+        sha = process.env.GITHUB_SHA ? process.env.GITHUB_SHA.slice(0, 7) : 'local';
+    }
+
+    return `v${todayUtc}-${sha}`;
+}
+
 
 /**
  * Resolve uma referência encontrada dentro de um toy (ex.: "styles.css",
@@ -214,7 +231,9 @@ function buildMain(toysMap, anyUsesPdfWorker) {
     const appJs = escapeScript(read('app.js'));
     const toysJson = escapeScript(JSON.stringify(toysMap));
 
+    const releaseTag = getReleaseTag();
     const injectedScripts = [
+        `<script>window.GANTOYS_RELEASE = ${JSON.stringify(releaseTag)};</script>`,
         `<script>window.GANTOYS_TOYS = ${toysJson};</script>`,
     ];
     if (anyUsesPdfWorker) {

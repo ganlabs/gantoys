@@ -71,6 +71,10 @@
                     <i class="bi bi-person-lines-fill"></i>
                     <span>Normalizador de Nomes</span>
                 </a>
+                <a href="#" class="nav-item" data-toy="gannormalizadoriris">
+                    <i class="bi bi-folder2-open"></i>
+                    <span>Normalizador Pastas IRIS</span>
+                </a>
                 <a href="#" class="nav-item" data-toy="ganpadronizadorcnj">
                     <i class="bi bi-list-ol"></i>
                     <span>Padronizador CNJ</span>
@@ -156,6 +160,7 @@
                         <h2>Bem-vindo ao GAN Toys</h2>
                         <p class="welcome-subtitle">Selecione uma ferramenta no menu lateral.</p>
                         <p class="welcome-quote" id="welcomeQuote"></p>
+                        <span class="welcome-version" id="welcomeVersion"></span>
                     </div>
                 </div>
             </div>
@@ -368,9 +373,23 @@
             "O amor é tudo o que você precisa."
         ];
 
+        function updateWelcomeInfo() {
+            getRandomQuote();
+            updateReleaseVersion();
+        }
+
         function getRandomQuote() {
             const quote = quotes[Math.floor(Math.random() * quotes.length)];
-            document.getElementById('welcomeQuote').textContent = `"${quote}"`;
+            const el = document.getElementById('welcomeQuote');
+            if (el) el.textContent = `"${quote}"`;
+        }
+
+        function updateReleaseVersion() {
+            const el = document.getElementById('welcomeVersion');
+            if (!el) return;
+            const version = window.GANTOYS_RELEASE || '';
+            el.textContent = version;
+            el.style.display = version ? 'block' : 'none';
         }
         
         (function() {
@@ -468,6 +487,7 @@
             } else {
                 showHome();
             }
+            updateReleaseVersion();
 
             document.getElementById('sidebarToggle').addEventListener('click', function() {
                 document.getElementById('sidebar').classList.toggle('open');
@@ -504,10 +524,11 @@
                         <h2>Bem-vindo ao GAN Toys</h2>
                         <p class="welcome-subtitle">Selecione uma ferramenta no menu lateral.</p>
                         <p class="welcome-quote" id="welcomeQuote"></p>
+                        <span class="welcome-version" id="welcomeVersion"></span>
                     </div>
                 `;
                 localStorage.removeItem('lastToy');
-                getRandomQuote();
+                updateWelcomeInfo();
             }
 
             function loadToy(toyName) {

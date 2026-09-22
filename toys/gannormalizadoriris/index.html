@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script>
+        (function () {
+            function syncThemeCss(cssText) {
+                try {
+                    const css = cssText || localStorage.getItem('gantoys_theme_css');
+                    if (!css || !document.head) return;
+                    const existingStyle = document.getElementById('gantoys-theme-inject');
+                    if (existingStyle) existingStyle.remove();
+                    const style = document.createElement('style');
+                    style.id = 'gantoys-theme-inject';
+                    style.textContent = css;
+                    document.head.appendChild(style);
+                } catch (e) {}
+            }
+            function applyTheme(theme, visual, cssText) {
+                if (theme) document.documentElement.setAttribute('data-theme', theme);
+                if (visual) document.documentElement.setAttribute('data-visual', visual);
+                if (cssText) { try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {} }
+                syncThemeCss(cssText);
+            }
+            try { applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
+            document.addEventListener('DOMContentLoaded', function () { syncThemeCss(); });
+            window.addEventListener('message', function (e) {
+                if (e.data && e.data.type === 'theme') applyTheme(e.data.theme, e.data.visual, e.data.css);
+            });
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Normalizador de Pastas IRIS</title>
+    <link rel="icon" href="../../favicon.png" type="image/png">
+    <link rel="stylesheet" href="../shared/toy.css">
+    <style>
+        #settings label { display: grid; gap: 8px; color: var(--toy-muted); font-size: .92rem; font-weight: 600; }
+        #settings .check { display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Normalizador de Pastas IRIS</h1>
+            <p>Remova o prefixo IRIS e os zeros à esquerda das pastas IRIS.</p>
+        </header>
+        <section class="glass-card">
+            <div class="panel">
+                <div class="card-heading"><h2>Entrada</h2><p id="inputHint">Cole os dados, um por linha. Exemplo: IRIS00998585.</p></div>
+                <div id="settings" class="field-grid hidden"></div>
+                <label class="input-label" for="toolInput">Dados</label>
+                <textarea id="toolInput" spellcheck="false" placeholder="Cole os dados aqui..."></textarea>
+                <button id="runButton" class="btn btn-primary" type="button">Processar</button>
+                <section id="resultsSection" class="stack hidden" aria-live="polite">
+                    <hr class="divider">
+                    <div class="card-heading"><h2>Resultado</h2><p id="resultSummary"></p></div>
+                    <div class="actions"><button id="clearButton" class="btn btn-outline" type="button">Limpar</button><button id="copyButton" class="btn btn-outline" type="button">Copiar resultado</button></div>
+                    <div id="errorMessage" class="message error hidden"></div>
+                    <div id="results" class="results-table-wrap"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
