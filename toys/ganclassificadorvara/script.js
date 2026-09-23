@@ -84,7 +84,6 @@ function renderSettings(config, container) {
     const options = {
         'extract-polos': [{ key: 'polo', label: 'Polo a filtrar', value: 'ATIVO' }],
         'extract-columns': [{ key: 'cols', label: 'Colunas (separadas por vírgula)', value: '' }],
-        'resolve-carteira-reu': [{ key: 'duo', label: 'Modo duo (duas colunas separadas por tabulação)', type: 'checkbox' }],
         'strip-suffix': [{ key: 'suffix', label: 'Sufixo a remover', value: '-PI' }]
     }[config.type] || [];
 
@@ -159,10 +158,9 @@ function runTool(type, text, settings) {
     if (type === 'extract-columns') return extractColumns(text, settings.cols);
     if (type === 'extract-columns-santander') return extractColumnsSantander(text);
     if (type === 'list-reus-ml') return listReusMl();
-    if (type === 'lookup-oab') return lookupOab(text);
     if (type === 'normalize-documents') return normalizeDocuments(text);
     if (type === 'normalize-names') return normalizeNames(text);
-    if (type === 'resolve-carteira-reu') return resolveCarteiraReu(text, settings.duo);
+    if (type === 'resolve-carteira-reu') return resolveCarteiraReu(text);
     if (type === 'strip-suffix') return stripSuffix(text, settings.suffix);
     return { error: 'Ferramenta não configurada.' };
 }
@@ -317,16 +315,6 @@ function listReusMl() {
     return { headers: ['Réu'], rows: ['EBAZAR.COM.BR LTDA.', 'MERCADOLIVRE.COM ATIVIDADES DE INTERNET LTDA.', 'MERCADO CRÉDITO SOCIEDADE DE CREDITO, FINANCIAMENTO E INVESTIMENTO S.A.', 'MERCADO ENVIOS TRANSPORTE LTDA.', 'MERCADO PAGO INSTITUICAO DE PAGAMENTO LTDA', 'KANGU PARTICIPAÇÕES S.A.', 'K21 INTERMEDIACAO LTDA.', 'IBAZAR.COM ATIVIDADES DE INTERNET LTDA.'].map((name) => [name]) };
 }
 
-function lookupOab(text) {
-    const references = { 244109: 'RJ', 215984: 'RJ', 138434: 'RJ', 97301: 'RS', 15600: 'RO', 60501: 'SC', 62176: 'SC', 8772: 'SE', 15790: 'SE', 527608: 'SP', 182536: 'SP', 148622: 'RJ', 152176: 'RJ', 8146: 'RN', 17793: 'RN', 6070: 'ES', 22033: 'MT', 225990: 'RJ', 12518: 'GO', 18913: 'ES', 44200: 'ES', 100275: 'RJ', 165202: 'RJ', 24595: 'ES', 94978: 'RJ', 206127: 'RJ', 209356: 'RJ', 28446: 'ES' };
-    const rows = inputLines(text).map((line) => {
-        const [name = '', rawOab = ''] = line.split('\t');
-        const oab = rawOab.trim().replace(/\D/g, '');
-        const uf = !oab ? 'TJ' : references[oab] || `? OAB ${name.trim()} ${oab}`;
-        return [name.trim(), rawOab.trim(), uf];
-    });
-    return { headers: ['Advogado', 'OAB', 'UF'], rows };
-}
 
 function normalizeDocuments(text) {
     return { headers: ['Tipo', 'Normalizado'], rows: inputLines(text).map((line) => {
@@ -368,7 +356,7 @@ function normalizeNames(text) {
     return { headers, rows };
 }
 
-function resolveCarteiraReu(text, duo) {
+function resolveCarteiraReu(text) {
     const refs = [
         ['Saneamento - Águas do Rio 4', 'AGUAS DO RIO 4 SPE S.A.'], ['Saneamento - Águas do Rio 1', 'AGUAS DO RIO 1 SPE S.A.'], ['Saneamento - Rio+', 'RIO+ SANEAMENTO BL3 S.A.'], ['Mercado Livre - Mercado Livre - JC', 'REU A DEFINIR'], ['Mercado Livre - Mercado Livre - JEC', 'REU A DEFINIR'], ['Saneamento - Prolagos - Consumidor', 'PROLAGOS S.A. - CONCESSIONÁRIA DE SERVIÇOS PÚBLICOS DE ÁGUA E ESGOTO'], ['Saneamento - Prolagos - Cobranca', 'PROLAGOS S.A. - CONCESSIONÁRIA DE SERVIÇOS PÚBLICOS DE ÁGUA E ESGOTO'], ['Saneamento - FAB', 'F.AB. ZONA OESTE S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – REGIÃO METROPOLITANA DO RECIFE/GOIANA SPE S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL BLUMENAU S.A'], ['Saneamento - BRK', 'BRK AMBIENTAL – CAÇADOR S.A'], ['Saneamento - BRK', 'BRK AMBIENTAL – CACHOEIRO DE ITAPEMIRIM S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – GOIAS S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – LIMEIRA S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – MACAÉ S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – REGIÃO METROPOLITANA DE MACEIO S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – MARANHÃO S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – MAUÁ S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL PARTICIPAÇÕES'], ['Saneamento - BRK', 'BRK AMBIENTAL – PORTO FERREIRA S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – RIO CLARO S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – SANTA GERTRUDES S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL SUMARÉ S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – ARAGUAIA SANEAMENTO S.A.'], ['Saneamento - BRK', 'BRK AMBIENTAL – URUGUAIANA S.A.'], ['Saneamento - BRK', 'SANEAQUA MAIRINQUE S.A.'], ['Saneamento - BRK', 'Companhia de Saneamento do Tocantins – SANEATINS'], ['Mercado Livre', 'EBAZAR.COM.BR LTDA.'], ['Mercado Livre', 'MERCADOLIVRE.COM ATIVIDADES DE INTERNET LTDA.'], ['Mercado Livre', 'MERCADO CRÉDITO SOCIEDADE DE CREDITO, FINANCIAMENTO E INVESTIMENTO S.A.'], ['Mercado Livre', 'MERCADO ENVIOS TRANSPORTE LTDA.'], ['Mercado Livre', 'MERCADO PAGO INSTITUICAO DE PAGAMENTO LTDA'], ['Mercado Livre', 'KANGU PARTICIPAÇÕES S.A.'], ['Mercado Livre', 'K21 INTERMEDIACAO LTDA.'], ['Mercado Livre', 'IBAZAR.COM ATIVIDADES DE INTERNET LTDA.'], ['Naturgy - Naturgy', 'CEG RIO S.A.'], ['Naturgy - Naturgy', 'COMPANHIA DISTRIBUIDORA DE GAS DO RIO DE JANEIRO - CEG'], ['Naturgy - Naturgy', 'GAS NATURAL SERVICOS S.A.'], ['Bradesco - Indenizatória', 'BANCO BRADESCO SA']
     ];
@@ -399,12 +387,6 @@ function resolveCarteiraReu(text, duo) {
         return best;
     };
     const rows = inputLines(text).map((line) => {
-        if (duo && line.includes('\t')) {
-            const [left, right] = line.split('\t', 2);
-            const leftMatch = find(left);
-            const rightMatch = find(right);
-            return [line, leftMatch?.[0] || rightMatch?.[0] || '', rightMatch?.[1] || leftMatch?.[1] || ''];
-        }
         const match = find(line);
         return [line, match?.[0] || '', match?.[1] || ''];
     });

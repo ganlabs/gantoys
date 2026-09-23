@@ -10,4 +10,3 @@ Estes toys foram retirados do menu ativo por estarem em desuso. Seus códigos fo
 | `ganextratorcolunas` | Arquivado por desuso |
 | `ganextratorcolunassantander` | Arquivado por desuso |
 | `ganlistarreusml` | Arquivado por desuso |
-| `ganconsultoroab` | Arquivado por desuso |
