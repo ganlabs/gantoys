@@ -43,4 +43,4 @@ jobs:
           gh release create "${TAG}" dist/index.html \
             --repo "${GITHUB_REPOSITORY}" \
             --title "GAN Toys ${TAG}" \
-            --notes "Bundle HTML único (imagens/fontes embutidas em base64) gerado automaticamente a partir de ${GITHUB_SHA}."
+            --notes "Bundle HTML único (assets compartilhados em Blob URLs do próprio documento) gerado automaticamente a partir de ${GITHUB_SHA}."

@@ -21,6 +21,24 @@ try {
     process.exit(1);
 }
 
+// 0) registro de assets compartilhados do documento pai
+const assetsMarker = 'window.GANTOYS_ASSETS = ';
+const assetsStart = html.indexOf(assetsMarker) + assetsMarker.length;
+const assetsEnd = html.indexOf(';\n</script>', assetsStart);
+
+let assets = {};
+if (assetsStart < assetsMarker.length || assetsEnd < 0) {
+    console.error('marcador do registro de assets não encontrado');
+    process.exit(1);
+}
+try {
+    assets = JSON.parse(html.slice(assetsStart, assetsEnd));
+    console.log('JSON GANTOYS_ASSETS OK — assets:', Object.keys(assets).length);
+} catch (e) {
+    console.error('JSON GANTOYS_ASSETS FAIL:', e.message);
+    process.exit(1);
+}
+
 // 1) nenhum </script> cru dentro dos srcdoc (fecharia o script embutido antes da hora)
 let rawTotal = 0;
 for (const t of Object.keys(map)) {
@@ -59,8 +77,9 @@ const FORBIDDEN = [
     'lucide', 'lucide-react',
 ];
 
-// identidade: o logo do toy é o favicon.png (mesmo asset nos 15 toys)
+// identidade: o logo do toy é o favicon.png (asset compartilhado do bundle)
 const toyLogoDataUrl = `data:image/png;base64,${readFileSync('favicon.png').toString('base64')}`;
+const toyLogoAsset = '__ganasset:favicon.png';
 
 const layoutFails = [];
 for (const t of Object.keys(map)) {
@@ -68,7 +87,7 @@ for (const t of Object.keys(map)) {
     const missing = REQUIRED.filter((needle) => !markup.includes(needle));
     const stale = FORBIDDEN.filter((needle) => markup.includes(needle));
 
-    if (!markup.includes(toyLogoDataUrl)) missing.push('logo (favicon.png)');
+    if (!markup.includes(toyLogoAsset) && !markup.includes(toyLogoDataUrl)) missing.push('logo (favicon.png)');
 
     // Emoji de verdade: apresentação padrão emoji (©/™/→ são pictográficos mas não emoji)
     const emoji = map[t].match(/[\p{Emoji_Presentation}\uFE0F]/gu);
@@ -81,16 +100,37 @@ for (const t of Object.keys(map)) {
 }
 console.log('toys fora do contrato de layout:', layoutFails.length);
 
+// 3.1) todo marcador __ganasset: precisa existir no registro do pai — inclusive
+// os que aparecem dentro do conteúdo dos próprios assets (CSS -> fonte)
+const registered = new Set(Object.keys(assets));
+const missingRefs = new Map();
+const sources = [...Object.entries(map), ...Object.entries(assets).map(([k, v]) => [`asset:${k}`, v[2]])];
+for (const [name, text] of sources) {
+    for (const ref of String(text).match(/__ganasset:([\w./-]+)/g) || []) {
+        const key = ref.slice('__ganasset:'.length);
+        if (!registered.has(key)) missingRefs.set(`${name} -> ${key}`, true);
+    }
+}
+for (const ref of missingRefs.keys()) console.log('  referência sem asset no registro:', ref);
+console.log('referências de asset órfãs:', missingRefs.size);
+
 // 4) estrutura principal
-console.log('worker b64 embutido:', html.includes('window.GANTOYS_PDF_WORKER_B64'));
-console.log('srcdoc usado no app.js:', html.includes('iframe.srcdoc = bundled'));
+const assetEntries = Object.values(assets);
+const registryBytes = assetEntries.reduce((total, entry) => total + entry[2].length, 0);
+console.log('worker do pdf como asset:', registered.has('vendor/pdfjs/pdf.worker.min.js'));
+console.log('runtime de assets no app.js:', html.includes('window.ganAssetText(bundled)'));
 console.log('tesseract CDN (externo, intencional):', html.includes('cdn.jsdelivr.net/npm/tesseract'));
+console.log('registry MB:', (registryBytes / 1024 / 1024).toFixed(2), '| assets:', assetEntries.length);
 console.log('data:image:', (html.match(/data:image\//g) || []).length);
 console.log('data:font:', (html.match(/data:font\//g) || []).length);
 console.log('tamanho total MB:', (html.length / 1024 / 1024).toFixed(2));
 
 if (leftover > 0) {
     console.error('FALHA: há referências locais quebradas no bundle.');
+    process.exit(1);
+}
+if (missingRefs.size > 0) {
+    console.error('FALHA: há marcadores de asset sem entrada no registro.');
     process.exit(1);
 }
 if (layoutFails.length > 0) {

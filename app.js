@@ -21,13 +21,12 @@ const GANTOYS = {
     ensurePdfWorker() {
         try {
             if (window.__ganPdfWorkerUrl) return window.__ganPdfWorkerUrl;
-            const b64 = window.GANTOYS_PDF_WORKER_B64;
-            if (!b64) return null;
-            const binary = atob(b64);
-            const bytes = new Uint8Array(binary.length);
-            for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-            window.__ganPdfWorkerUrl = URL.createObjectURL(new Blob([bytes], { type: 'text/javascript' }));
-            return window.__ganPdfWorkerUrl;
+            const url = typeof window.ganAssetUrl === 'function'
+                ? window.ganAssetUrl('vendor/pdfjs/pdf.worker.min.js')
+                : null;
+            if (!url) return null;
+            window.__ganPdfWorkerUrl = url;
+            return url;
         } catch (error) {
             console.warn('Cannot create bundled PDF worker:', error);
             return null;
@@ -52,7 +51,9 @@ const GANTOYS = {
 
         const bundled = (window.GANTOYS_TOYS && window.GANTOYS_TOYS[toyName]) || null;
         if (bundled) {
-            iframe.srcdoc = bundled;
+            // Marcadores __ganasset:<caminho> viram Blob URLs criados por este
+            // documento: o asset compartilhado existe uma vez só no bundle.
+            iframe.srcdoc = typeof window.ganAssetText === 'function' ? window.ganAssetText(bundled) : bundled;
         } else {
             iframe.src = `toys/${toyName}/index.html`;
         }

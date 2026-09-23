@@ -13,7 +13,7 @@
   com `<header class="brand">` (logo `../../favicon.png` em `.brand-logo`) e cartões
   `<section class="glass-card"><div class="panel">…</div></section>`
 - CSS local (`styles.css`) só com o que é específico do toy, sempre via tokens `--toy-*`
-- Dependência local: `pdf-lib.min.js` (processamento de PDF)
+- Dependência local: `../../vendor/pdf-lib/pdf-lib.min.js` (processamento de PDF)
 - Sections: Header, Folder Selection, Processing Status, Results
 
 ### Visual Design

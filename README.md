@@ -16,8 +16,10 @@ Consequências para quem mexe no código:
 - scripts clássicos (`<script src>`), nunca módulos ES (`type="module"`), que o
   navegador bloqueia em `file://`;
 - recursos compartilhados ficam em `toys/shared/` e são carregados por caminho
-  relativo (`../shared/toy.css`, `../shared/toy.js`); o bundle embute os dois;
-- nada de Service Worker nem de `Worker` a partir de arquivo local;
+  relativo (`../shared/toy.css`, `../shared/toy.js`); no bundle os dois entram
+  uma única vez e chegam aos toys como `Blob URL` do documento pai;
+- nada de Service Worker nem de `Worker` a partir de arquivo local (`Blob URL`
+  criado pelo documento pai funciona: é o que o worker do pdf.js usa);
 - a única dependência de rede é o `tesseract.js` por CDN no `gannovodiv` (OCR).
 
 Servir por HTTP continua valendo como atalho de desenvolvimento:
@@ -79,19 +81,39 @@ definidos em `toys/shared/toy.css`:
 Referência: `toys/gancopy/index.html` é o toy exemplar do padrão.
 
 `node build/check-bundle.mjs` valida esse contrato em todos os toys: casca
-canônica, logo (`favicon.png`) embutido, ausência de classes legadas e ausência
-de emoji.
+canônica, logo (`favicon.png`) referenciado, ausência de classes legadas, ausência
+de emoji e integridade dos assets compartilhados do bundle.
 
 ## Bundle HTML único (entregável)
 
 O entregável oficial do projeto é um **único arquivo HTML autocontido**,
 `dist/index.html`, que embute:
 
-- todos os toys (como `<iframe srcdoc>`, com seus CSS/JS já inline);
-- CSS/JS locais de `vendor/` e `app.js`/`styles.css` da aplicação;
-- imagens e fontes (`logo.png`, `favicon.png`, bootstrap-icons, fonts do vendor)
-  em base64;
-- o worker do pdf.js como `Blob URL` criado pelo documento pai.
+- todos os toys (como `<iframe srcdoc>`, com o HTML e o JS/CSS próprios já inline);
+- CSS/JS da aplicação (`app.js`, `styles.css`, bootstrap) inline;
+- imagens da aplicação (`logo.png`, `favicon.png`) em base64;
+- os assets compartilhados entre os toys — `vendor/`, `toys/shared/` e as
+  imagens da raiz — **uma única vez**, em `window.GANTOYS_ASSETS`.
+
+Como os assets compartilhados chegam aos toys: o srcdoc não carrega cópia
+própria. Ele sai do bundle com o marcador `__ganasset:<caminho>` e, na hora de
+carregar o toy, o documento pai troca cada marcador por um `Blob URL` criado a
+partir do registro (`window.ganAssetText`). É o mesmo mecanismo já usado pelo
+worker do pdf.js (`window.parent.__ganPdfWorkerUrl`), e funciona em `file://`
+porque o iframe `srcdoc` herda a origem do documento pai. Consequências para
+quem mexe no código:
+
+- nada muda nos toys nem no `index.html` de desenvolvimento: eles continuam
+  carregando `vendor/…` e `toys/shared/…` por caminho relativo, e abrem direto
+  do disco;
+- um asset novo referenciado por toy entra no bundle automaticamente; se ele
+  estiver fora da pasta do próprio toy (`vendor/`, `toys/shared/`, raiz), vale
+  para todos;
+- CSS embutido passa por dois ajustes de tamanho no bundle: `@font-face` mantém
+  só o `woff2` quando existe (woff/ttf/eot/otf saem) e `url()` de asset
+  compartilhado vira marcador, resolvido em tempo de carga;
+- abrir `dist/index.html` exige JS ligado (o registro e os Blob URLs são
+  runtime); não há nada externo ao arquivo.
 
 Gere localmente com Node (sem dependências externas):
 
