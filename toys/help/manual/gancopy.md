@@ -53,7 +53,7 @@ Copia documentos por número de processo entre duas pastas locais, sem mover nem
 
 Na aba `Arquivo`:
 
-- É copiado todo arquivo de qualquer subpasta da origem cujo nome ou caminho contenha um dos processos informados, mantendo o nome original. Vários arquivos podem atender ao mesmo processo.
+- É copiado todo arquivo de qualquer subpasta da origem cujo nome ou caminho contenha um dos processos informados, mantendo o nome original. Vários arquivos podem atender ao mesmo processo. Para processos no formato CNJ, a busca localiza o arquivo tanto no formato pontuado quanto no formato sem pontuação (e vice-versa).
 - O contador `Encontrados` conta os arquivos que casaram com algum processo; `Copiados` e `Não copiados` dividem esse total.
 - Cada linha do quadro `Copiados` traz o caminho relativo do arquivo na origem e o estado `COPIADO` ou `ATUALIZADO`.
 - Processos sem nenhum arquivo recebem a linha `NÃO LOCALIZADO` com a mensagem `<processo>: nenhum arquivo localizado na origem.`

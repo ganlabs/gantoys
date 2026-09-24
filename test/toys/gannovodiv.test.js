@@ -946,3 +946,33 @@ test('NovoDiv — Refazer seleção e Novo Processamento zeram a tela', async (t
     assert.equal(pagina.seletor('#stepUpload').classList.contains('hidden'), false);
     assert.deepEqual(pagina.textos('.summary .stat strong'), ['0', '0', '0', '0']);
 });
+
+test('NovoDiv — arquivo com CNJ despontuado no nome é aceito e gera PDFs e CSV com CNJ formatado', async (t) => {
+    const paginas = [PAGINA_SISTEMA, PAGINA_INICIAL, PAGINA_FECHAMENTO, PAGINA_PROCURACAO];
+    const pagina = await abrirNovoDiv(t, { paginas });
+    const cnjCru = '00000010220258260100';
+    const nomeCru = `autos ${cnjCru}.pdf`;
+
+    selecionar(pagina, [await arquivoDeTeste(pagina, nomeCru, 4)]);
+    assert.equal(pagina.texto('#fileBadge'), '1 arquivo(s) na fila');
+
+    await processar(pagina);
+
+    assert.deepEqual(pagina.destino.caminhos(), [`Docs_${CNJ}.pdf`, `Inicial_${CNJ}.pdf`]);
+    assert.equal(pagina.todos('#reportTbody tr').length, 1);
+    assert.deepEqual(celulasDaLinha(pagina, 0), [nomeCru, '2 a 3 (2p)', 'Inicial Docs Corrigir', 'OK']);
+});
+
+test('NovoDiv — formatarCNJ e cnjFromName aceitam formatos pontuado e despontuado', async (t) => {
+    const pagina = await abrirNovoDiv(t);
+    const cnjCru = '00000010220258260100';
+
+    assert.equal(pagina.janela.formatarCNJ(cnjCru), CNJ);
+    assert.equal(pagina.janela.formatarCNJ(CNJ), CNJ);
+    assert.equal(pagina.janela.formatarCNJ('123'), null);
+    assert.equal(pagina.janela.formatarCNJ(''), null);
+
+    assert.equal(pagina.janela.cnjFromName(`processo ${CNJ}.pdf`), CNJ);
+    assert.equal(pagina.janela.cnjFromName(`autos ${cnjCru}.pdf`), CNJ);
+    assert.equal(pagina.janela.cnjFromName('sem_numero.pdf'), null);
+});

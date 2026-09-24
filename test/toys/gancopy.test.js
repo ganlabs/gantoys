@@ -188,6 +188,40 @@ test('gancopy — processo só de dígitos casa pelo número e copia todos os ar
     ]);
 });
 
+test('gancopy — processo pontuado localiza arquivo despontuado no Santander e no Bradesco', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const cnjCru = '00012345620268000000';
+    const origem = montarArvore('Origem', {
+        [`a/${cnjCru}.pdf`]: 'conteúdo despontuado',
+    });
+    const destino = montarArvore('Destino', {});
+
+    // Santander: processo pontuado encontra arquivo com nome despontuado
+    await escolherPasta(ctx, '#santander-source', origem);
+    await escolherPasta(ctx, '#santander-destination', destino);
+    pagina.digitar('#santander-processes', PROCESSO);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.deepEqual(destino.caminhos(), [`${cnjCru}.pdf`]);
+    assert.equal(destino.conteudo(`${cnjCru}.pdf`), 'conteúdo despontuado');
+    assert.equal(pagina.texto('#santander-total'), '1');
+    assert.equal(pagina.texto('#santander-success'), '1');
+
+    // Bradesco: processo pontuado encontra PDF despontuado e renomeia
+    pagina.clicar('#tab-bradesco');
+    const destinoBradesco = montarArvore('DestinoBradesco', {});
+    await escolherPasta(ctx, '#bradesco-source', origem);
+    await escolherPasta(ctx, '#bradesco-destination', destinoBradesco);
+    pagina.digitar('#bradesco-processes', PROCESSO);
+    pagina.digitar('#bradesco-clients', 'Pasta Alpha');
+    await copiar(pagina, '#bradesco-copy', '#bradesco-summary');
+
+    assert.deepEqual(destinoBradesco.caminhos(), ['INICIAL Pasta Alpha.pdf']);
+    assert.equal(destinoBradesco.conteudo('INICIAL Pasta Alpha.pdf'), 'conteúdo despontuado');
+    assert.equal(pagina.texto('#bradesco-success'), '1');
+});
+
 test('gancopy — processo com texto casa por trecho do caminho, ignorando maiúsculas', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;

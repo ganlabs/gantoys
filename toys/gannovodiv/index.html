@@ -872,7 +872,7 @@ function handleFiles(files) {
     
     const integrais = pdfs.filter(f => {
         if (f.name.startsWith('Inicial') || f.name.startsWith('Docs')) return false;
-        return f.name.match(/(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/);
+        return Boolean(cnjFromName(f.name));
     });
     
     if (integrais.length === 0) { 
@@ -929,9 +929,20 @@ function log(msg) {
     console.log(msg); 
 }
 
+function formatarCNJ(numero) {
+    const digitos = String(numero || '').replace(/\D/g, '');
+    if (digitos.length === 20) {
+        return digitos.replace(/(\d{7})(\d{2})(\d{4})(\d{1})(\d{2})(\d{4})/, '$1-$2.$3.$4.$5.$6');
+    }
+    return null;
+}
+
 function cnjFromName(n) { 
     const m = n.match(/(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/); 
-    return m ? m[1] : null; 
+    if (m) return m[1];
+    const mCru = n.match(/(\d{20})/);
+    if (mCru) return formatarCNJ(mCru[1]);
+    return null; 
 }
 
 async function splitSavePDF(file, start, end, destDir, nomeBase) {

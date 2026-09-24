@@ -554,7 +554,7 @@ Copia documentos por número de processo entre duas pastas locais, sem mover nem
 
 Na aba `Arquivo`:
 
-- É copiado todo arquivo de qualquer subpasta da origem cujo nome ou caminho contenha um dos processos informados, mantendo o nome original. Vários arquivos podem atender ao mesmo processo.
+- É copiado todo arquivo de qualquer subpasta da origem cujo nome ou caminho contenha um dos processos informados, mantendo o nome original. Vários arquivos podem atender ao mesmo processo. Para processos no formato CNJ, a busca localiza o arquivo tanto no formato pontuado quanto no formato sem pontuação (e vice-versa).
 - O contador `Encontrados` conta os arquivos que casaram com algum processo; `Copiados` e `Não copiados` dividem esse total.
 - Cada linha do quadro `Copiados` traz o caminho relativo do arquivo na origem e o estado `COPIADO` ou `ATUALIZADO`.
 - Processos sem nenhum arquivo recebem a linha `NÃO LOCALIZADO` com a mensagem `<processo>: nenhum arquivo localizado na origem.`
@@ -599,7 +599,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 - O toy precisa rodar dentro do aplicativo GAN Toys: a escolha da pasta de destino e a gravação dos arquivos são pedidas ao aplicativo hospedeiro por mensagem. Fora do host, não existe seletor de pasta e o processamento nem começa.
 - `pdf-lib` e `pdf.js` são carregados do próprio projeto (`../../vendor/pdf-lib/pdf-lib.min.js` e `../../vendor/pdfjs/pdf.min.js`, com worker em `../../vendor/pdfjs/pdf.worker.min.js`); nenhum download é feito para eles.
 - O OCR de emergência depende da CDN `https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js`. Sem internet o OCR não existe: o arquivo que precisaria dele falha em vez de ser lido como imagem.
-- Cada PDF precisa ter o número CNJ no nome, no padrão `0000000-00.0000.0.00.0000`. Arquivos cujo nome começa com `Inicial` ou `Docs` são descartados da fila.
+- Cada PDF precisa ter o número CNJ no nome, no padrão `0000000-00.0000.0.00.0000` ou como 20 dígitos seguidos. Arquivos cujo nome começa com `Inicial` ou `Docs` são descartados da fila.
 - Extração de texto e montagem dos PDFs acontecem na máquina do usuário; nada é enviado para servidores.
 
 ## Passo a passo
@@ -649,7 +649,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 - `Intervalo de páginas inválido.` — `Início`/`Fim` vazios, menores que 1 ou em ordem invertida.
 - `Divisão manual concluída e sobrescrita com sucesso!` — a correção substitui os arquivos do processo e remove a pendência de revisão.
 - Um arquivo com erro não interrompe o lote: os demais são processados e a contagem `Erros` aumenta.
-- O CNJ é lido apenas do nome do arquivo; sem ele o arquivo nem entra na fila.
+- O CNJ é lido do nome do arquivo (no formato pontuado ou com 20 dígitos seguidos); sem ele o arquivo nem entra na fila.
 - Repetir o lote na mesma pasta sobrescreve `Inicial_<CNJ>.pdf` e `Docs_<CNJ>.pdf` dos processos já feitos.
 - O toy não valida o conteúdo jurídico do resultado e não corrige o intervalo sem intervenção: quando a detecção termina com dúvida, a linha vai para revisão humana.
 
