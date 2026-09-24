@@ -1,0 +1,23 @@
+{
+  "geradoPor": "tools/assets-integrity.mjs",
+  "arquivos": {
+    "favicon.png": "1696916f725b3116f2cef97e07a6d980017d0f9bd24a11b04d80ea9dd9406d8b",
+    "logo.png": "cc912cf4fa8fd57476fea205539a25278fdeb2260387f06cf9c313ce339340cc",
+    "toys/shared/kit.js": "bbebf1ab60f96f50fb533d1359e4515a5ff865bf40029883590f5ca8dbebfb06",
+    "toys/shared/toy.css": "3487f6eb4a4c23e1512a1180c628f112b3eca00fa7753ef89a2d00ea31145bfe",
+    "toys/shared/toy.js": "ddcee9a7c9709c7fda0d0bb8095a20b989b2a255c32f4de87ab1bd7396c432a2",
+    "vendor/bootstrap-icons/font/bootstrap-icons.css": "bd6146337f91518bdf30381cd35ab6db9ea4056572bfb7d8c7d6a3bd642c7fba",
+    "vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff": "d0346eea5a5ca9998be3c506fc655f0cbfccb42deb5fc6df39815425af867bb5",
+    "vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff2": "5b2dd4d4f81cd1f52a50b0833ea12c8f63f2c4ae4d2c5a799fcc741feb2ea40f",
+    "vendor/bootstrap/css/bootstrap.min.css": "3017df4a76db5f01c2b99b603d88b03106df13bcfe18e67b7c13c2341d3a67df",
+    "vendor/jspdf/jspdf.umd.min.js": "98ccf17aa10c20bb1301762618fcc9b6ab3a4e7f26b6071d64d0b41154df3875",
+    "vendor/jszip/jszip.min.js": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e",
+    "vendor/pdf-lib/pdf-lib.min.js": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f",
+    "vendor/pdfjs/pdf.min.js": "5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946",
+    "vendor/pdfjs/pdf.worker.min.js": "feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b",
+    "vendor/sqljs/sql-asm.js": "b5f2415a643a1af94a94ecfe07650e916d948861e4f28286839b12dcd01e9993",
+    "vendor/sqljs/sql-wasm.js": "2ef9c614e826f1e6fee7d6b8ed6a42676ac2c296fc47fdb7b9ac59699b992ba5",
+    "vendor/sqljs/sql-wasm.wasm": "18fc45ef410e6015296dad9fa775684c96e71e7007b99f2d87799a18a354e750",
+    "vendor/xlsx/xlsx.full.min.js": "e6c54d23060cbe6efc3794447e0c36573e4e488fdbb9b101f7dac053403cdfad"
+  }
+}

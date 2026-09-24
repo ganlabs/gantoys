@@ -21,7 +21,6 @@ let fileStatuses = [];
 
 // Busca no PDF
 let searchResults = [];
-let currentSearchIndex = 0;
 let pdfTextContent = {}; // Cache de texto por página
 
 // Inicialização
@@ -174,6 +173,12 @@ function extrairNumeroCNJ(nomeArquivo) {
     return null;
 }
 
+// Avança para o próximo arquivo do lote e o carrega no visualizador.
+function carregarProximoArquivo() {
+    currentFileIndex += 1;
+    carregarArquivoAtual();
+}
+
 // Carregar arquivo atual da fila
 async function carregarArquivoAtual() {
     if (currentFileIndex >= filesQueue.length) {
@@ -233,7 +238,6 @@ async function carregarArquivoAtual() {
         
         // Limpar busca anterior
         searchResults = [];
-        currentSearchIndex = 0;
         pdfTextContent = {};
         document.getElementById('searchText').value = '';
         document.getElementById('searchResults').textContent = '';
@@ -261,13 +265,8 @@ function atualizarStatusFila(index, status, className = '') {
     atualizarResumoLote();
 }
 
-// Marcar arquivo como ignorado
-function marcarArquivoComoIgnorado(index) {
-    atualizarStatusFila(index, 'Ignorado', 'skipped');
-}
-
 // Marcar arquivo como erro
-function marcarArquivoComoErro(index, erro) {
+function marcarArquivoComoErro(index, _erro) {
     atualizarStatusFila(index, 'Erro', 'error');
 }
 
@@ -389,28 +388,89 @@ function atualizarPreview() {
     // Definir nomes dos arquivos
     const sufixoCNJ = numeroCNJ ? ` - ${numeroCNJ}` : '';
     
-    // Atualizar preview
-    document.getElementById('previewInicial').innerHTML = `
-        <strong>Páginas ${inicio}-${fim}</strong><br>
-        ${paginasInicial} página(s)<br>
-        <small>Inicial${sufixoCNJ}.pdf</small>
-    `;
-    
+    // Atualizar preview (valores por textContent: o sufixo vem do CNJ lido do nome do arquivo)
+    const espaco = () => document.createTextNode(' ');
+    const previewInicial = document.getElementById('previewInicial');
+    previewInicial.replaceChildren(
+        criarLinhaForte(`Páginas ${inicio}-${fim}`),
+        document.createElement('br'),
+        espaco(),
+        document.createTextNode(`${paginasInicial} página(s)`),
+        document.createElement('br'),
+        espaco(),
+        criarLinhaFina(`Inicial${sufixoCNJ}.pdf`)
+    );
+
+    const previewDocs = document.getElementById('previewDocs');
     if (paginasDocs > 0) {
-        document.getElementById('previewDocs').innerHTML = `
-            <strong>${docsDescricao}</strong><br>
-            ${paginasDocs} página(s)<br>
-            <small>Docs Inicial${sufixoCNJ}.pdf</small>
-        `;
+        previewDocs.replaceChildren(
+            criarLinhaForte(docsDescricao),
+            document.createElement('br'),
+            espaco(),
+            document.createTextNode(`${paginasDocs} página(s)`),
+            document.createElement('br'),
+            espaco(),
+            criarLinhaFina(`Docs Inicial${sufixoCNJ}.pdf`)
+        );
     } else {
-        document.getElementById('previewDocs').innerHTML = `
-            <strong>Nenhuma página</strong><br>
-            <small>(Todas as páginas estão na "Inicial")</small>
-        `;
+        previewDocs.replaceChildren(
+            criarLinhaForte('Nenhuma página'),
+            document.createElement('br'),
+            espaco(),
+            criarLinhaFina('(Todas as páginas estão na "Inicial")')
+        );
     }
     
     // Mostrar preview
     document.getElementById('divisionPreview').style.display = 'block';
+}
+
+/** Elemento <strong> com texto literal. */
+function criarLinhaForte(texto) {
+    const elemento = document.createElement('strong');
+    elemento.textContent = texto;
+    return elemento;
+}
+
+/** Elemento <small> com texto literal. */
+function criarLinhaFina(texto) {
+    const elemento = document.createElement('small');
+    elemento.textContent = texto;
+    return elemento;
+}
+
+/** Ícone + texto, para compor mensagens sem passar valor por HTML. */
+function partesComIcone(classe, conteudo) {
+    const icone = document.createElement('i');
+    icone.className = classe;
+    return [icone, document.createTextNode(conteudo)];
+}
+
+/**
+ * Mensagem de fim de arquivo do lote: `Arquivo X/Y processado!` seguida do
+ * resultado e do aviso de avanço. Contadores vêm da fila do usuário, então
+ * tudo é montado com DOM/textContent.
+ */
+function mostrarFimDeArquivo(resultado) {
+    const destino = document.getElementById('resultMessage');
+    const quebra = () => document.createElement('br');
+
+    const titulo = document.createElement('strong');
+    titulo.textContent = `Arquivo ${currentFileIndex + 1}/${filesQueue.length} processado!`;
+
+    const aviso = document.createElement('strong');
+    const ultimo = currentFileIndex + 1 >= filesQueue.length;
+    aviso.append(...partesComIcone(
+        ultimo ? 'bi bi-check2-circle' : 'bi bi-arrow-right',
+        ultimo ? ' Todos os arquivos foram processados!' : ' Carregando próximo arquivo...'
+    ));
+
+    destino.replaceChildren(
+        titulo, quebra(), quebra(),
+        ...partesComIcone('bi bi-file-earmark-arrow-down', ` ${resultado}`),
+        quebra(), quebra(),
+        aviso
+    );
 }
 
 // Processar e dividir PDF
@@ -425,21 +485,6 @@ async function processarDivisao() {
     }
     
     const sufixoCNJ = numeroCNJ ? ` - ${numeroCNJ}` : '';
-    
-    // Calcular páginas que serão "Docs da Inicial"
-    const paginasAntes = inicio > 1 ? `1-${inicio-1}` : null;
-    const paginasDepois = fim < pageCount ? `${fim+1}-${pageCount}` : null;
-    
-    let docsDescricao = '';
-    if (paginasAntes && paginasDepois) {
-        docsDescricao = `Páginas ${paginasAntes} + ${paginasDepois}`;
-    } else if (paginasAntes) {
-        docsDescricao = `Páginas ${paginasAntes}`;
-    } else if (paginasDepois) {
-        docsDescricao = `Páginas ${paginasDepois}`;
-    } else {
-        docsDescricao = 'Nenhuma página adicional';
-    }
     
     showToast('Iniciando Divisão', `Processando: ${currentFile.name}`, 'info', 2000);
     
@@ -537,13 +582,7 @@ async function processarDivisao() {
             resultSection.style.display = 'block';
             
             const numArquivos = (temPaginasAntes || temPaginasDepois) ? 2 : 1;
-            document.getElementById('resultMessage').innerHTML = `
-                <strong>Arquivo ${currentFileIndex + 1}/${filesQueue.length} processado!</strong><br><br>
-                <i class="bi bi-file-earmark-arrow-down"></i> ${numArquivos} PDF(s) baixado(s) com sucesso!<br><br>
-                ${currentFileIndex + 1 < filesQueue.length ? 
-                    '<strong><i class="bi bi-arrow-right"></i> Carregando próximo arquivo...</strong>' : 
-                    '<strong><i class="bi bi-check2-circle"></i> Todos os arquivos foram processados!</strong>'}
-            `;
+            mostrarFimDeArquivo(`${numArquivos} PDF(s) baixado(s) com sucesso!`);
             
             // Resetar botão
             btnProcessar.disabled = false;
@@ -612,16 +651,34 @@ function finalizarProcessamento() {
     const erros = fileStatuses.filter(status => status === 'error').length;
     const ignorados = fileStatuses.filter(status => status === 'skipped').length;
     
-    document.getElementById('resultMessage').innerHTML = `
-        <h3 style="color: var(--toy-success);"><i class="bi bi-check2-circle"></i> Processamento concluído!</h3>
-        <strong><i class="bi bi-bar-chart-line"></i> Estatísticas:</strong><br><br>
-        <i class="bi bi-folder2-open"></i> Total de arquivos: ${total}<br>
-        <i class="bi bi-check-lg"></i> Processados com sucesso: ${concluidos}<br>
-        <i class="bi bi-x-lg"></i> Erros: ${erros}<br>
-        <i class="bi bi-skip-end-fill"></i> Ignorados: ${ignorados}<br><br>
-        <strong><i class="bi bi-download"></i> Os arquivos foram baixados para sua pasta Downloads.</strong><br>
-        Você pode organizá-los na pasta de sua preferência.
-    `;
+    const destino = document.getElementById('resultMessage');
+    const quebra = () => document.createElement('br');
+
+    const titulo = document.createElement('h3');
+    titulo.style.color = 'var(--toy-success)';
+    titulo.append(...partesComIcone('bi bi-check2-circle', ' Processamento concluído!'));
+
+    const subtitulo = document.createElement('strong');
+    subtitulo.append(...partesComIcone('bi bi-bar-chart-line', ' Estatísticas:'));
+
+    const linhas = [
+        ['bi bi-folder2-open', ` Total de arquivos: ${total}`],
+        ['bi bi-check-lg', ` Processados com sucesso: ${concluidos}`],
+        ['bi bi-x-lg', ` Erros: ${erros}`],
+        ['bi bi-skip-end-fill', ` Ignorados: ${ignorados}`],
+    ];
+
+    const rodape = document.createElement('strong');
+    rodape.append(...partesComIcone('bi bi-download', ' Os arquivos foram baixados para sua pasta Downloads.'));
+
+    destino.replaceChildren(
+        titulo, quebra(),
+        subtitulo, quebra(), quebra(),
+        ...linhas.flatMap(([classe, conteudo]) => [...partesComIcone(classe, conteudo), quebra()]),
+        quebra(),
+        rodape, quebra(),
+        document.createTextNode(' Você pode organizá-los na pasta de sua preferência.')
+    );
 }
 
 // Limpar tudo e recomeçar
@@ -668,7 +725,6 @@ async function buscarNoPDF() {
     }
     
     searchResults = [];
-    currentSearchIndex = 0;
     
     // Mostrar progresso
     document.getElementById('searchResults').innerHTML = '<i class="bi bi-hourglass-split"></i> Buscando...';
@@ -689,8 +745,12 @@ async function buscarNoPDF() {
     
     // Mostrar resultados
     if (searchResults.length > 0) {
-        document.getElementById('searchResults').innerHTML = 
-            `<i class="bi bi-check-lg"></i> ${searchResults.length} página(s) encontrada(s): ${searchResults.join(', ')}`;
+        const destinoBusca = document.getElementById('searchResults');
+        const iconeBusca = document.createElement('i');
+        iconeBusca.className = 'bi bi-check-lg';
+        destinoBusca.replaceChildren(iconeBusca, document.createTextNode(
+            ` ${searchResults.length} página(s) encontrada(s): ${searchResults.join(', ')}`
+        ));
         
         // Ir para primeira ocorrência
         irParaPagina(searchResults[0]);
@@ -699,20 +759,6 @@ async function buscarNoPDF() {
         document.getElementById('searchResults').innerHTML = '<i class="bi bi-x-lg"></i> Palavra não encontrada';
         alert('Palavra não encontrada no documento.');
     }
-}
-
-// Ir para próxima ocorrência
-function proximaOcorrencia() {
-    if (searchResults.length === 0) {
-        alert('Faça uma busca primeiro!');
-        return;
-    }
-    
-    currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
-    irParaPagina(searchResults[currentSearchIndex]);
-    
-    document.getElementById('searchResults').innerHTML = 
-        `<i class="bi bi-file-earmark-pdf"></i> Página ${searchResults[currentSearchIndex]} (${currentSearchIndex + 1}/${searchResults.length})`;
 }
 
 // Formatar número CNJ sem pontuação
@@ -763,22 +809,18 @@ function aplicarCNJManual() {
     
     // Aplicar CNJ
     numeroCNJ = cnjFormatado;
-    document.getElementById('detectedCNJ').innerHTML = `<span class="badge badge-ok"><i class="bi bi-check-lg"></i>${numeroCNJ} (manual)</span>`;
+    const selo = document.createElement('span');
+    selo.className = 'badge badge-ok';
+    const iconeSelo = document.createElement('i');
+    iconeSelo.className = 'bi bi-check-lg';
+    selo.append(iconeSelo, document.createTextNode(`${numeroCNJ} (manual)`));
+    document.getElementById('detectedCNJ').replaceChildren(selo);
     document.getElementById('cnjWarning').style.display = 'none';
     
     // Atualizar preview
     atualizarPreview();
     
     alert(`CNJ aplicado com sucesso!\n\n${numeroCNJ}\n\nOs PDFs serão nomeados com este número.`);
-}
-
-// Formatar bytes
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
 // ============= MODO PERSONALIZADO =============
@@ -795,10 +837,14 @@ function showToast(title, message, type = 'info', duration = 2200) {
     const tons = { success: 'ok', error: 'fail', warning: 'warn' };
     const toast = document.createElement('div');
     toast.className = 'toast' + (tons[type] ? ` ${tons[type]}` : '');
-    toast.innerHTML = `
-        <div class="toast-title">${title}</div>
-        <div class="toast-body">${message}</div>
-    `;
+    // Título e mensagem podem carregar nome de arquivo: vão por textContent.
+    const titulo = document.createElement("div");
+    titulo.className = "toast-title";
+    titulo.textContent = title;
+    const corpo = document.createElement("div");
+    corpo.className = "toast-body";
+    corpo.textContent = message;
+    toast.append(titulo, corpo);
     container.appendChild(toast);
 
     requestAnimationFrame(() => toast.classList.add('show'));
@@ -889,6 +935,7 @@ function renderizarListaDivisoes() {
     
     if (customDivisions.length === 0) {
         listSection.style.display = 'none';
+        container.replaceChildren();
         return;
     }
     
@@ -1034,13 +1081,7 @@ async function processarDivisoesCustom() {
             progressSection.style.display = 'none';
             resultSection.style.display = 'block';
             
-            document.getElementById('resultMessage').innerHTML = `
-                <strong>Arquivo ${currentFileIndex + 1}/${filesQueue.length} processado!</strong><br><br>
-                <i class="bi bi-file-earmark-arrow-down"></i> ${totalDivisoes} PDF(s) criado(s) com sucesso!<br><br>
-                ${currentFileIndex + 1 < filesQueue.length ? 
-                    '<strong><i class="bi bi-arrow-right"></i> Carregando próximo arquivo...</strong>' : 
-                    '<strong><i class="bi bi-check2-circle"></i> Todos os arquivos foram processados!</strong>'}
-            `;
+            mostrarFimDeArquivo(`${totalDivisoes} PDF(s) criado(s) com sucesso!`);
             
             // Resetar botão
             btnProcessar.disabled = false;

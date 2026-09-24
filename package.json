@@ -1,0 +1,33 @@
+{
+  "name": "gantoys",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GAN Toys — utilitários jurídicos em HTML/CSS/JS puro, com app, toys e bundle HTML único",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "test": "node testkit/coverage/run.mjs",
+    "test:fast": "node --test test/",
+    "coverage": "node testkit/coverage/run.mjs",
+    "bench": "node bench/run.mjs",
+    "lint": "eslint .",
+    "security": "node tools/security-check.mjs",
+    "assets:integrity": "node tools/assets-integrity.mjs",
+    "manual": "node build/manual.mjs",
+    "bundle": "node build/bundle.mjs",
+    "check:bundle": "node build/check-bundle.mjs",
+    "verify": "npm run lint && npm run security && npm run coverage && npm run bench"
+  },
+  "devDependencies": {
+    "eslint": "^10.11.0",
+    "eslint-plugin-html": "^8.2.1",
+    "globals": "^17.12.0",
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-instrument": "^6.0.3",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
+    "jsdom": "^30.1.1"
+  }
+}

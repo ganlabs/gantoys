@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Reembutir os manuais no toy de Ajuda
+        run: node build/manual.mjs
+
       - name: Gerar bundle HTML único
         run: node build/bundle.mjs
 

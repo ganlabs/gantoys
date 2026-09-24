@@ -53,7 +53,7 @@ async function selectFolder() {
         await scanSubfolders(handle);
 
         elements.folderBtn.classList.add('selected');
-        elements.folderBtn.innerHTML = `<i class="bi bi-folder2-open" aria-hidden="true"></i><span>${handle.name}</span>`;
+        preencherBotaoPasta(elements.folderBtn, handle.name);
         elements.folderInfo.classList.remove('hidden');
         elements.folderPath.textContent = handle.name;
 
@@ -108,7 +108,7 @@ async function selectFolderFromFiles(fileList) {
     elements.folderCount.textContent = state.subfolders.length;
     elements.pdfCount.textContent = totalPdfs;
     elements.folderBtn.classList.add('selected');
-    elements.folderBtn.innerHTML = `<i class="bi bi-folder2-open" aria-hidden="true"></i><span>${rootName}</span>`;
+    preencherBotaoPasta(elements.folderBtn, rootName);
     elements.folderInfo.classList.remove('hidden');
     elements.folderPath.textContent = `${rootName} (modo offline)`;
     renderSubfolders();
@@ -153,23 +153,48 @@ async function scanSubfolders(dirHandle) {
 
 function renderSubfolders() {
     if (state.subfolders.length === 0) {
-        elements.subfoldersList.innerHTML = '';
+        elements.subfoldersList.replaceChildren();
         elements.subfoldersList.classList.add('hidden');
         return;
     }
 
-    const html = state.subfolders.map(sf => `
-        <div class="tile">
-          <span><i class="bi bi-folder2-open" aria-hidden="true"></i> ${sf.name}</span>
-          <span class="badge badge-accent">${sf.files.length}</span>
-        </div>
-      `).join('');
+    // Nome de subpasta vem do disco do usuário: montado com textContent.
+    const titulo = document.createElement('div');
+    titulo.className = 'section-title';
+    const iconeTitulo = document.createElement('i');
+    iconeTitulo.className = 'bi bi-folder2-open';
+    titulo.append(iconeTitulo, document.createTextNode('Subpastas'));
 
-    elements.subfoldersList.innerHTML = `
-        <div class="section-title"><i class="bi bi-folder2-open"></i>Subpastas</div>
-        ${html}
-      `;
+    const linhas = state.subfolders.map((sf) => {
+        const linha = document.createElement('div');
+        linha.className = 'tile';
+
+        const nome = document.createElement('span');
+        const icone = document.createElement('i');
+        icone.className = 'bi bi-folder2-open';
+        icone.setAttribute('aria-hidden', 'true');
+        nome.append(icone, document.createTextNode(` ${sf.name}`));
+
+        const contagem = document.createElement('span');
+        contagem.className = 'badge badge-accent';
+        contagem.textContent = sf.files.length;
+
+        linha.append(nome, contagem);
+        return linha;
+    });
+
+    elements.subfoldersList.replaceChildren(titulo, ...linhas);
     elements.subfoldersList.classList.remove('hidden');
+}
+
+/** Rótulo do botão de pasta: ícone + nome da pasta, sem passar por HTML. */
+function preencherBotaoPasta(botao, nome) {
+    const icone = document.createElement('i');
+    icone.className = 'bi bi-folder2-open';
+    icone.setAttribute('aria-hidden', 'true');
+    const rotulo = document.createElement('span');
+    rotulo.textContent = nome;
+    botao.replaceChildren(icone, rotulo);
 }
 
 async function mergePdfs() {
@@ -260,35 +285,70 @@ async function mergePdfs() {
 }
 
 async function renderResults(results) {
-    const html = await Promise.all(results.map(async r => {
+    // Cada item é montado com DOM + textContent: nome de subpasta/arquivo e
+    // mensagem de erro vêm do disco do usuário.
+    const itens = await Promise.all(results.map(async (r) => {
+        const item = document.createElement('div');
+        item.className = r.success ? 'result-item ok' : 'result-item fail';
+
+        const cabecalho = document.createElement('div');
+        cabecalho.className = 'result-item-head';
+
         if (r.success) {
             const file = r.blob
                 ? new File([r.blob], r.name, { type: 'application/pdf' })
                 : await (await state.selectedDirHandle.getFileHandle(r.name)).getFile();
             const url = URL.createObjectURL(file);
-            return `
-            <div class="result-item ok">
-              <div class="result-item-head">
-                <a href="${url}" target="_blank" class="result-name"><i class="bi bi-file-earmark-pdf"></i> ${r.name}</a>
-                <span class="result-status ok"><i class="bi bi-check-lg"></i> OK</span>
-              </div>
-              <p class="result-meta">${r.pages} páginas</p>
-            </div>
-          `;
-        } else {
-            return `
-            <div class="result-item fail">
-              <div class="result-item-head">
-                <span class="result-name"><i class="bi bi-file-earmark-pdf"></i> ${r.name}</span>
-                <span class="result-status fail"><i class="bi bi-x-lg"></i> Falha</span>
-              </div>
-              <p class="result-meta error">${r.error}</p>
-            </div>
-          `;
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            // A aba nova não deve ter acesso à janela que a abriu.
+            link.rel = 'noopener';
+            link.className = 'result-name';
+            const iconeLink = document.createElement('i');
+            iconeLink.className = 'bi bi-file-earmark-pdf';
+            link.append(iconeLink, document.createTextNode(` ${r.name}`));
+
+            const status = document.createElement('span');
+            status.className = 'result-status ok';
+            const iconeStatus = document.createElement('i');
+            iconeStatus.className = 'bi bi-check-lg';
+            status.append(iconeStatus, document.createTextNode(' OK'));
+
+            cabecalho.append(link, status);
+            item.appendChild(cabecalho);
+
+            const meta = document.createElement('p');
+            meta.className = 'result-meta';
+            meta.textContent = `${r.pages} páginas`;
+            item.appendChild(meta);
+            return item;
         }
+
+        const nome = document.createElement('span');
+        nome.className = 'result-name';
+        const iconeNome = document.createElement('i');
+        iconeNome.className = 'bi bi-file-earmark-pdf';
+        nome.append(iconeNome, document.createTextNode(` ${r.name}`));
+
+        const status = document.createElement('span');
+        status.className = 'result-status fail';
+        const iconeStatus = document.createElement('i');
+        iconeStatus.className = 'bi bi-x-lg';
+        status.append(iconeStatus, document.createTextNode(' Falha'));
+
+        cabecalho.append(nome, status);
+        item.appendChild(cabecalho);
+
+        const erro = document.createElement('p');
+        erro.className = 'result-meta error';
+        erro.textContent = r.error;
+        item.appendChild(erro);
+        return item;
     }));
 
-    elements.resultsList.innerHTML = html.join('');
+    elements.resultsList.replaceChildren(...itens);
     elements.results.classList.remove('hidden');
 
     const successfulResults = results.filter(r => r.success);

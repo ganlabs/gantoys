@@ -1,0 +1,60 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Checagens de segurança
+        run: npm run security
+
+      - name: Integridade dos assets de terceiros
+        run: npm run assets:integrity
+
+      - name: Testes com cobertura (mínimo de 90% por toy e geral)
+        run: npm run coverage
+
+      - name: Benchmarks
+        run: npm run bench
+
+      - name: Gerar o bundle e validar o contrato dos toys
+        run: |
+          node build/manual.mjs
+          node build/bundle.mjs
+          node build/check-bundle.mjs
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: coverage/
+          if-no-files-found: warn
+
+      - name: Publicar resultados dos benchmarks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: bench/resultados.json
+          if-no-files-found: warn

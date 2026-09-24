@@ -86,6 +86,7 @@
 
     function closeAll(except) {
         document.querySelectorAll('.combo.is-open').forEach(function (combo) {
+            // istanbul ignore next -- open() nunca roda num combo já aberto (o clique alterna)
             if (combo === except) return;
             var instance = instances.get(combo);
             if (instance) close(combo, instance);
@@ -93,10 +94,16 @@
     }
 
     function choose(select, list, state, item) {
-        if (!item || item.classList.contains('is-disabled')) return;
+        if (!item || item.classList.contains('is-disabled')) {
+            // Nada escolhido (lista vazia, item desabilitado): o popup fecha do
+            // mesmo jeito, como acontece no select nativo.
+            close(state.combo, state);
+            return;
+        }
         close(state.combo, state);
         var index = Number(item.id.split('-').pop());
         var option = select.options[index];
+        // istanbul ignore next -- item obsoleto entre o clique e o rebuild da lista
         if (!option) return;
         var changed = select.selectedIndex !== index;
         select.selectedIndex = index;
@@ -230,6 +237,7 @@
     }
 
     function upgradeAll(root) {
+        // istanbul ignore next -- upgradeAll sempre recebe um nó ou o documento
         (root || document).querySelectorAll('select:not([data-combo])').forEach(upgrade);
     }
 
@@ -247,6 +255,7 @@
         }).observe(document.body, { childList: true, subtree: true });
     }
 
+    // istanbul ignore else -- o script sempre roda durante o carregamento da página
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 })();

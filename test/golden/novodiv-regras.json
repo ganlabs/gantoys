@@ -1,0 +1,1014 @@
+{
+  "geradoPor": "GANTOYS_ATUALIZAR_GOLDEN=1 node --test test/toys/gannovodiv-regras.test.js",
+  "inventario": {
+    "inicio": [
+      "/EXCELENT[ÍI]SSIM[OA]\\b/i",
+      "/AO\\s+DOUTO\\s+JU[ÍI]ZO/i",
+      "/AO\\s+JU[ÍI]ZO/i",
+      "/AO\\s+(?:DOUTO\\s+)?JU[ÍI]ZADO\\b/i",
+      "/EXMO\\.?\\s*(?:SR\\.?)\\s+DR\\.?\\s+JU[ÍI]Z/i",
+      "/JU[ÍI]ZO\\s+DE\\s+DIREITO\\s+DA\\s+VARA/i",
+      "/MERITÍSSIMO/i",
+      "/MERITISSIMO/i",
+      "/EXMO\\s*\\(A\\)/i",
+      "/EXMO\\.?\\s*(?:\\(A\\)\\s*)?DR?\\.?\\s*JU[ÍI]Z/i",
+      "/DEFENSORIA\\s+PÚBLICA/i",
+      "/DEFENSORIA\\s+PUBLICA/i"
+    ],
+    "fim": [
+      "/[Pp]ede\\s+[Dd]eferimento/",
+      "/[Pp]ede[- ]*se\\s+[Dd]eferimento/",
+      "/[Pp]ede\\s+e\\s+(?:espera|agna)\\s+(?:o|por)?\\s*[Dd]eferimento/",
+      "/[Cc]onfia\\s+(?:e\\s+)?(?:espera|agna)\\s+(?:o|por)?\\s*[Dd]eferimento/",
+      "/[Cc]onfia\\s+no\\s+[Dd]eferimento/",
+      "/P\\.?\\s*[Dd]eferimento/",
+      "/[Tt]ermos\\s+em\\s+que/",
+      "/[Nn]estes\\s+[Tt]ermos/",
+      "/[Nn]esses\\s+[Tt]ermos/",
+      "/[Dd]á-se\\s+(?:a|à)\\s+causa/",
+      "/[Ss]endo\\s+assim/",
+      "/consumidora\\s+requer/i",
+      "/VALOR\\s+DA\\s+CAUSA/"
+    ],
+    "marcadores": [
+      "PÁGINA DE SEPARAÇÃO",
+      "Gerada automaticamente pelo sistema",
+      "Nº do processo",
+      "Data de autuação",
+      "Procedimento Comum",
+      "PROCEDIMENTO DO",
+      "JEF Previdenciária",
+      "Benefício Prev.",
+      "Classe:",
+      "Órgão julgador:",
+      "Assunto:",
+      "Número:"
+    ],
+    "continuacao": [
+      "da",
+      "do",
+      "de",
+      "a",
+      "o"
+    ]
+  },
+  "casamento": {
+    "inicio": [
+      [
+        0
+      ],
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ],
+      [
+        6
+      ],
+      [
+        7
+      ],
+      [
+        8
+      ],
+      [
+        9
+      ],
+      [
+        10
+      ],
+      [
+        11
+      ]
+    ],
+    "fim": [
+      [
+        0
+      ],
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        0,
+        7
+      ],
+      [
+        8
+      ],
+      [
+        9
+      ],
+      [
+        10
+      ],
+      [
+        11
+      ],
+      [
+        12
+      ]
+    ]
+  },
+  "classificadores": {
+    "sistemas": [
+      [
+        "separacao",
+        true
+      ],
+      [
+        "geradaPorSistema",
+        false
+      ],
+      [
+        "numeroProcesso",
+        true
+      ],
+      [
+        "classe",
+        true
+      ],
+      [
+        "curta",
+        true
+      ],
+      [
+        "curtaComProcesso",
+        true
+      ],
+      [
+        "corrido",
+        false
+      ]
+    ],
+    "documentosNovos": [
+      [
+        "procuracao",
+        true
+      ],
+      [
+        "resumo",
+        true
+      ],
+      [
+        "crednet",
+        true
+      ],
+      [
+        "serasa",
+        true
+      ],
+      [
+        "qrCode",
+        true
+      ],
+      [
+        "fls",
+        true
+      ],
+      [
+        "processo",
+        true
+      ],
+      [
+        "termoNotificacao",
+        true
+      ],
+      [
+        "conferirOriginal",
+        true
+      ],
+      [
+        "carteiraTrabalho",
+        true
+      ],
+      [
+        "comprovante",
+        true
+      ],
+      [
+        "declaracao",
+        true
+      ],
+      [
+        "certidao",
+        true
+      ]
+    ],
+    "identificadores": [
+      [
+        "pje",
+        [
+          "pje",
+          "45"
+        ]
+      ],
+      [
+        "projudi",
+        [
+          "projudi",
+          "7701"
+        ]
+      ],
+      [
+        "eproc",
+        [
+          "eproc",
+          "PETICAO"
+        ]
+      ],
+      [
+        "semIdentificador",
+        [
+          null,
+          null
+        ]
+      ]
+    ]
+  },
+  "casos": {
+    "inicio-0": {
+      "regra": "inicio:0",
+      "descricao": "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nEXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-1": {
+      "regra": "inicio:1",
+      "descricao": "AO DOUTO JUÍZO DA VARA CÍVEL",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAO DOUTO JUÍZO DA VARA CÍVEL\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-2": {
+      "regra": "inicio:2",
+      "descricao": "AO JUÍZO DA 2ª VARA CÍVEL",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAO JUÍZO DA 2ª VARA CÍVEL\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-3": {
+      "regra": "inicio:3",
+      "descricao": "AO JUÍZADO ESPECIAL CÍVEL",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAO JUÍZADO ESPECIAL CÍVEL\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-4": {
+      "regra": "inicio:4",
+      "descricao": "EXMO. SR. DR. JUIZ DE DIREITO",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nEXMO. SR. DR. JUIZ DE DIREITO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-5": {
+      "regra": "inicio:5",
+      "descricao": "JUÍZO DE DIREITO DA VARA CÍVEL DA COMARCA",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nJUÍZO DE DIREITO DA VARA CÍVEL DA COMARCA\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-6": {
+      "regra": "inicio:6",
+      "descricao": "MERITÍSSIMO JUIZ DE DIREITO",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nMERITÍSSIMO JUIZ DE DIREITO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-7": {
+      "regra": "inicio:7",
+      "descricao": "MERITISSIMO JUIZ DE DIREITO",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nMERITISSIMO JUIZ DE DIREITO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-8": {
+      "regra": "inicio:8",
+      "descricao": "EXMO (A) SENHOR DOUTOR JUIZ",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nEXMO (A) SENHOR DOUTOR JUIZ\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-9": {
+      "regra": "inicio:9",
+      "descricao": "EXMO. DR. JUIZ DE DIREITO",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nEXMO. DR. JUIZ DE DIREITO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-10": {
+      "regra": "inicio:10",
+      "descricao": "DEFENSORIA PÚBLICA DO ESTADO",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nDEFENSORIA PÚBLICA DO ESTADO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "inicio-11": {
+      "regra": "inicio:11",
+      "descricao": "DEFENSORIA PUBLICA DO ESTADO",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nDEFENSORIA PUBLICA DO ESTADO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "fim-0": {
+      "regra": "fim:0",
+      "descricao": "Ante o exposto, pede deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAnte o exposto, pede deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-1": {
+      "regra": "fim:1",
+      "descricao": "Ante o exposto, pede-se deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAnte o exposto, pede-se deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-2": {
+      "regra": "fim:2",
+      "descricao": "Requerente pede e espera o deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nRequerente pede e espera o deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-3": {
+      "regra": "fim:3",
+      "descricao": "Requerente confia e espera o deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nRequerente confia e espera o deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-4": {
+      "regra": "fim:4",
+      "descricao": "Requerente confia no deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nRequerente confia no deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-5": {
+      "regra": "fim:5",
+      "descricao": "P. Deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nP. Deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-6": {
+      "regra": "fim:6",
+      "descricao": "Termos em que pede deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nTermos em que pede deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-7": {
+      "regra": "fim:7",
+      "descricao": "Nestes Termos, pede deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nNestes Termos, pede deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-8": {
+      "regra": "fim:8",
+      "descricao": "Nesses Termos, requer o deferimento.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nNesses Termos, requer o deferimento."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-9": {
+      "regra": "fim:9",
+      "descricao": "Dá-se a causa o valor de R$ 10.000,00.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nDá-se a causa o valor de R$ 10.000,00."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-10": {
+      "regra": "fim:10",
+      "descricao": "Sendo assim, requer a procedência.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nSendo assim, requer a procedência."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-11": {
+      "regra": "fim:11",
+      "descricao": "A consumidora requer deferimento imediato do pedido.",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nA consumidora requer deferimento imediato do pedido."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fim-12": {
+      "regra": "fim:12",
+      "descricao": "VALOR DA CAUSA: R$ 10.000,00",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nVALOR DA CAUSA: R$ 10.000,00"
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "pontuacao-peticao-curta": {
+      "regra": "pontuacao",
+      "descricao": "Inicial + fechamento em 2 páginas: intervalo curto desconta 1 ponto",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "pontuacao-documento-longo": {
+      "regra": "pontuacao",
+      "descricao": "Inicial seguida de 62 páginas de documento: intervalo longo desconta 1 ponto",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 63,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 63
+      }
+    },
+    "sem-inicio-fallback": {
+      "regra": "fallback",
+      "descricao": "Nenhuma página tem saudação a juízo: início cai na primeira página, com revisão",
+      "paginas": [
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 0,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fechamento-com-continuacao": {
+      "regra": "continuacao",
+      "descricao": "\"Pede deferimento da parte\" não fecha (palavra de continuação), mas OAB fecha",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAnte o exposto, pede deferimento da parte requerente conforme segue."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "fechamento-sem-oab": {
+      "regra": "fechamento-sem-oab",
+      "descricao": "Fechamento sem OAB é confirmado por página de sistema seguinte",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAnte o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado",
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    },
+    "sinal-de-oab": {
+      "regra": "sinal-oab",
+      "descricao": "OAB na página basta como sinal de fim de petição",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAdvogado\nOAB/SP 999.999"
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "sinal-de-valor": {
+      "regra": "sinal-valor",
+      "descricao": "Valor da causa em reais fecha a petição",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nValor: R$ 5.000,00"
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "sinal-de-fls": {
+      "regra": "sinal-fls",
+      "descricao": "Selo de fls. no fim da página fecha a petição",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nfls. 22"
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 1,
+        "flags": [
+          "review"
+        ],
+        "total": 2
+      }
+    },
+    "procon-notificacao": {
+      "regra": "procon",
+      "descricao": "TERMO DE NOTIFICAÇÃO abre o processo e vai até o fim",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nTERMO DE NOTIFICAÇÃO\nNotificação de audiência ao fornecedor.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe."
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 2,
+        "flags": [
+          "PROCON",
+          "review"
+        ]
+      }
+    },
+    "procon-troca-de-identificador": {
+      "regra": "procon",
+      "descricao": "PROCON: troca de identificador fecha a notificação",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nTERMO DE NOTIFICAÇÃO\nNotificação de audiência.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nNum. 7 - Pág. 1\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nNum. 8 - Pág. 1\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe."
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 3,
+        "flags": [
+          "PROCON",
+          "review"
+        ]
+      }
+    },
+    "eproc-inic1": {
+      "regra": "identificador-eproc",
+      "descricao": "Página eproc INIC1 marca o início da inicial",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nEvento 1, INIC1,\nEXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nEvento 12, PETICAO,\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe."
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 2,
+        "confidence": 3,
+        "flags": [],
+        "total": 3
+      }
+    },
+    "pje-troca-de-documento": {
+      "regra": "identificador-pje",
+      "descricao": "Mudança de identificador PJe fecha a inicial",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nNum. 100 - Pág. 1\nEXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nNum. 100 - Pág. 2\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nNum. 200 - Pág. 1\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe."
+      ],
+      "esperado": {
+        "start": 2,
+        "end": 3,
+        "confidence": 3,
+        "flags": [],
+        "total": 4
+      }
+    },
+    "ancora-inicio-depois-de-pagina-neutra": {
+      "regra": "ancora",
+      "descricao": "Página neutra antes da inicial: o início é a página com saudação, não a primeira",
+      "paginas": [
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nEXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO\n\nA autora requer a procedência do pedido.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.",
+        "Ante o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456"
+      ],
+      "esperado": {
+        "start": 3,
+        "end": 4,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 4
+      }
+    },
+    "ancora-fim-por-fechamento-confirmado": {
+      "regra": "ancora",
+      "descricao": "Fechamento com OAB seguido de página de sistema confirma o fim",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAnte o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456",
+        "PÁGINA DE SEPARAÇÃO\nDocumento gerado automaticamente pelo sistema."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 3,
+        "flags": [],
+        "total": 3
+      }
+    },
+    "ancora-fim-por-documento-novo": {
+      "regra": "ancora",
+      "descricao": "Procuração depois da inicial fecha a petição",
+      "paginas": [
+        "EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 1ª VARA CÍVEL DA COMARCA\n\nA autora, já qualificada nos autos, vem propor a presente ação de cobrança em face da ré, pelos fatos e fundamentos que passa a expor.",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nAnte o exposto, requer a procedência integral dos pedidos.\nPede deferimento.\nSão Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456",
+        "Laudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe.\n\nPROCURAÇÃO AD JUDICIA\nOutorgado: Advogado OAB/SP 1.234\n\nLaudo médico emitido em 10/01/2025 descrevendo o quadro clínico, os exames realizados, as medicações em uso e as recomendações de acompanhamento ambulatorial regular pelo paciente, assinado pelo profissional responsável com registro no conselho de classe."
+      ],
+      "esperado": {
+        "start": 1,
+        "end": 2,
+        "confidence": 2,
+        "flags": [
+          "review"
+        ],
+        "total": 3
+      }
+    }
+  }
+}

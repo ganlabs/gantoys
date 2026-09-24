@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kit (fixture de teste)</title>
+    <link rel="stylesheet" href="../../toys/shared/toy.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Kit</h1>
+            <p>Fixture de teste do kit compartilhado dos toys de texto.</p>
+        </header>
+
+        <section class="glass-card" aria-label="Kit dos toys de texto">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2>Entrada</h2>
+                    <p>Um item por linha</p>
+                </div>
+
+                <div id="settings" class="field-grid hidden"></div>
+
+                <label class="input-label" for="toolInput">Dados</label>
+                <textarea id="toolInput" spellcheck="false"></textarea>
+
+                <div class="actions">
+                    <button id="runButton" class="btn btn-primary" type="button">Processar</button>
+                </div>
+
+                <section id="resultsSection" class="stack hidden" aria-live="polite">
+                    <div class="card-heading">
+                        <div>
+                            <h2>Resultado</h2>
+                            <p id="resultSummary"></p>
+                        </div>
+                        <div class="actions">
+                            <button id="clearButton" class="btn btn-outline" type="button">Limpar</button>
+                            <button id="copyButton" class="btn btn-outline btn-small" type="button">Copiar resultado</button>
+                        </div>
+                    </div>
+                    <div id="errorMessage" class="message error hidden"></div>
+                    <div id="results"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script src="../../toys/shared/kit.js"></script>
+</body>
+</html>

@@ -53,8 +53,8 @@ definidos em `toys/shared/toy.css`:
 </body>
 ```
 
-- **Identidade:** o logo do toy é sempre `favicon.png` (o mesmo nos 15 toys), no
-  cabeçalho e no `<link rel="icon">`.
+- **Identidade:** o logo do toy é sempre `favicon.png` (o mesmo em todos os
+  toys), no cabeçalho e no `<link rel="icon">`.
 - **Ícones:** apenas Bootstrap Icons (`<i class="bi bi-*">`). Emoji é proibido.
 - **Componentes:** blocos internos são `.tile` (variação `.tile-accent`), rótulos
   de grupo `.section-title`, pílulas `.badge` (+ `.badge-accent/-ok/-warn/-fail`),
@@ -83,6 +83,98 @@ Referência: `toys/gancopy/index.html` é o toy exemplar do padrão.
 `node build/check-bundle.mjs` valida esse contrato em todos os toys: casca
 canônica, logo (`favicon.png`) referenciado, ausência de classes legadas, ausência
 de emoji e integridade dos assets compartilhados do bundle.
+
+## Manuais e o toy de Ajuda
+
+O toy `toys/help/` é a central de manuais: ele usa a mesma casca dos demais
+(cabeçalho, cartão, avisos) e abre cada manual em um popup, com um índice que
+troca de toy sem fechar a janela.
+
+A fonte da verdade são arquivos Markdown em `toys/help/manual/` — um por toy
+(`<nome da pasta>.md`) mais o `index.md` de visão geral. Como o app precisa
+funcionar em `file://`, onde não há `fetch` de arquivo local, o gerador
+`build/manual.mjs` embute cada `.md` em `toys/help/index.html` duas vezes:
+
+- como card da grade (região `<!-- manuals:cards:start -->` … `end`);
+- como `<script type="text/markdown" data-manual="<slug>">` (região
+  `<!-- manuals:start -->` … `end`), de onde o renderizador Markdown da própria
+  página lê o texto.
+
+```bash
+node build/manual.mjs   # reembute toys/help/manual/*.md em toys/help/index.html
+```
+
+Consequências para quem mexe no código:
+
+- depois de criar ou editar um manual, rode o gerador; sem ele a página continua
+  servindo a versão anterior do texto;
+- a ordem e o ícone de cada manual vêm da navegação do `index.html`, e a
+  descrição do card é o primeiro parágrafo do manual — não há registro paralelo
+  para manter em dia;
+- o Markdown aceito é um subconjunto (títulos, parágrafos, listas planas,
+  negrito, `código`, blocos cercados, citação e régua): o renderizador vive em
+  `toys/help/index.html` e é pequeno de propósito. Sem tabelas, imagens ou HTML
+  cru; emoji é reprovado pelo contrato visual;
+- o workflow de release roda `node build/manual.mjs` antes do bundle, então o
+  entregável nunca sai com manual desatualizado.
+
+## Testes, benchmarks e checagens
+
+O projeto é HTML/CSS/JS puro, mas o código de produto é exercitado por uma suíte
+em Node + jsdom: o harness carrega a página do toy, executa os scripts na ordem
+do documento (com os `<script>` controlados, sem `fetch` de arquivo local) e
+mede cobertura por toy. Nada de navegador de verdade, nada de rede.
+
+```bash
+npm ci                 # dependências só de desenvolvimento (jsdom, istanbul, eslint)
+npm test               # suíte completa + cobertura + limites (falha abaixo de 90%)
+npm run test:fast      # só os testes, sem medir cobertura
+npm run bench          # benchmarks (transformações, fluxos, pipeline de entrega)
+npm run lint           # ESLint (inclui o JS embutido nos HTML)
+npm run security       # checagens estáticas de segurança
+npm run assets:integrity   # confere o sha256 dos assets de terceiros
+npm run verify         # lint + security + cobertura + benchmarks
+```
+
+- **Cobertura:** mínimo de **90%** em linhas, branches, funções e statements,
+  por toy e no total da suíte. Toy sem teste é falha, não aviso. Para ver o que
+  ficou de fora: `node testkit/coverage/detalhe.mjs <toy>` (linhas, branches e
+  funções sem cobertura, com o número da linha). O relatório HTML fica em
+  `coverage/`.
+- **Regras de divisão do NovoDiv:** `test/toys/gannovodiv-regras.test.js` congela a
+  divisão de cada processo em `test/golden/novodiv-regras.json` (40 casos: um por
+  regra de início, um por regra de fechamento, classificadores de página e
+  pontuação), inventaria a tabela de regras do toy e prova que o corpus é
+  sensível — regra nova que intercepte página antiga reprova apontando o padrão.
+  O passo a passo para acrescentar uma regra está em `toys/help/manual/gannovodiv.md`.
+- **Testes de regressão:** os testes falam pela interface real (campos, botões,
+  combobox) e conferem valores exatos — mensagens, formatos, nomes de arquivo,
+  contagens, ordem, estado habilitado/desabilitado. `test/toys/texto-corpus.test.js`
+  congela o comportamento dos toys de texto em `test/golden/texto.json` (46
+  casos), que é a rede de proteção ao mexer no kit compartilhado.
+- **Harness (`testkit/`):** loader do jsdom, sistema de arquivos em memória com
+  a forma da File System Access API, ponte com o `app.js` real, dublês de
+  pdf.js/jspdf/tesseract e helpers de interação. O guia de uso está em
+  `testkit/COMO-TESTAR.md`; os toys que carregam pdf-lib e JSZip usam os
+  arquivos reais do `vendor/`.
+- **Benchmarks:** medem as transformações de texto com as funções reais dos
+  toys, os fluxos de tela dentro do jsdom e o pipeline (`build/manual.mjs`,
+  `build/bundle.mjs`, `build/check-bundle.mjs`). Os orçamentos têm folga grande:
+  servem para pegar regressão grosseira (algoritmo que virou quadrático), não
+  variação de 5%. Resultado em `bench/resultados.json`.
+- **Segurança:** `npm run security` procura execução dinâmica de código, HTML
+  montado por interpolação, URL `javascript:`, `target=_blank` sem `noopener`,
+  recurso externo, segredo no repositório e `postMessage('*')`. Risco aceito
+  fica escrito em `tools/seguranca-allowlist.json`, com o motivo. Os assets de
+  terceiros (`vendor/`, `toys/shared/`, imagens da raiz) têm impressão digital
+  registrada em `tools/integridade-assets.json`.
+- **CI:** `.github/workflows/test.yml` roda lint, segurança, integridade,
+  cobertura e benchmarks em push para `main` e em pull request, e publica o
+  relatório de cobertura e o resultado dos benchmarks como artefato.
+
+Ao rodar duas execuções de cobertura ao mesmo tempo, cada uma escreve em
+`.coverage/run-<pid>/`, mas o relatório consolidado (`coverage/`) é único — para
+números finais, rode uma suíte por vez.
 
 ## Bundle HTML único (entregável)
 
@@ -118,7 +210,8 @@ quem mexe no código:
 Gere localmente com Node (sem dependências externas):
 
 ```bash
-node build/bundle.mjs      # -> dist/index.html
+node build/manual.mjs        # reembute os manuais no toy de Ajuda
+node build/bundle.mjs        # -> dist/index.html
 node build/check-bundle.mjs  # valida integridade do bundle
 ```
 

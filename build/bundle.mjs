@@ -285,6 +285,7 @@ function buildToy(toyName) {
         }
     }
 
+    // eslint-disable-next-line no-control-regex -- \u0000 é marcador interno de stash, não aparece no HTML
     html = html.replace(/\u0000gan(\d+)\u0000/g, (match, index) => injected[Number(index)]);
 
     return { html, usesPdfWorker };
@@ -300,7 +301,7 @@ function assetRuntime() {
 window.GANTOYS_ASSETS = ${escapeScript(JSON.stringify(Object.fromEntries(
         [...REGISTRY].map(([key, asset]) => [key, asset.text !== undefined ? ['text', asset.mime, asset.text] : ['data', asset.mime, asset.data]])
     )))};
-<\/script>
+</script>
 <script>
 (function () {
     var urls = window.__ganAssetUrls = window.__ganAssetUrls || {};
@@ -334,7 +335,7 @@ window.GANTOYS_ASSETS = ${escapeScript(JSON.stringify(Object.fromEntries(
         document.head.appendChild(link);
     }
 })();
-<\/script>`;
+</script>`;
 }
 
 function buildMain(toysMap, anyUsesPdfWorker) {

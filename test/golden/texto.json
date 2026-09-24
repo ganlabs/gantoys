@@ -1,0 +1,767 @@
+{
+  "ganclassificadorvara": [
+    {
+      "entrada": "1ª VARA CÍVEL DA COMARCA DE SÃO PAULO/SP",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Nº",
+        "Classe",
+        "Comarca"
+      ],
+      "linhas": [
+        [
+          "Comum",
+          "1",
+          "VC",
+          "SAO PAULO"
+        ]
+      ]
+    },
+    {
+      "entrada": "JUIZADO ESPECIAL CÍVEL DA COMARCA DE CAMPINAS/SP",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Nº",
+        "Classe",
+        "Comarca"
+      ],
+      "linhas": [
+        [
+          "Juizados",
+          "0",
+          "JEC",
+          "CAMPINAS"
+        ]
+      ]
+    },
+    {
+      "entrada": "VARA DO TRABALHO DE CAMPINAS/SP",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Nº",
+        "Classe",
+        "Comarca"
+      ],
+      "linhas": [
+        [
+          "Comum",
+          "1",
+          "VC",
+          "TRABALHO DE CAMPINAS"
+        ]
+      ]
+    },
+    {
+      "entrada": "2ª VARA DE FAMÍLIA E SUCESSÕES DA COMARCA DO RIO DE JANEIRO/RJ",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Nº",
+        "Classe",
+        "Comarca"
+      ],
+      "linhas": [
+        [
+          "Comum",
+          "2",
+          "VC",
+          "A DE FAMILIA E SUCESSOES DA COMARCA DO RIO DE JANEIRO"
+        ]
+      ]
+    },
+    {
+      "entrada": "VARA ÚNICA DA COMARCA DE UBERLÂNDIA/MG",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Nº",
+        "Classe",
+        "Comarca"
+      ],
+      "linhas": [
+        [
+          "Comum",
+          "1",
+          "VC",
+          "UBERLANDIA"
+        ]
+      ]
+    },
+    {
+      "entrada": "texto solto\n\n  ",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Nº",
+        "Classe",
+        "Comarca"
+      ],
+      "linhas": [
+        [
+          "Comum",
+          "1",
+          "VC",
+          "TEXTO SOLTO"
+        ]
+      ]
+    },
+    {
+      "entrada": "",
+      "campos": {},
+      "resumo": "0 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Nº",
+        "Classe",
+        "Comarca"
+      ],
+      "linhas": []
+    }
+  ],
+  "ganconverterrito": [
+    {
+      "entrada": "VC",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Convertido"
+      ],
+      "linhas": [
+        [
+          "Comum"
+        ]
+      ]
+    },
+    {
+      "entrada": "JEC",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Convertido"
+      ],
+      "linhas": [
+        [
+          "Juizados"
+        ]
+      ]
+    },
+    {
+      "entrada": "vc\njec\noutro",
+      "campos": {},
+      "resumo": "3 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Convertido"
+      ],
+      "linhas": [
+        [
+          "Comum"
+        ],
+        [
+          "Juizados"
+        ],
+        [
+          "outro"
+        ]
+      ]
+    },
+    {
+      "entrada": "",
+      "campos": {},
+      "resumo": "0 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Convertido"
+      ],
+      "linhas": []
+    }
+  ],
+  "ganextratorvalores": [
+    {
+      "entrada": "R$ 1.234,56",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Extraído"
+      ],
+      "linhas": [
+        [
+          "1234,56"
+        ]
+      ]
+    },
+    {
+      "entrada": "1234.56",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Extraído"
+      ],
+      "linhas": [
+        [
+          "1234,56"
+        ]
+      ]
+    },
+    {
+      "entrada": "1,234.56",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Extraído"
+      ],
+      "linhas": [
+        [
+          "1234,56"
+        ]
+      ]
+    },
+    {
+      "entrada": "10,00",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Extraído"
+      ],
+      "linhas": [
+        [
+          "10"
+        ]
+      ]
+    },
+    {
+      "entrada": "texto|99,90",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Extraído"
+      ],
+      "linhas": [
+        [
+          ""
+        ]
+      ]
+    },
+    {
+      "entrada": "abc\n\n  7",
+      "campos": {},
+      "resumo": "2 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Extraído"
+      ],
+      "linhas": [
+        [
+          ""
+        ],
+        [
+          "7"
+        ]
+      ]
+    }
+  ],
+  "gannormalizadordocumentos": [
+    {
+      "entrada": "12345678901",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "CPF",
+          "123.456.789-01"
+        ]
+      ]
+    },
+    {
+      "entrada": "12.345.678/0001-99",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "CNPJ",
+          "12.345.678/0001-99"
+        ]
+      ]
+    },
+    {
+      "entrada": "111.222.333-44|extra",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "CPF",
+          "111.222.333-44"
+        ]
+      ]
+    },
+    {
+      "entrada": "123",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "INVÁLIDO",
+          "123"
+        ]
+      ]
+    },
+    {
+      "entrada": "abc",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "INVÁLIDO",
+          ""
+        ]
+      ]
+    },
+    {
+      "entrada": "",
+      "campos": {},
+      "resumo": "0 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Tipo",
+        "Normalizado"
+      ],
+      "linhas": []
+    }
+  ],
+  "gannormalizadornomes": [
+    {
+      "entrada": "João da Silva|123",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "JOAO DA SILVA"
+        ]
+      ]
+    },
+    {
+      "entrada": "MARIA\tAutor",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado 1",
+        "Normalizado 2"
+      ],
+      "linhas": [
+        [
+          "MARIA",
+          "AUTOR"
+        ]
+      ]
+    },
+    {
+      "entrada": "ACME LTDA\tSEM ADV\tSEM OAB\tSEM UF",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado 1",
+        "Normalizado 2",
+        "Normalizado 3",
+        "Normalizado 4"
+      ],
+      "linhas": [
+        [
+          "ACME LTDA",
+          "SEM ADVOGADO",
+          "0",
+          "TJ"
+        ]
+      ]
+    },
+    {
+      "entrada": "José;sufixo",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "JOSE;SUFIXO"
+        ]
+      ]
+    },
+    {
+      "entrada": "  João   da Silva  ",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "JOAO   DA SILVA"
+        ]
+      ]
+    },
+    {
+      "entrada": "A\tB\tC",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado 1",
+        "Normalizado 2",
+        "Normalizado 3"
+      ],
+      "linhas": [
+        [
+          "A",
+          "B",
+          "C"
+        ]
+      ]
+    }
+  ],
+  "gannormalizadoriris": [
+    {
+      "entrada": "IRIS00998585",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "998585"
+        ]
+      ]
+    },
+    {
+      "entrada": "iris-000123",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "123"
+        ]
+      ]
+    },
+    {
+      "entrada": "IRIS 0025",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "25"
+        ]
+      ]
+    },
+    {
+      "entrada": "IRIS000",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "0"
+        ]
+      ]
+    },
+    {
+      "entrada": "000123",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "123"
+        ]
+      ]
+    },
+    {
+      "entrada": "IRISIRIS001\nIRIS PASTA 01",
+      "campos": {},
+      "resumo": "2 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Normalizado"
+      ],
+      "linhas": [
+        [
+          "IRIS001"
+        ],
+        [
+          "PASTA 01"
+        ]
+      ]
+    }
+  ],
+  "ganresolvercarteirareu": [
+    {
+      "entrada": "MERCADO LIVRE VC",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Consulta",
+        "Carteira",
+        "Réu"
+      ],
+      "linhas": [
+        [
+          "MERCADO LIVRE VC",
+          "Mercado Livre - Mercado Livre - JC",
+          "REU A DEFINIR"
+        ]
+      ]
+    },
+    {
+      "entrada": "ML JEC",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Consulta",
+        "Carteira",
+        "Réu"
+      ],
+      "linhas": [
+        [
+          "ML JEC",
+          "Mercado Livre - Mercado Livre - JEC",
+          "REU A DEFINIR"
+        ]
+      ]
+    },
+    {
+      "entrada": "BRK RECIFE",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Consulta",
+        "Carteira",
+        "Réu"
+      ],
+      "linhas": [
+        [
+          "BRK RECIFE",
+          "Saneamento - BRK",
+          "BRK AMBIENTAL – REGIÃO METROPOLITANA DO RECIFE/GOIANA SPE S.A."
+        ]
+      ]
+    },
+    {
+      "entrada": "PROLAGOS",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Consulta",
+        "Carteira",
+        "Réu"
+      ],
+      "linhas": [
+        [
+          "PROLAGOS",
+          "Saneamento - Prolagos - Consumidor",
+          "PROLAGOS S.A. - CONCESSIONÁRIA DE SERVIÇOS PÚBLICOS DE ÁGUA E ESGOTO"
+        ]
+      ]
+    },
+    {
+      "entrada": "NATURGY",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Consulta",
+        "Carteira",
+        "Réu"
+      ],
+      "linhas": [
+        [
+          "NATURGY",
+          "Naturgy - Naturgy",
+          "CEG RIO S.A."
+        ]
+      ]
+    },
+    {
+      "entrada": "desconhecido total",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Consulta",
+        "Carteira",
+        "Réu"
+      ],
+      "linhas": [
+        [
+          "desconhecido total",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "entrada": "",
+      "campos": {},
+      "resumo": "0 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Consulta",
+        "Carteira",
+        "Réu"
+      ],
+      "linhas": []
+    }
+  ],
+  "ganremovedorsufixouf": [
+    {
+      "entrada": "PROC-1-PI",
+      "campos": {},
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Original",
+        "Sem trecho"
+      ],
+      "linhas": [
+        [
+          "PROC-1-PI",
+          "PROC"
+        ]
+      ]
+    },
+    {
+      "entrada": "A-B-C\nsem-sufixo",
+      "campos": {},
+      "resumo": "2 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Original",
+        "Sem trecho"
+      ],
+      "linhas": [
+        [
+          "A-B-C",
+          "A"
+        ],
+        [
+          "sem-sufixo",
+          "sem"
+        ]
+      ]
+    },
+    {
+      "entrada": "PROC-1-PI",
+      "campos": {
+        "[name=\"mode\"]": "replace",
+        "[name=\"replacement\"]": "X"
+      },
+      "resumo": "1 linha processada.",
+      "erro": "",
+      "cabecalhos": [
+        "Original",
+        "Substituído"
+      ],
+      "linhas": [
+        [
+          "PROC-1-PI",
+          "PROCX"
+        ]
+      ]
+    },
+    {
+      "entrada": "arquivo.pdf\noutro.txt",
+      "campos": {
+        "[name=\"pattern\"]": "*.pdf"
+      },
+      "resumo": "2 linhas processadas.",
+      "erro": "",
+      "cabecalhos": [
+        "Original",
+        "Sem trecho"
+      ],
+      "linhas": [
+        [
+          "arquivo.pdf",
+          ""
+        ],
+        [
+          "outro.txt",
+          "outro.txt"
+        ]
+      ]
+    }
+  ]
+}

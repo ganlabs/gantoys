@@ -111,43 +111,8 @@
         let renamePlanId = null;
         let plannedRenames = [];
 
-        function convertPatternToRegex(pattern) {
-            const characters = [...String(pattern || '')];
-            let source = '';
 
-            for (let index = 0; index < characters.length; index += 1) {
-                const character = characters[index];
-                if (character === '*') {
-                    source += '(.*)';
-                    continue;
-                }
-                if (character === '?') {
-                    let count = 1;
-                    while (characters[index + count] === '?') count += 1;
-                    source += `(.{${count}})`;
-                    index += count - 1;
-                    continue;
-                }
-                source += character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            }
 
-            return new RegExp(source, 'i');
-        }
-
-        function normalizeExtension(name) {
-            const dot = name.lastIndexOf('.');
-            if (dot <= 0 || dot === name.length - 1) return name;
-            const extension = name.slice(dot);
-            if (extension === extension.toLowerCase()) return name;
-            return name.slice(0, dot) + extension.toLowerCase();
-        }
-
-        function transformFileName(name, pattern, replacement, shouldNormalize) {
-            const matcher = convertPatternToRegex(pattern);
-            let result = matcher.test(name) ? name.replace(matcher, replacement) : name;
-            if (shouldNormalize) result = normalizeExtension(result);
-            return result;
-        }
 
         function requestShellRenamer(action, payload = {}) {
             return new Promise((resolve, reject) => {
@@ -189,6 +154,8 @@
             $('summary').classList.remove('visible');
             $('report').classList.remove('visible');
             $('reportList').replaceChildren();
+            $('previewList').replaceChildren();
+            $('previewTitle').textContent = 'Prévia da renomeação';
         }
 
         async function buildPreview() {

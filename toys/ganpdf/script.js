@@ -25,7 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file && file.type === "application/pdf") {
             selectedFile = file;
             originalFileName = file.name.replace('.pdf', '');
-            fileNameDisplay.innerHTML = `<strong>${file.name}</strong> selecionado`;
+            const nome = document.createElement('strong');
+            nome.textContent = file.name;
+            fileNameDisplay.replaceChildren(nome, document.createTextNode(' selecionado'));
             
             const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
             fileSizeInfo.textContent = `Tamanho Original: ${sizeMB} MB`;
@@ -178,7 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     link.className = 'tile download-item';
                     link.href = URL.createObjectURL(fileObj.blob);
                     link.download = fileObj.name;
-                    link.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> ${fileObj.name} (${(fileObj.blob.size / (1024*1024)).toFixed(2)} MB)`;
+                    // Nome do arquivo montado com DOM/textContent: vem do arquivo do usuário.
+                    const icone = document.createElement('i');
+                    icone.className = 'bi bi-file-earmark-pdf';
+                    const tamanho = document.createTextNode(` ${fileObj.name} (${(fileObj.blob.size / (1024*1024)).toFixed(2)} MB)`);
+                    link.replaceChildren(icone, tamanho);
                     fileListDiv.appendChild(link);
                 });
             }, 800);

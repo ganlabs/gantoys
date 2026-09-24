@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script>
+    (function () {
+        function syncThemeCss(cssText) {
+            try {
+                const css = cssText || localStorage.getItem('gantoys_theme_css');
+                if (!css || !document.head) return;
+                const existingStyle = document.getElementById('gantoys-theme-inject');
+                if (existingStyle) existingStyle.remove();
+                const style = document.createElement('style');
+                style.id = 'gantoys-theme-inject';
+                style.textContent = css;
+                document.head.appendChild(style);
+            } catch (e) {}
+        }
+        function applyTheme(theme, visual, cssText) {
+            if (theme) document.documentElement.setAttribute('data-theme', theme);
+            if (visual) document.documentElement.setAttribute('data-visual', visual);
+            if (cssText) { try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {} }
+            syncThemeCss(cssText);
+        }
+        try { applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
+        document.addEventListener('DOMContentLoaded', function () { syncThemeCss(); });
+        window.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'theme') applyTheme(e.data.theme, e.data.visual, e.data.css);
+        });
+    })();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajuda</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="stylesheet" href="../shared/toy.css">
+    <style>
+        /* Específico deste toy: grade de manuais e leitura em duas colunas dentro
+           do popup. Cores apenas pelos tokens --toy-* (o tema vem do app). */
+
+        .manual-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+            gap: 12px;
+        }
+
+        .manual-card {
+            display: grid;
+            gap: 6px;
+            width: 100%;
+            font: inherit;
+            color: var(--toy-text);
+            text-align: left;
+            cursor: pointer;
+            transition: border-color .15s ease, background-color .15s ease;
+        }
+
+        .manual-card:hover { border-color: var(--toy-accent); background: var(--toy-accent-soft); }
+        .manual-card .bi { color: var(--toy-accent); font-size: 1.25rem; }
+        .manual-card-title { font-size: .98rem; font-weight: 800; }
+        .manual-card-desc { color: var(--toy-muted); font-size: .82rem; line-height: 1.45; }
+
+        /* Popup: índice à esquerda, manual à direita; cada coluna rola sozinha. */
+        .manual-body {
+            display: grid;
+            grid-template-columns: minmax(200px, 264px) minmax(0, 1fr);
+            overflow: hidden;
+        }
+
+        .manual-nav {
+            display: grid;
+            align-content: start;
+            gap: 4px;
+            min-height: 0;
+            padding: 12px;
+            overflow: auto;
+            border-right: 1px solid var(--toy-border);
+            background: var(--toy-surface-alt);
+        }
+
+        .manual-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 11px;
+            border: 1px solid transparent;
+            border-radius: var(--toy-control-radius);
+            background: none;
+            color: var(--toy-muted);
+            font: inherit;
+            font-size: .85rem;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .manual-nav-item:hover { color: var(--toy-text); background: var(--toy-surface); }
+        .manual-nav-item.active { border-color: var(--toy-accent); background: var(--toy-accent-soft); color: var(--toy-text); }
+        .manual-nav-item .bi { flex: none; color: var(--toy-accent); }
+
+        .manual-content {
+            min-height: 0;
+            padding: clamp(18px, 3vw, 32px);
+            overflow: auto;
+        }
+
+        /* Tipografia do Markdown renderizado. */
+        .md-body { color: var(--toy-text); font-size: .95rem; line-height: 1.65; }
+        .md-body > :first-child { margin-top: 0; }
+
+        .md-body h1 {
+            margin: 0 0 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--toy-border);
+            font-size: 1.5rem;
+            font-weight: 850;
+            letter-spacing: -.01em;
+        }
+
+        .md-body h2 { margin: 26px 0 10px; font-size: 1.12rem; font-weight: 800; }
+        .md-body h3 { margin: 20px 0 8px; font-size: .98rem; font-weight: 800; }
+        .md-body h2:first-child, .md-body h3:first-child { margin-top: 0; }
+        .md-body p { margin: 0 0 12px; }
+        .md-body ul, .md-body ol { margin: 0 0 14px; padding-left: 22px; }
+        .md-body li { margin-bottom: 6px; }
+        .md-body strong { color: var(--toy-text); font-weight: 800; }
+
+        .md-body code {
+            padding: 2px 6px;
+            border: 1px solid var(--toy-border);
+            border-radius: 6px;
+            background: var(--toy-surface-alt);
+            font-size: .86em;
+        }
+
+        .md-body pre {
+            margin: 0 0 14px;
+            padding: 14px;
+            border: 1px solid var(--toy-border);
+            border-radius: var(--toy-control-radius);
+            background: var(--toy-input-bg);
+            overflow: auto;
+        }
+
+        .md-body pre code { padding: 0; border: 0; background: none; font-size: .85rem; line-height: 1.55; }
+
+        .md-body blockquote {
+            margin: 0 0 14px;
+            padding: 11px 14px;
+            border-left: 3px solid var(--toy-accent);
+            border-radius: 0 var(--toy-control-radius) var(--toy-control-radius) 0;
+            background: var(--toy-accent-soft);
+            color: var(--toy-muted);
+        }
+
+        .md-body blockquote p { margin: 0; }
+        .md-body hr { height: 1px; margin: 22px 0; border: 0; background: var(--toy-border); }
+        .md-body a { color: var(--toy-accent); }
+
+        body.modal-aberto { overflow: hidden; }
+
+        @media (max-width: 860px) {
+            .manual-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+            .manual-nav { max-height: 34%; border-right: 0; border-bottom: 1px solid var(--toy-border); }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Ajuda</h1>
+            <p>Manual de uso de cada toy, do primeiro clique ao resultado final.</p>
+        </header>
+
+        <section class="glass-card" aria-label="Manuais dos toys">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2>Manuais</h2>
+                    <p>Abra um manual no popup. Dentro dele o índice da esquerda troca de toy sem fechar.</p>
+                </div>
+
+                <div class="manual-grid" id="manualGrid">
+                    <!-- manuals:cards:start -->
+                    <button class="tile manual-card" type="button" data-manual="index">
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        <span class="manual-card-title">Visão geral do GAN Toys</span>
+                        <span class="manual-card-desc">O GAN Toys reúne utilitários jurídicos que rodam inteiramente no navegador. Cada ferramenta (chamada de toy) abre dentro da mesma janela, à direita…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganclassificadorvara">
+                        <i class="bi bi-bank" aria-hidden="true"></i>
+                        <span class="manual-card-title">Classificador de Vara</span>
+                        <span class="manual-card-desc">Classifica varas e juizados a partir de uma lista colada na tela, devolvendo tipo, número, classe e comarca de cada linha. A entrada é texto puro…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="gancompressor">
+                        <i class="bi bi-file-zip" aria-hidden="true"></i>
+                        <span class="manual-card-title">Compressor de PDF em Lote</span>
+                        <span class="manual-card-desc">Reduz o tamanho de vários PDFs de uma vez: cada página é renderizada como imagem JPEG dentro de um PDF novo, montado página a página. A entrada é um…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganconverterrito">
+                        <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+                        <span class="manual-card-title">Conversor de Rito</span>
+                        <span class="manual-card-desc">Converte as siglas de rito VC e JEC na descrição correspondente (Comum e Juizados). A entrada é uma lista de siglas colada na tela, uma por linha, e…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="gancopy">
+                        <i class="bi bi-folder-symlink" aria-hidden="true"></i>
+                        <span class="manual-card-title">Cópia Integral e Bradesco</span>
+                        <span class="manual-card-desc">Copia documentos por número de processo entre duas pastas locais, sem mover nem apagar nada na origem. A entrada é um par de pastas (origem e…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="gannovodiv">
+                        <i class="bi bi-scissors" aria-hidden="true"></i>
+                        <span class="manual-card-title">Divisor Automático Santander</span>
+                        <span class="manual-card-desc">Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inicial separada dos demais documentos, um par de arquivos por processo.…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganpdf">
+                        <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                        <span class="manual-card-title">Divisor de PDF</span>
+                        <span class="manual-card-desc">Divide um PDF em partes menores que o tamanho máximo em megabytes informado, testando a soma das páginas antes de fechar cada bloco. Entra um arquivo…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="gandivisorsantander">
+                        <i class="bi bi-layout-split" aria-hidden="true"></i>
+                        <span class="manual-card-title">Divisor Santander</span>
+                        <span class="manual-card-desc">Percorre um lote de PDFs de processo e separa, em cada um, as páginas da Inicial das demais, baixando os arquivos gerados. Entram PDFs nomeados com o…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganextratorvalores">
+                        <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                        <span class="manual-card-title">Extrator de Valores</span>
+                        <span class="manual-card-desc">Extrai o número de cada linha colada e o reescreve no padrão brasileiro, com vírgula decimal. Entra uma lista de valores em texto, um por linha; sai…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganjuntar">
+                        <i class="bi bi-files" aria-hidden="true"></i>
+                        <span class="manual-card-title">Juntar PDFs</span>
+                        <span class="manual-card-desc">Une em um único PDF todos os PDFs de cada subpasta do diretório escolhido. Entra uma pasta com subpastas de PDFs; sai um arquivo <nome da…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="gannormalizadordocumentos">
+                        <i class="bi bi-person-badge" aria-hidden="true"></i>
+                        <span class="manual-card-title">Normalizador CPF/CNPJ</span>
+                        <span class="manual-card-desc">Recebe uma lista de documentos, um por linha, e devolve cada um no padrão oficial de CPF ou CNPJ, com o tipo identificado. Não grava arquivos: a…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="gannormalizadornomes">
+                        <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+                        <span class="manual-card-title">Normalizador de Nomes</span>
+                        <span class="manual-card-desc">Recebe textos de nomes, um por linha, e devolve cada valor em maiúsculas, sem acentos e limitado aos caracteres aceitos pelo cadastro. Não grava…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="gannormalizadoriris">
+                        <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                        <span class="manual-card-title">Normalizador de Pastas IRIS</span>
+                        <span class="manual-card-desc">Recebe uma lista de identificadores de pastas IRIS, um por linha, e devolve cada valor sem o prefixo IRIS e sem zeros à esquerda. Não toca em…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganpadronizadorcnj">
+                        <i class="bi bi-list-ol" aria-hidden="true"></i>
+                        <span class="manual-card-title">Padronizador CNJ</span>
+                        <span class="manual-card-desc">Converte uma lista de números de processo entre o formato pontuado e o formato despontuado. A entrada é uma lista de processos, um por linha; a saída…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganremovedorsufixouf">
+                        <i class="bi bi-eraser" aria-hidden="true"></i>
+                        <span class="manual-card-title">Removedor por Wildcard</span>
+                        <span class="manual-card-desc">Remove ou substitui trechos de cada linha usando um padrão wildcard. A entrada é uma lista de textos, um por linha; a saída é uma tabela com a linha…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganrenomeador">
+                        <i class="bi bi-input-cursor-text" aria-hidden="true"></i>
+                        <span class="manual-card-title">Renomeador em Massa</span>
+                        <span class="manual-card-desc">Renomeia arquivos de uma pasta local aplicando um padrão wildcard com substituição. A entrada é uma pasta escolhida pelo usuário; a saída é a lista…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganresolvercarteirareu">
+                        <i class="bi bi-diagram-3" aria-hidden="true"></i>
+                        <span class="manual-card-title">Resolver Carteira/Réu</span>
+                        <span class="manual-card-desc">Encontra o réu correspondente a uma carteira, cliente ou apelido informado. A entrada é uma lista de consultas, uma por linha; a saída é uma tabela…</span>
+                    </button>
+<!-- manuals:cards:end -->
+                </div>
+            </div>
+        </section>
+
+        <aside class="notice">
+            <span aria-hidden="true">i</span>
+            <span><strong>Offline.</strong> Os manuais são embutidos nesta página em Markdown e renderizados aqui mesmo; nada é buscado na internet.</span>
+        </aside>
+    </main>
+
+    <div class="modal-overlay" id="manualOverlay" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+        <div class="modal modal-shell modal-viewer">
+            <div class="modal-header">
+                <h3 class="modal-title" id="manualTitle">Manual</h3>
+                <button class="modal-close" id="manualClose" type="button" aria-label="Fechar manual"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-body manual-body">
+                <nav class="manual-nav" id="manualNav" aria-label="Índice de manuais"></nav>
+                <article class="manual-content md-body" id="manualContent"></article>
+            </div>
+        </div>
+    </div>
+
+    <!-- manuals:start -->
+    <script type="text/markdown" data-manual="index" data-title="Visão geral do GAN Toys">
+# Visão geral do GAN Toys
+
+O GAN Toys reúne utilitários jurídicos que rodam inteiramente no navegador. Cada ferramenta (chamada de toy) abre dentro da mesma janela, à direita do menu lateral, e trabalha somente com os arquivos que você escolher do seu computador.
+
+## Requisitos
+
+- Google Chrome ou Microsoft Edge atualizados. Os toys que leem e escrevem pastas usam a File System Access API, que não existe no Firefox e no Safari.
+- Nenhuma instalação: o app é um arquivo HTML único. Nada é enviado para a internet e nenhuma conta é necessária.
+- Um caminho local com espaço suficiente para os arquivos de saída. Os toys escrevem na pasta que você indicar.
+
+## Passo a passo
+
+1. Abra o app. Use o `dist/index.html` (entregável de arquivo único) ou o `index.html` da raiz do projeto durante o desenvolvimento. Duplo clique basta: tudo funciona aberto direto do disco, sem servidor.
+2. Escolha um toy no menu lateral esquerdo. Cada item traz um ícone e o nome da ferramenta; o conteúdo abre na área principal, dentro de um quadro próprio.
+3. Trabalhe dentro do toy. Em geral o fluxo é o mesmo em todos: escolher pasta de origem, escolher pasta de destino, preencher os campos, clicar no botão principal e acompanhar a barra de progresso.
+4. Leia o resultado no fim da execução. Todo toy termina com um resumo (totais, sucessos e falhas) e um relatório por arquivo; as listas de erro podem ser copiadas para a área de transferência.
+5. Volte ao início quando quiser (item `Início` no menu) ou troque de toy. O app guarda o último toy aberto e os campos preenchidos, então reabrir a página devolve o estado anterior.
+
+## Navegação e interface
+
+- O botão de seta no topo do menu compacta ou expande a barra lateral.
+- O rodapé da barra lateral concentra o controle de tema: o botão de sol ou lua alterna entre claro e escuro.
+- Dentro de um toy, os controles seguem sempre o mesmo vocabulário: campos com rótulo em caixa alta, contadores de linhas, botões primários para a ação principal, avisos em destaque e pílulas de estado.
+- Toy em execução não é interrompido ao trocar de ferramenta: voltar ao toy mostra o estado salvo dos campos, mas a execução anterior precisa ser reiniciada.
+
+## Temas e visuais
+
+- São seis visuais: glassmorphism, neumorphism, neobrutalism, material, claymorphism e japandi. Cada um tem versão clara e escura.
+- O conjunto de botões de visual no rodapé do menu muda conforme o tema: no escuro aparecem os visuais escuros, no claro aparecem os claros.
+- A escolha do tema e do visual fica gravada no navegador e é aplicada a todos os toys, inclusive nos popups.
+
+## Privacidade e arquivos
+
+- A leitura e a escrita acontecem no seu disco, pelo navegador. Não há upload, servidor nem telemetria.
+- A única exceção é o toy `Divisor Automático Santander`, que baixa a biblioteca de OCR `tesseract.js` de um CDN na primeira execução; por isso ele precisa de internet, enquanto os demais trabalham offline.
+- O navegador pede a confirmação de leitura ou escrita na primeira vez que um toy abre uma pasta; a permissão vale para a sessão.
+
+## Esta central de ajuda
+
+- A grade acima lista os manuais, um por toy, na mesma ordem do menu lateral.
+- Um clique abre o popup com o manual renderizado a partir do Markdown embutido na própria página.
+- Dentro do popup, o índice da esquerda troca de manual sem fechar a janela. `Esc` ou o botão de fechar saem.
+- O texto de cada manual fica em `toys/help/manual/<toy>.md`. Depois de editar, rode `node build/manual.mjs` para reembutir os arquivos na página.
+
+## Detalhes técnicos
+
+- Cada toy é uma página isolada em `toys/<nome>/index.html`, exibida em um `iframe` pelo app. Por isso um toy não interfere no outro nem enxerga o estado do vizinho.
+- O estado dos formulários é salvo em `localStorage` sob a chave `toy_state_<toy>`, por `name` de campo, e restaurado quando o toy abre.
+- O entregável `dist/index.html` embute o app, todos os toys e os recursos compartilhados em um único arquivo; os assets comuns existem uma só vez e chegam aos toys por Blob URLs criadas pelo documento principal.
+    </script>
+
+    <script type="text/markdown" data-manual="ganclassificadorvara" data-title="Classificador de Vara">
+# Classificador de Vara
+
+Classifica varas e juizados a partir de uma lista colada na tela, devolvendo tipo, número, classe e comarca de cada linha. A entrada é texto puro (uma vara por linha) e a saída é uma tabela exibida na própria página, também copiável em formato TSV.
+
+## Requisitos
+
+- Todo o processamento acontece no próprio navegador: nada é enviado para a internet.
+- A entrada vem apenas do campo de texto da página; o toy não lê arquivos nem pastas.
+- Cada vara deve ficar em uma linha. Linhas vazias são descartadas antes do processamento.
+
+## Passo a passo
+
+1. Cole a lista de varas e juizados no campo `Dados`, uma por linha.
+2. Clique em `Processar`.
+3. A seção `Resultado` aparece com o resumo acima da tabela.
+4. Clique em `Copiar resultado` se precisar levar a tabela para outro programa. O rótulo do botão passa a `Copiado` e volta a `Copiar resultado` logo depois.
+5. Clique em `Limpar` para esvaziar a entrada e voltar ao estado inicial.
+
+## Campos e controles
+
+- **Dados** — área de texto com o marcador `Cole os dados aqui...`. Aceita qualquer texto, sem validação de formato. A dica fixa acima do campo é `Cole os dados, um por linha.`
+- **Processar** — reprocessa o conteúdo atual do campo e regrava a tabela.
+- **Limpar** — apaga `Dados`, esconde a seção `Resultado`, limpa a tabela e devolve o foco ao campo de dados.
+- **Copiar resultado** — copia as linhas da tabela em TSV (colunas separadas por tabulação, uma linha por registro, sem o cabeçalho). Se a área de transferência falhar, o toy usa uma cópia alternativa e ainda assim exibe `Copiado`.
+- Este toy não tem campos de configuração: o bloco de ajustes fica oculto, porque o tipo `classify-court` não define nenhuma opção.
+
+## Resultado
+
+- Tabela com as colunas `Tipo`, `Nº`, `Classe` e `Comarca`, na mesma ordem das linhas não vazias da entrada.
+- `Tipo` recebe `Juizados` quando a linha é identificada como juizado e `Comum` nos demais casos.
+- `Classe` recebe `JEC` para juizados e `VC` para as varas comuns.
+- Resumo exibido acima da tabela: `N linhas processadas.` (ou `1 linha processada.`).
+- O toy não cria arquivos, pastas nem relatórios em disco.
+
+## Avisos e limitações
+
+- Linhas vazias (ou só com espaços) não entram na tabela, então a contagem do resumo pode ser menor que o número de linhas coladas.
+- Quando a linha não traz nenhum número reconhecível, `Nº` recebe `0` para juizados e `1` para varas comuns.
+- Não há validação de entrada nem mensagem de erro específica: o único erro previsto pelo código é `Ferramenta não configurada.`, exibido se o tipo da ferramenta deixar de ser reconhecido.
+- A comarca é deduzida por heurística de texto. Linhas fora dos padrões tratados podem resultar em comarca incompleta ou vazia.
+
+## Detalhes técnicos
+
+- `Nº` é o primeiro número inteiro da linha, aceitando `ª`, `º` ou `°` logo depois dos dígitos. Se não houver dígitos, o toy procura palavra por palavra (ignorando espaços, pontos e hífens) por numerais escritos (`PRIMEIRA`/`PRIMEIRO` até `DECIMA`/`DECIMO`, de 1 a 10) e por numerais romanos de `I` a `X`.
+- A linha é classificada como juizado quando contém `JEC` como palavra isolada, ou `JUIZADO`, ou `JUI` seguido de espaço ou ponto.
+- Comarca: a linha é convertida para maiúsculas, perde um sufixo `/UF` de duas letras e pontos finais; se contiver `DA COMARCA DE `, aproveita o trecho posterior; se contiver ` - `, aproveita o trecho posterior ao separador. Em seguida, caracteres acentuados são reduzidos a ASCII e símbolos são removidos (mantendo letras, números, espaço, `_` e `-`), e são apagados os rótulos de tipo de órgão (`VARA CIVEL`, `VARA JUDICIAL`, `JUIZADO ESPECIAL CIVEL`, `JUIZADO ESPECIAL CIVEL E CRIMINAL`, `JUIZ ESP CIV`, `JUIZADO`), o ordinal (`1ª`, `PRIMEIRA`, `SEGUNDA`, ...), os numerais romanos e um `DE ` inicial.
+- A divisão da entrada usa quebras de linha no padrão `\r?\n`, com remoção de espaços nas pontas e descarte de linhas vazias.
+    </script>
+
+    <script type="text/markdown" data-manual="gancompressor" data-title="Compressor de PDF em Lote">
+# Compressor de PDF em Lote
+
+Reduz o tamanho de vários PDFs de uma vez: cada página é renderizada como imagem JPEG dentro de um PDF novo, montado página a página. A entrada é um lote de arquivos `.pdf` escolhidos no seletor de arquivos e a saída é o download automático de um arquivo `<nome>_comprimido.pdf` por PDF do lote.
+
+## Requisitos
+
+- Navegador com suporte a Canvas e a download por link; o toy não usa seleção de pastas nem File System Access API.
+- O `pdf.js` e o `jsPDF` vêm do próprio projeto (`vendor/pdfjs/pdf.min.js` e `vendor/jspdf/jspdf.umd.min.js`), com o worker `vendor/pdfjs/pdf.worker.min.js`; nenhum recurso é baixado da internet.
+- O seletor aceita apenas `.pdf` (múltipla seleção) e o toy descarta arquivos cujo tipo não seja `application/pdf`.
+- Os PDFs ficam na sua máquina; nada é enviado para a internet.
+
+## Passo a passo
+
+1. Clique em `Selecionar PDFs` e escolha os arquivos do lote (use Ctrl+Clique para selecionar vários).
+2. A seção `Arquivos do lote` dá lugar a `Configurações e processamento`, com a `Fila de Arquivos` na ordem em que os arquivos foram escolhidos.
+3. Ajuste `Qualidade da Compressão` e `Resolução (DPI)`.
+4. Clique em `Comprimir PDFs`. Durante o lote, `Comprimir PDFs` e `Limpar e Recomeçar` ficam desabilitados.
+5. Acompanhe `Progresso Geral` e o estado de cada item da fila.
+6. Ao terminar, a seção `Processamento Concluído!` aparece com o aviso `A compressão foi finalizada. Os arquivos foram baixados automaticamente.` e o aviso rápido `Sucesso` / `Processamento do lote concluído!`.
+7. Clique em `Processar Novos Arquivos` para voltar à primeira etapa, ou em `Limpar e Recomeçar` para zerar a fila.
+
+Se nenhum arquivo válido for escolhido, nada avança: aparece o aviso rápido `Aviso` / `Selecione arquivos PDF válidos.`
+
+## Campos e controles
+
+- **Qualidade da Compressão** — botões de rádio que definem a qualidade do JPEG de cada página: `Baixa (Maior Compressão)` (`0.4`), `Média (Recomendado)` (`0.6`, marcado por padrão) e `Alta (Menor Compressão)` (`0.8`).
+- **Resolução (DPI)** — botões de rádio que definem a resolução de renderização: `50 DPI (Extrema)`, `72 DPI (Baixa)`, `150 DPI (Média)` (marcado por padrão) e `300 DPI (Alta)`.
+- **Selecionar PDFs** — abre o seletor de arquivos (`.pdf`, múltipla seleção). A dica abaixo do botão é `Use Ctrl+Clique para selecionar vários arquivos.`
+- **Comprimir PDFs** — inicia o lote. Fica desabilitado do início ao fim do processamento.
+- **Limpar e Recomeçar** — zera a fila, limpa o seletor de arquivos, esconde as seções de configuração e de conclusão e volta para a etapa `Arquivos do lote`.
+- **Processar Novos Arquivos** — botão da seção de conclusão; faz o mesmo que `Limpar e Recomeçar`.
+- **Fila de Arquivos** — lista somente leitura. Cada item mostra o nome do arquivo, o tamanho original e uma etiqueta de estado: `Aguardando`, `Processando...`, `Concluído` ou `Erro`. A barra fina de cada item aparece apenas enquanto o arquivo está em processamento.
+
+## Resultado
+
+- Cada PDF concluído é baixado automaticamente com o nome `<nome original sem extensão>_comprimido.pdf`.
+- O item da fila passa de `Original: <tamanho>` para `Original: <tamanho> -> Final: <tamanho> (Redução de X%)` quando o arquivo diminui; quando não diminui, mostra `Original: <tamanho> -> Final: Mantido (Já otimizado. Original mantido)` e o arquivo baixado é o original.
+- Tamanhos são formatados em `Bytes`, `KB`, `MB` ou `GB`, com duas casas decimais.
+- `Progresso Geral` mostra `N / M concluídos`, com a barra preenchida na proporção dos arquivos já tratados.
+- O toy não grava pastas nem relatórios: os arquivos vão para a pasta de downloads do navegador.
+
+## Avisos e limitações
+
+- O PDF de saída é feito de imagens JPEG: o texto deixa de ser selecionável e buscável, e não há OCR.
+- Se a compressão de um arquivo falhar, o item recebe `Erro`, aparece o aviso rápido `Erro` / `Falha ao comprimir <nome do arquivo>` e o lote segue para os demais arquivos.
+- Se o resultado ficar maior que o original, o toy mantém o conteúdo original no arquivo baixado, ainda com o sufixo `_comprimido.pdf`.
+- Um arquivo já `Concluído` ou com `Erro` é pulado se o processamento for acionado de novo sem limpar a fila.
+- O lote é processado em sequência, um arquivo por vez, sem limite de quantidade definido no código.
+
+## Detalhes técnicos
+
+- O fator de renderização é `dpi / 72`, aplicado em `getViewport({ scale })` sobre um canvas oculto (`renderCanvas`); cada página é exportada com `toDataURL('image/jpeg', qualidade)`.
+- O PDF de saída é montado com o jsPDF: a primeira página usa as dimensões originais da página de origem em pontos (`unit: 'pt'`, `format: [largura, altura]`) e a orientação `portrait` ou `landscape` conforme a proporção; as páginas seguintes são criadas com `addPage` nas mesmas dimensões. O documento é criado com `compress: true` e cada imagem é inserida ocupando a página inteira.
+- O progresso por arquivo vai de 0 a 100 conforme as páginas são renderizadas; o progresso geral é recalculado ao término de cada arquivo.
+- Os valores de qualidade (`0.4` / `0.6` / `0.8`) e de DPI (`50` / `72` / `150` / `300`) são lidos dos botões de rádio marcados; sem marcação, o código usa `0.6` e `150`.
+- O download usa um link temporário com `URL.createObjectURL` e o atributo `download`.
+    </script>
+
+    <script type="text/markdown" data-manual="ganconverterrito" data-title="Conversor de Rito">
+# Conversor de Rito
+
+Converte as siglas de rito `VC` e `JEC` na descrição correspondente (`Comum` e `Juizados`). A entrada é uma lista de siglas colada na tela, uma por linha, e a saída é uma tabela de uma coluna exibida na própria página, também copiável em formato TSV.
+
+## Requisitos
+
+- O processamento roda inteiramente no navegador; nada é enviado para a internet.
+- A entrada vem apenas do campo de texto da página; o toy não lê arquivos nem pastas.
+- Cada sigla deve ficar em uma linha. Linhas vazias são descartadas antes do processamento.
+
+## Passo a passo
+
+1. Cole as siglas no campo `Dados`, uma por linha.
+2. Clique em `Processar`.
+3. A seção `Resultado` aparece com o resumo acima da tabela.
+4. Clique em `Copiar resultado` para levar a coluna convertida para outro programa. O rótulo do botão passa a `Copiado` e volta a `Copiar resultado` logo depois.
+5. Clique em `Limpar` para esvaziar a entrada e voltar ao estado inicial.
+
+## Campos e controles
+
+- **Dados** — área de texto com o marcador `Cole os dados aqui...`. Aceita qualquer texto, sem validação de formato. A dica fixa acima do campo é `Cole os dados, um por linha.`
+- **Processar** — reprocessa o conteúdo atual do campo e regrava a tabela.
+- **Limpar** — apaga `Dados`, esconde a seção `Resultado`, limpa a tabela e devolve o foco ao campo de dados.
+- **Copiar resultado** — copia a coluna em TSV (uma linha por registro, sem o cabeçalho). Se a área de transferência falhar, o toy usa uma cópia alternativa e ainda assim exibe `Copiado`.
+- Este toy não tem campos de configuração: o bloco de ajustes fica oculto, porque o tipo `convert-rito` não define nenhuma opção.
+
+## Resultado
+
+- Tabela com a coluna única `Convertido`, na mesma ordem das linhas não vazias da entrada.
+- Resumo exibido acima da tabela: `N linhas processadas.` (ou `1 linha processada.`).
+- O toy não cria arquivos, pastas nem relatórios em disco.
+
+## Avisos e limitações
+
+- A comparação é feita com a linha em maiúsculas, então `vc` e `jec` também são convertidos, mas apenas as siglas exatas: textos como `VARA CÍVEL` ou `JEC 2` saem exatamente como foram digitados (sem os espaços das pontas).
+- Linhas vazias (ou só com espaços) não entram na tabela, então a contagem do resumo pode ser menor que o número de linhas coladas.
+- Não há validação de entrada nem mensagem de erro específica: o único erro previsto pelo código é `Ferramenta não configurada.`, exibido se o tipo da ferramenta deixar de ser reconhecido.
+
+## Detalhes técnicos
+
+- A divisão da entrada usa quebras de linha no padrão `\r?\n`, com remoção de espaços nas pontas e descarte de linhas vazias.
+- O mapeamento é exato após conversão para maiúsculas: `VC` vira `Comum`, `JEC` vira `Juizados` e qualquer outro valor é devolvido sem alteração.
+- A cópia em TSV usa uma coluna por linha, sem cabeçalho, com os valores separados por tabulação e as linhas por quebra de linha.
+    </script>
+
+    <script type="text/markdown" data-manual="gancopy" data-title="Cópia Integral e Bradesco">
+# Cópia Integral e Bradesco
+
+Copia documentos por número de processo entre duas pastas locais, sem mover nem apagar nada na origem. A entrada é um par de pastas (origem e destino) mais as listas de números de processo e, na aba `Bradesco`, de pastas cliente; a saída são os arquivos copiados na pasta de destino e um relatório na tela com o que foi e o que não foi copiado.
+
+## Requisitos
+
+- Abra o arquivo no Google Chrome ou no Microsoft Edge: a seleção e a cópia das pastas usam a File System Access API.
+- Permissão de leitura na pasta de origem e de permissão de escrita na pasta de destino, confirmada na hora da cópia.
+- A busca percorre a pasta de origem inteira, incluindo as subpastas.
+- Nenhum arquivo é enviado para a internet: a cópia é local.
+
+## Passo a passo
+
+### Modo `Arquivo`
+
+1. Mantenha a aba `Arquivo` selecionada.
+2. Em `Pasta de origem`, clique em `Selecionar origem` e confirme no diálogo `Selecionar pasta`. O nome da pasta escolhida substitui o texto `Nenhuma pasta selecionada`.
+3. Em `Pasta de destino`, clique em `Selecionar destino` e confirme do mesmo modo.
+4. Cole os números dos processos no campo `Números dos processos`, um por linha.
+5. Clique em `Copiar arquivos` (o botão só habilita com origem, destino e pelo menos um processo).
+6. Acompanhe a barra de progresso enquanto a origem é varrida.
+7. Confira os contadores e os quadros `Copiados` e `Não copiados`.
+
+### Modo `Bradesco`
+
+1. Clique na aba `Bradesco`.
+2. Selecione a pasta de origem com `Selecionar origem` e a de destino com `Selecionar destino`, como no outro modo.
+3. Cole os números dos processos em `Números dos processos`, um por linha.
+4. Cole as pastas cliente em `Pastas cliente`, uma por linha, na mesma ordem dos processos: o primeiro processo recebe a primeira pasta cliente, e assim por diante.
+5. Confira a linha de validação abaixo dos campos.
+6. Clique em `Copiar e renomear PDFs` (habilita apenas com as duas listas do mesmo tamanho).
+7. Acompanhe a barra e, no fim, os contadores e os quadros de resultado.
+
+### Depois da cópia
+
+1. O texto da barra termina em `Cópia concluída.`; quando nenhum arquivo corresponde, a aba `Arquivo` mostra `Nenhum arquivo correspondente foi encontrado.`
+2. Cada linha do quadro `Não copiados` vem precedida de um estado: `NÃO LOCALIZADO`, `IGUAL` ou `ERRO`.
+3. Use `Copiar lista` no quadro `Não copiados` para copiar apenas os números dos processos dessas linhas, um por linha e sem repetir. O rótulo do botão vira `Copiado` por instantes e volta a `Copiar lista`.
+4. Rodar a cópia de novo limpa os quadros e os contadores antes de recomeçar.
+
+## Campos e controles
+
+- **Abas `Arquivo` e `Bradesco`** — trocam o painel exibido. A aba `Arquivo` abre a seção `Cópia por número de processo`, com a descrição de que localiza todos os arquivos cujo nome contenha um dos processos informados e os copia mantendo o nome original; a aba `Bradesco` abre `Cópia e renomeação de iniciais`. Cada aba mantém as suas próprias pastas, listas e resultados; trocar de aba não apaga o que já foi feito na outra.
+- **Selecionar origem** — abre o diálogo de pasta em modo somente leitura. O nome escolhido substitui `Nenhuma pasta selecionada`. Cancelar a seleção não altera o que já estava escolhido.
+- **Selecionar destino** — o mesmo diálogo, em modo de leitura e escrita.
+- **Números dos processos** — uma linha por processo; o contador ao lado mostra `N processos` (ou `1 processo`). Os exemplos do marcador são `12345` e `0001234-56.2026.8.00.0000`. Linhas vazias são ignoradas e a busca percorre também as subpastas da origem.
+- **Pastas cliente** — só na aba `Bradesco`; uma linha por pasta, com o contador `N pastas` (ou `1 pasta`). A linha de validação abaixo das listas mostra `Informe os processos e as pastas cliente.` quando as duas estão vazias, `As listas precisam ter a mesma quantidade: N processo(s) e M pasta(s).` quando os tamanhos divergem, ou `N correspondência(s) pronta(s) para cópia.` quando estão pareadas. A dica fixa é `A ordem das linhas define a correspondência: o primeiro processo recebe a primeira pasta cliente, e assim por diante.`
+- **Copiar arquivos** (aba `Arquivo`) — habilita só com origem, destino e ao menos um processo.
+- **Copiar e renomear PDFs** (aba `Bradesco`) — habilita só com origem, destino e as duas listas com a mesma quantidade de linhas.
+- **Copiar lista** — habilita quando existe pelo menos um processo no quadro `Não copiados`; copia somente os números desses processos, sem caminhos e sem mensagens.
+
+## Resultado
+
+Na aba `Arquivo`:
+
+- É copiado todo arquivo de qualquer subpasta da origem cujo nome ou caminho contenha um dos processos informados, mantendo o nome original. Vários arquivos podem atender ao mesmo processo.
+- O contador `Encontrados` conta os arquivos que casaram com algum processo; `Copiados` e `Não copiados` dividem esse total.
+- Cada linha do quadro `Copiados` traz o caminho relativo do arquivo na origem e o estado `COPIADO` ou `ATUALIZADO`.
+- Processos sem nenhum arquivo recebem a linha `NÃO LOCALIZADO` com a mensagem `<processo>: nenhum arquivo localizado na origem.`
+- Quando nada é encontrado, o total fica em zero e aparece a linha `Nenhum arquivo encontrado para os processos informados.`
+
+Na aba `Bradesco`:
+
+- Para cada processo, o primeiro PDF localizado na origem é copiado com o nome `INICIAL <pasta cliente>.pdf`, usando a pasta cliente da mesma posição da lista.
+- O contador `Processos` mostra o tamanho da lista de processos; `Copiados` e `Não copiados` dividem esse total.
+- Cada linha do quadro `Copiados` mostra `<processo> -> INICIAL <pasta cliente>.pdf`, com o estado `COPIADO` ou `ATUALIZADO`.
+- Processos sem PDF recebem a linha `NÃO LOCALIZADO` com a mensagem `<processo>: nenhum PDF localizado.`
+
+Nas duas abas, os quadros `Copiados` e `Não copiados` só aparecem quando têm conteúdo, e o destino é sempre a pasta escolhida em `Selecionar destino` (sem recriar as subpastas da origem).
+
+## Avisos e limitações
+
+- Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem; se a seleção não responder em 60 segundos, o erro é `A seleção de pasta não respondeu.`
+- Se a cópia ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de cópia não respondeu.` e a barra mostra `Não foi possível concluir a cópia.`
+- Se as pastas escolhidas não estiverem mais disponíveis, a cópia falha com `Selecione novamente as pastas de origem e destino.`; sem permissão, falha com `É necessário conceder permissão de leitura na origem e escrita no destino.`
+- Um arquivo já existente no destino com o mesmo conteúdo não é recopiado: entra no quadro `Não copiados` com o estado `IGUAL` e o motivo `já existe no destino com o mesmo conteúdo`. Se o arquivo do destino for o mesmo arquivo da origem, o motivo é `origem e destino são o mesmo arquivo`.
+- Um arquivo já existente com conteúdo diferente é sobrescrito, recebe o estado `ATUALIZADO` e o sufixo ` (sobrescrito)` no relatório. O toy não pergunta antes de sobrescrever.
+- No modo `Bradesco` só entram arquivos com nome terminando em `.pdf` e cada processo consome apenas o primeiro PDF que casar.
+- O destino é plano: arquivos vindos de subpastas diferentes com o mesmo nome caem na mesma pasta, e o último processado sobrescreve o anterior.
+- Nada é movido, renomeado ou apagado na origem; ao final, o texto da barra de progresso continua mostrando a contagem de `analisado(s)` e `copiado(s)`.
+
+## Detalhes técnicos
+
+- Correspondência de processo: cada número informado é normalizado uma vez (texto em minúsculas e apenas os dígitos). Um arquivo casa quando o caminho em minúsculas contém o processo informado (para processos com algum caractere não numérico) ou quando os dígitos do caminho contêm todos os dígitos do processo.
+- O relatório marca como copiados os estados `ok` (arquivo novo) e `updated` (sobrescrito); `same`, `missing` e `fail` vão para `Não copiados`.
+- Durante a varredura, o progresso é enviado no máximo a cada 120 milissegundos e a barra fica cheia, com o texto `N analisado(s) | M copiado(s)`; o texto inicial é `Procurando e copiando arquivos...` (aba `Arquivo`) ou `Procurando e copiando PDFs...` (aba `Bradesco`).
+- A comparação de conteúdo entre origem e destino é feita em blocos de 1 MiB, com comparação prévia de tamanho.
+- A gravação usa um fluxo de escrita que trunca o arquivo de destino, por isso um arquivo existente é sempre sobrescrito e nunca renomeado com sufixo.
+    </script>
+
+    <script type="text/markdown" data-manual="gannovodiv" data-title="Divisor Automático Santander">
+# Divisor Automático Santander
+
+Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inicial separada dos demais documentos, um par de arquivos por processo. Entram PDFs nomeados com o número CNJ; saem `Inicial_<CNJ>.pdf`, `Docs_<CNJ>.pdf`, um relatório na tela e um CSV.
+
+## Requisitos
+
+- O toy precisa rodar dentro do aplicativo GAN Toys: a escolha da pasta de destino e a gravação dos arquivos são pedidas ao aplicativo hospedeiro por mensagem. Fora do host, não existe seletor de pasta e o processamento nem começa.
+- `pdf-lib` e `pdf.js` são carregados do próprio projeto (`../../vendor/pdf-lib/pdf-lib.min.js` e `../../vendor/pdfjs/pdf.min.js`, com worker em `../../vendor/pdfjs/pdf.worker.min.js`); nenhum download é feito para eles.
+- O OCR de emergência depende da CDN `https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js`. Sem internet o OCR não existe: o arquivo que precisaria dele falha em vez de ser lido como imagem.
+- Cada PDF precisa ter o número CNJ no nome, no padrão `0000000-00.0000.0.00.0000`. Arquivos cujo nome começa com `Inicial` ou `Docs` são descartados da fila.
+- Extração de texto e montagem dos PDFs acontecem na máquina do usuário; nada é enviado para servidores.
+
+## Passo a passo
+
+1. Clique na área de seleção (`Clique para selecionar ou arraste os PDFs aqui`) ou arraste os arquivos para ela. A contagem passa a aparecer no formato `N arquivo(s) na fila`.
+2. Clique em `Avançar e Escolher Destino`. O aplicativo hospedeiro abre o seletor de pasta; escolha onde os PDFs serão gravados.
+3. Acompanhe o passo `Processamento`: a linha de status mostra `Analisando 1 de N: <arquivo>`, a barra avança em porcentagem, os contadores `Total`, `Concluídos`, `A Revisar` e `Erros` são atualizados a cada arquivo e o log registra `Lendo bytes de ...`, `Detectando limites...`, `Separando PDF (início a fim)...` e `Salvo com sucesso.`
+4. Ao terminar, o passo `Auditoria` é ativado e aparece a mensagem `Os resultados foram guardados em <pasta>.`
+5. Clique em `Ver Relatório` para abrir `Relatório Detalhado` e conferir a linha de cada processo.
+6. Na coluna `Visualizar`, use `Inicial` ou `Docs` para abrir o PDF gerado, ou `Corrigir` para refazer a divisão à mão.
+7. Clique em `Exportar CSV` para baixar o relatório, ou em `Novo Processamento` para voltar ao início.
+
+## Campos e controles
+
+- **Clique para selecionar ou arraste os PDFs aqui** — área de clique e de arraste; aceita vários arquivos `.pdf` de uma vez.
+- **N arquivo(s) na fila** — contagem da fila válida; só aparece depois de uma seleção aceita.
+- **Avançar e Escolher Destino** — inicia o lote; só funciona com a pasta escolhida no host.
+- **Refazer seleção** — limpa fila, relatório, contadores, barra e log, e volta ao passo 1.
+- **Ver Relatório** — abre o relatório; disponível apenas depois do processamento.
+- **Exportar CSV** — baixa o CSV do relatório; sem dados, não faz nada.
+- **Novo Processamento** — mesmo efeito de `Refazer seleção`.
+- **Inicial** e **Docs** — abrem o arquivo gerado no visualizador nativo do navegador, sem controles de zoom próprios.
+- **Corrigir** — abre o arquivo original no visualizador próprio, com os campos `Início` e `Fim` preenchidos com o intervalo detectado.
+- **Marcar Início** e **Marcar Fim** — copiam a página que está sendo exibida para os campos `Início` e `Fim`.
+- **Início** e **Fim** — números inteiros, mínimo 1; definem o intervalo da Inicial na correção manual.
+- **Dividir** — grava a divisão manual por cima dos arquivos do processo e marca a linha do relatório com a origem `Manual`.
+- **Fit** — reajusta a página ao quadro; sem zoom manual o rótulo é `Fit`, com zoom manual o rótulo passa a mostrar o percentual aplicado.
+- **Pág N de M** — campo numérico de página; valores fora de 1 e do total são ignorados.
+- **Contadores do painel** — `Total`, `Concluídos`, `A Revisar` e `Erros`.
+- **Coluna Status do relatório** — selo `OK`, selo `Revisar` ou o texto `Erro: <mensagem>`.
+
+## Resultado
+
+- Na pasta escolhida: `Inicial_<CNJ>.pdf` com as páginas detectadas da petição e `Docs_<CNJ>.pdf` com todas as páginas restantes, na ordem do original. O arquivo de documentos só é criado quando existem páginas fora do intervalo da Inicial.
+- Ao final da tela de processamento, além do caminho da pasta, pode aparecer `Atenção: N processo(s) geraram dúvidas algorítmicas e requerem revisão humana.`
+- `Relatório Detalhado` com as colunas `Arquivo`, `Páginas Iniciais` (formato `12 a 34 (23p)`), `Visualizar` e `Status`.
+- CSV baixado como `NovoDiv_Relatorio_<data-hora>.csv`, em UTF-8 com marca de ordem de bytes, separado por ponto e vírgula e com as colunas `Arquivo`, `CNJ`, `Pagina_Inicial`, `Pagina_Final`, `Total_Paginas_Peticao`, `Status`, `Precisa_Revisao`, `Flags` e `Mensagem_Erro`. Em `Status` os valores são `OK`, `REVISAR` e `ERRO`; em `Precisa_Revisao`, `SIM` ou `NÃO`.
+
+## Avisos e limitações
+
+- `Nenhum PDF válido selecionado.` — a seleção ou o arraste não trouxe nenhum arquivo `.pdf`.
+- `Nenhum PDF Integral encontrado. Certifique-se de que o nome contém o número CNJ.` — nenhum arquivo passou no filtro de nome.
+- `É necessário selecionar uma pasta de destino para salvar os PDFs.` — a escolha de pasta falhou ou estourou o limite de espera, que é de 120 segundos; nesse caso o erro interno é `A operação com a pasta não respondeu.`
+- `Não detectou início (mesmo com OCR)` — o arquivo entra como erro no relatório e o lote continua.
+- `Não foi possível carregar o PDF gerado: <mensagem>` — falha ao ler o arquivo gravado para visualização.
+- `Arquivo original não encontrado na memória.` e `Erro ao abrir PDF para edição visual: <mensagem>` — falhas ao abrir o modo de correção.
+- `Intervalo de páginas inválido.` — `Início`/`Fim` vazios, menores que 1 ou em ordem invertida.
+- `Divisão manual concluída e sobrescrita com sucesso!` — a correção substitui os arquivos do processo e remove a pendência de revisão.
+- Um arquivo com erro não interrompe o lote: os demais são processados e a contagem `Erros` aumenta.
+- O CNJ é lido apenas do nome do arquivo; sem ele o arquivo nem entra na fila.
+- Repetir o lote na mesma pasta sobrescreve `Inicial_<CNJ>.pdf` e `Docs_<CNJ>.pdf` dos processos já feitos.
+- O toy não valida o conteúdo jurídico do resultado e não corrige o intervalo sem intervenção: quando a detecção termina com dúvida, a linha vai para revisão humana.
+
+## Detalhes técnicos
+
+- O texto de cada página é extraído pelo `pdf.js` juntando os itens; uma quebra de linha é inserida quando a diferença de posição vertical entre itens passa de 2.
+- Páginas de sistema são ignoradas: página com menos de 50 caracteres, cabeçalho com marcadores como `PÁGINA DE SEPARAÇÃO`, `Nº do processo`, `Data de autuação`, `Classe:`, `Órgão julgador:`, `Assunto:` ou `Número:`, ou página com menos de 500 caracteres que contenha `PROCESSO`.
+- O identificador de documento é procurado no início do texto: `Num. N - Pág. N` (PJe), `Id. N - Pág. N` (Projudi) e `Evento N, NOME,` (eproc). A troca de identificador indica onde um documento termina e o outro começa.
+- Início: a primeira página não-sistema que traz saudação a juízo, como `EXCELENTÍSSIMO`, `AO DOUTO JUÍZO`, `AO JUÍZO`, `EXMO. SR. DR. JUIZ`, `JUÍZO DE DIREITO DA VARA`, `MERITÍSSIMO` ou `DEFENSORIA PÚBLICA`. Sem nenhuma delas, vale a primeira página não-sistema com mais de 200 caracteres. Processo originado em PROCON começa na primeira página de notificação encontrada entre as 20 primeiras.
+- Fim: é escolhida a menor página entre os candidatos, na ordem identificador de documento, início de novo documento por conteúdo, fechamento confirmado por OAB e Defensoria seguido de novo documento, fechamento sem OAB e fechamento isolado.
+- Documento novo por conteúdo é reconhecido por início de página, entre outros: `PROCURAÇÃO`, `Resumo`, `CREDNET`, `SERASA`, `SPC Brasil`, `Calculadora`, `INSS`, `QR-CODE`, `fls.` com número, `Processo:` com número, `TERMO DE NOTIFICAÇÃO`, `Para conferir o original`, carteira de trabalho, RG, `COMPROVANTE`, `DECLARAÇÃO`, `Termo de Audiência` e `CERTIDÃO`.
+- O fechamento da petição é reconhecido por fórmulas como `Pede deferimento`, `Pede-se deferimento`, `Confia e espera deferimento`, `Confia no deferimento`, `Termos em que`, `Nestes termos`, `Dá-se a causa`, `Sendo assim`, `consumidora requer` e `VALOR DA CAUSA`. Ocorrências cujo texto seguinte começa por `da`, `do`, `de`, `a` ou `o` são descartadas por parecerem continuação de frase.
+- Também contam como sinal de fim, nas últimas 20 linhas da página, a presença de `OAB/` ou `OAB` seguido de número, de Defensoria Pública, de `valor da causa` ou `Dá-se a causa`, de `Valor: R$` e de `fls.` com número.
+- Refinamento de início: se a primeira candidata tiver 2 páginas ou menos, o algoritmo procura adiante outra candidata e adota a que tiver pelo menos o dobro de páginas; em processo eproc, um documento `INIC1`, `INIC` ou `PET1` pode deslocar o início, e um `TERMO` posterior a um único `INIC1` passa a valer como início.
+- Confiança de 0 a 5: soma 2 para início por padrão ou por `INIC1` e 2 para fim por identificador, conteúdo ou fechamento confirmado; início alternativo, por `TERMO2` ou PROCON e fim sem OAB somam 1. Intervalos menores que 3 páginas ou maiores que 60 páginas perdem 1 ponto. Pontuação final abaixo de 3 ou qualquer ocorrência sinalizada marcam o processo como `Revisar`.
+- OCR: `Tesseract.createWorker('por')`, com cada página renderizada em canvas na escala 1.5. A varredura cobre as 10 primeiras páginas quando o texto inicial tem menos de 500 caracteres, e depois continua pelas páginas sem texto até encontrar fechamento com OAB; as mensagens são `[!] Imagem sem texto detectada. Iniciando OCR de emergência...` e `> Lendo pág N com OCR...`.
+- Visualizador próprio: a roda do mouse troca uma página por vez, com pausa de gesto de 120 ms, impulso de 400 por página e intervalo mínimo de 160 ms entre trocas. O zoom anda em passos de 0,2, com mínimo de 0,4, e o ajuste `Fit` calcula a escala pela área visível descontando 40 pixels de largura e 80 de altura.
+- A divisão usa `pdf-lib`: copia as páginas do intervalo para o arquivo da Inicial e as páginas antes e depois do intervalo, na ordem original, para o arquivo de documentos. Os bytes são gravados pelo aplicativo hospedeiro.
+
+### Adicionar uma regra de divisão sem quebrar as antigas
+
+Regra nova nunca pode mudar o resultado de um processo que já dividia certo. Toda divisão conhecida está congelada em `test/golden/novodiv-regras.json`: um caso para cada padrão de início, um para cada padrão de fechamento, os classificadores de página (sistema, documento novo, identificador) e os casos de pontuação.
+
+1. Acrescente o padrão na tabela certa de `toys/gannovodiv/index.html`: `START_PATTERNS` (saudação a juízo), `CLOSING_PATTERNS` (fechamento da petição) ou os marcadores usados por `isSystemPage`.
+2. Rode `npm test`. O teste `test/toys/gannovodiv-regras.test.js` reprova de propósito em dois pontos: o inventário de regras mudou e a regra nova ainda não tem caso.
+3. Acrescente em `testkit/novodiv.js` um fragmento realista da página do processo novo, na lista correspondente (`FRAGMENTOS_DE_INICIO` ou `FRAGMENTOS_DE_FIM`, na mesma posição da tabela), e rode `GANTOYS_ATUALIZAR_GOLDEN=1 node --test test/toys/gannovodiv-regras.test.js` para registrar o caso.
+4. Rode `npm test` outra vez. Nenhum caso antigo pode ter mudado; se mudou, o teste aponta o processo e a regra (`regra(s) N passaram a casar página antiga`, `a divisão do caso X mudou`). Estreite o padrão novo em vez de aceitar o resultado novo.
+5. Confira `git diff test/golden/novodiv-regras.json`: o diff deve conter apenas as adições do processo novo.
+
+Se a regra nova for mesmo mais específica e precisar ganhar de uma antiga, isso é reordenação de tabela: registre o caso afetado, explique no commit e revise o diff do golden caso a caso.
+    </script>
+
+    <script type="text/markdown" data-manual="ganpdf" data-title="Divisor de PDF">
+# Divisor de PDF
+
+Divide um PDF em partes menores que o tamanho máximo em megabytes informado, testando a soma das páginas antes de fechar cada bloco. Entra um arquivo `.pdf`; saem as partes nomeadas em sequência e um ZIP com todas elas.
+
+## Requisitos
+
+- `pdf-lib` e `jszip` vêm do próprio projeto (`../../vendor/pdf-lib/pdf-lib.min.js` e `../../vendor/jszip/jszip.min.js`); nenhum download externo é feito.
+- Um único arquivo por vez, com tipo `application/pdf`.
+- O arquivo é lido na máquina do usuário; nada é enviado para a internet.
+
+## Passo a passo
+
+1. Arraste um `.pdf` para a área de seleção ou clique nela e escolha o arquivo. O nome escolhido substitui o texto da área e a linha abaixo passa a mostrar `Tamanho Original: X.XX MB`.
+2. Ajuste `Tamanho máximo por parte (MB)` se não quiser usar `3.0`.
+3. Clique em `Processar Arquivo`. A faixa de status mostra, em ordem, `Lendo arquivo original...`, `Otimizando e carregando PDF...`, `Analisando N páginas...`, `Processando página X de Y...` e `Finalizando arquivos...`, com a barra acompanhando.
+4. Confira o resumo e a lista de partes. Clique em `Baixar Todas as Partes (ZIP)` para levar tudo de uma vez, ou clique no nome de uma parte para baixá-la isolada.
+
+## Campos e controles
+
+- **Área de seleção** — aceita clique e arraste. O texto inicial é `Arraste seu PDF ou clique aqui`; depois da escolha passa a `<nome do arquivo> selecionado`. Arquivo que não seja PDF dispara `Por favor, selecione um arquivo PDF válido.` e a seleção é limpa.
+- **Tamanho Original** — apenas informativo, com o tamanho do arquivo em MB com duas casas.
+- **Tamanho máximo por parte (MB)** — campo numérico, mínimo `0.1`, passo `0.1`, valor padrão `3.0`, placeholder `Ex: 3.0`. Valor vazio, zero ou negativo dispara `Por favor, insira um tamanho máximo válido.` e o processamento não começa.
+- **Processar Arquivo** — fica desabilitado enquanto nenhum arquivo foi escolhido e durante todo o processamento; volta a ficar ativo no fim, inclusive em caso de erro.
+
+## Resultado
+
+- O bloco `Resultado` aparece com o resumo `O arquivo foi dividido em N parte(s) menores que X MB.`
+- Lista de links `NOME_parte_1.pdf`, `NOME_parte_2.pdf` e assim por diante, cada um exibido com o tamanho no formato `(X.XX MB)`.
+- `Baixar Todas as Partes (ZIP)` gera o arquivo `NOME_dividido.zip` com todas as partes dentro.
+- Em todos os nomes, `NOME` é o nome do arquivo original sem a extensão `.pdf`.
+- Os arquivos são salvos na pasta de downloads do navegador; o toy não grava em outra pasta.
+
+## Avisos e limitações
+
+- `Ocorreu um erro ao processar o arquivo. Detalhes no console.` — falha ao ler o arquivo ou ao montar os PDFs. A faixa de status volta para `Erro no processamento.` com 0%, e o detalhe técnico fica no console do navegador.
+- Uma página sozinha maior que o limite não pode ser reduzida: ela vira uma parte própria, ainda acima do tamanho pedido.
+- O toy não compacta nem reamostra imagens nem fontes; o tamanho de cada parte é o do PDF reescrito pelo `pdf-lib`, que costuma ficar próximo do original.
+- A divisão é sempre sequencial a partir da página 1 e não aceita intervalo inicial nem ordem diferente das páginas.
+- A lista de partes fica só na tela até o clique; se a página for recarregada, a seleção e as partes são perdidas.
+- O botão de ZIP não faz nada enquanto a lista de partes estiver vazia.
+- Nenhuma página é descartada: a soma das páginas das partes é o total do documento.
+
+## Detalhes técnicos
+
+- O limite em megabytes é convertido para bytes por multiplicação por 1024 duas vezes.
+- O algoritmo percorre as páginas em ordem. Para cada página monta um PDF de teste com todas as páginas do bloco corrente mais a página nova, salva em memória e compara o tamanho com o limite.
+- Se o teste estourar o limite e o bloco já tiver ao menos uma página, o último bloco válido é fechado e a página atual passa a ser a primeira do próximo bloco. Se o bloco estiver vazio, a página é aceita mesmo acima do limite, garantindo que uma página grande não trave o processo.
+- O bloco válido anterior é sempre reaproveitado, então nenhuma página é duplicada entre partes.
+- A barra vai de 20% a 80% durante o laço de páginas, usa 5% e 15% nas leituras iniciais, 90% em `Finalizando arquivos...` e 100% em `Concluído!`; o bloco de resultado só aparece depois de uma pausa curta.
+- O ZIP é montado no navegador com `JSZip.generateAsync` e a URL temporária é liberada um segundo após o clique.
+    </script>
+
+    <script type="text/markdown" data-manual="gandivisorsantander" data-title="Divisor Santander">
+# Divisor Santander
+
+Percorre um lote de PDFs de processo e separa, em cada um, as páginas da Inicial das demais, baixando os arquivos gerados. Entram PDFs nomeados com o CNJ; saem `Inicial`, `Docs Inicial` ou divisões com nome próprio, todos baixados direto para a pasta de downloads do navegador.
+
+## Requisitos
+
+- `pdf.js` (`../../vendor/pdfjs/pdf.min.js`, com worker em `../../vendor/pdfjs/pdf.worker.min.js`) para exibir as páginas e ler o texto, e `pdf-lib` (`../../vendor/pdf-lib/pdf-lib.min.js`) para copiar as páginas.
+- Seleção múltipla de arquivos `.pdf`, feita pelo seletor do navegador; os arquivos ficam abertos um a um, não em paralelo.
+- O CNJ é procurado no nome do arquivo, no padrão `0000000-00.0000.0.00.0000` ou como 20 dígitos seguidos. Quando não é encontrado, o toy pede o número e avisa que ele serve para nomear os arquivos gerados.
+- Os downloads usam o mecanismo do próprio navegador. Não há ZIP, não há escolha de pasta e nada é enviado para a internet.
+
+## Passo a passo
+
+1. Clique em `Selecionar PDFs` e escolha os arquivos do lote. O texto de apoio lembra: `Use Ctrl+Clique para selecionar vários arquivos.`
+2. O painel do lote mostra `Total`, `Processados`, `Faltando`, `Em andamento` e `Arquivo atual`, e o primeiro PDF é aberto no visualizador com a notificação `Arquivo carregado`.
+3. Confira o painel `CNJ`. Se aparecer `Não detectado`, digite o número no campo com o exemplo `57104727520258090051 ou formatado` e clique em `Aplicar`.
+4. Escolha o `Modo de divisão`: `Automático` ou `Personalizado`.
+5. No modo `Automático`, navegue até a Inicial, ajuste `Primeira página` e `Última página` ou use os botões de marcação, confira o `Preview da divisão` e clique em `Dividir e baixar PDFs`.
+6. No modo `Personalizado`, informe `Nome do arquivo`, `Início` e `Fim`, clique em `Adicionar divisão`, repita para cada corte e clique em `Processar todas as divisões`.
+7. No modo `Automático`, o próximo arquivo do lote é aberto sozinho depois de cada divisão; o resumo final do lote aparece quando não há mais arquivos.
+
+## Campos e controles
+
+- **Selecionar PDFs** — abre o seletor múltiplo. Sem nenhum PDF: `Por favor, selecione arquivos PDF válidos.` Arquivos de outro tipo são descartados com o aviso `N arquivo(s) não-PDF foram ignorados.`
+- **CNJ** — mostra o número detectado ou `Não detectado`.
+- **Campo do CNJ manual** — aceita 20 dígitos, que são formatados automaticamente, ou o padrão já pontuado.
+- **Aplicar** — valida e aplica o CNJ digitado, que passa a aparecer com a indicação `(manual)`.
+- **Modo de divisão** — `Automático`, que gera `Inicial` e `Docs Inicial`, ou `Personalizado`, que cria vários cortes com nome próprio. Os painéis e os botões de ação trocam conforme a escolha.
+- **Primeira página** e **Última página** — números inteiros, mínimo 1, máximo igual ao total de páginas do arquivo; começam em 1 e no total. Se a primeira ficar maior que a última, as bordas ficam vermelhas e o preview para de atualizar.
+- **Marcar atual como 1ª** e **Marcar atual como última** — copiam a página exibida para os respectivos campos.
+- **Nome do arquivo** — obrigatório; não pode conter os caracteres `< > : " / \ | ? *`.
+- **Início** e **Fim** do modo personalizado — inteiros dentro do documento; os botões ao lado copiam a página atual para cada campo.
+- **Adicionar divisão** — valida o nome e o intervalo e acrescenta o item em `Divisões criadas`, numerado e com a contagem de páginas.
+- **Buscar palavra no PDF...** — campo de busca; `Enter` ou o botão `Buscar` procuram a palavra em todas as páginas.
+- **Navegação de página** — botões `Primeira página`, `Página anterior`, `Próxima página` e `Última página`, mais o campo numérico ao centro. Os botões das pontas ficam desabilitados quando a página atual é a primeira ou a última. A roda do mouse sobre o documento também troca de página.
+- **Zoom** — botões `Reduzir zoom` e `Aumentar zoom` em passos de 0,25 sobre o valor inicial de 150%, com o percentual exibido ao lado.
+- **Dividir e baixar PDFs** e **Processar todas as divisões** — durante o trabalho ficam desabilitados e passam a mostrar `Processando...`.
+- **Limpar e recomeçar** — confirma com `Deseja limpar tudo e recomeçar?` e depois avisa `Tudo limpo! Selecione novos PDFs para começar.`
+- **Limpar divisões** — remove todas as divisões criadas no modo personalizado.
+
+## Resultado
+
+- `Preview da divisão` com dois cartões: `Inicial`, com o intervalo, a contagem de páginas e o nome `<Inicial><sufixo>.pdf`; e `Docs Inicial`, com as páginas restantes ou `Nenhuma página` seguido de `(Todas as páginas estão na "Inicial")`.
+- Downloads: `Inicial - <CNJ>.pdf` e, quando sobram páginas, `Docs Inicial - <CNJ>.pdf`. Sem CNJ o sufixo é omitido e os nomes saem como `Inicial.pdf` e `Docs Inicial.pdf`.
+- No modo `Personalizado`, cada divisão gera `<Nome> - <CNJ>.pdf`.
+- Bloco `Resultado` com `Arquivo N/M processado!`, a linha `N PDF(s) baixado(s) com sucesso!` e, no fim, `Carregando próximo arquivo...` ou `Todos os arquivos foram processados!`
+- Ao terminar o lote, a tela troca pelo resumo `Processamento concluído!` com `Total de arquivos`, `Processados com sucesso`, `Erros` e `Ignorados`, seguido de `Os arquivos foram baixados para sua pasta Downloads.`
+- O painel `Processando` mostra a barra e as etapas `Lendo arquivo...`, `Carregando PDF...`, `Criando "Inicial"...`, `Gerando arquivo "Inicial"...`, `Criando "Docs Inicial"...` e `Concluído!`
+- Notificações no canto da tela: `Arquivo carregado`, `Iniciando Divisão`, `Processando Divisões`, `Divisões geradas` e `Lote concluído`.
+
+## Avisos e limitações
+
+- `Erro: A primeira página não pode ser maior que a última página!` — validação antes de dividir, no modo automático.
+- `Erro ao carregar PDF!` com o nome do arquivo e a mensagem do erro — o arquivo é contado como erro e o próximo da fila é aberto.
+- `Erro ao processar PDF!` seguido de `Deseja continuar com o próximo arquivo?` — o arquivo entra como erro e o lote só segue se a continuidade for confirmada.
+- `Erro ao processar divisões!` — mesma ideia no modo personalizado, sem perguntar sobre o próximo arquivo.
+- `Digite um nome para o arquivo!`, `A página inicial não pode ser maior que a final!`, `Páginas devem estar entre 1 e N!` e `O nome do arquivo contém caracteres inválidos!` — validações da divisão personalizada.
+- `Nenhuma divisão criada!` seguido de `Crie ao menos uma divisão antes de processar.` — o processamento personalizado começa com a lista vazia.
+- `Digite o número CNJ!`, `Número CNJ inválido! Deve ter 20 dígitos.` e `Formato CNJ inválido!` — validação do CNJ informado à mão.
+- `Digite uma palavra para buscar!`, `Nenhum PDF carregado!`, `Palavra não encontrada no documento.` e `Faça uma busca primeiro!` — respostas da busca.
+- Sem CNJ detectado e sem preenchimento manual, os arquivos saem como `Inicial.pdf` e `Docs Inicial.pdf`, sem identificação do processo.
+- Todos os downloads vão para a pasta padrão do navegador, um arquivo por vez; repetições recebem o sufixo numérico do próprio navegador.
+- No modo `Personalizado` com mais de um PDF no lote, ao concluir um arquivo a tela avisa `Carregando próximo arquivo...` e passa sozinha (cerca de 1 segundo depois) para o próximo PDF da fila. A lista de divisões é esvaziada a cada processamento, então os cortes precisam ser criados de novo para o arquivo seguinte.
+- Nada marca arquivos como ignorados, então o contador `Ignorados` do resumo final fica em zero.
+- As páginas fora do intervalo da Inicial são reunidas em um único arquivo, sem separar cada documento.
+
+## Detalhes técnicos
+
+- O CNJ é procurado primeiro no padrão pontuado de sete dígitos, dois dígitos, quatro dígitos, um dígito, dois dígitos e quatro dígitos; depois em uma sequência de 20 dígitos, que é reescrita no formato `NNNNNNN-DD.AAAA.J.TR.OOOO`.
+- O visualizador começa em escala 1.5, com zoom em passos de 0,25 limitados entre 0.5 e 3; cada página é desenhada em canvas pelo `pdf.js`.
+- A roda do mouse usa pausa de gesto de 120 ms, impulso de 400 por página e intervalo mínimo de 160 ms entre trocas, o que evita pular páginas em rodas com inércia.
+- O arquivo é lido duas vezes: uma para o visualizador e outra na hora de cortar, garantindo bytes íntegros na cópia das páginas.
+- O arquivo `Docs Inicial` recebe as páginas anteriores à Inicial e depois as posteriores, nessa ordem, com os índices originais.
+- A busca monta o texto de cada página juntando os itens com espaço, guarda esse texto em cache por página e lista todas as páginas encontradas, posicionando o documento na primeira delas.
+- Cada download é disparado isoladamente com uma pausa de meio segundo antes do próximo; no modo personalizado há ainda 200 ms de intervalo entre a geração de cada divisão.
+- A página carrega apenas `scripts.js`; o arquivo `script.js` existe na pasta do toy mas não é referenciado pelo `index.html`.
+    </script>
+
+    <script type="text/markdown" data-manual="ganextratorvalores" data-title="Extrator de Valores">
+# Extrator de Valores
+
+Extrai o número de cada linha colada e o reescreve no padrão brasileiro, com vírgula decimal. Entra uma lista de valores em texto, um por linha; sai uma tabela com a coluna `Extraído` e a mesma lista pronta para copiar.
+
+## Requisitos
+
+- Apenas navegador. O toy não lê arquivos, não usa bibliotecas externas e não envia nada para a internet.
+- Cole um valor por linha. Em linhas com campos separados por `|`, apenas o trecho antes da primeira barra é aproveitado.
+- Linhas vazias ou só com espaços são ignoradas na contagem e no resultado.
+
+## Passo a passo
+
+1. Cole os valores na caixa `Dados`. O texto de apoio do bloco diz `Cole os dados, um por linha.` e o placeholder da caixa é `Cole os dados aqui...`.
+2. Clique em `Processar`.
+3. Confira a coluna `Extraído` no bloco `Resultado` e a contagem exibida acima da tabela.
+4. Clique em `Copiar resultado` para levar a saída para a área de transferência, ou em `Limpar` para esvaziar a caixa e o resultado.
+
+## Campos e controles
+
+- **Dados** — caixa de texto sem corretor ortográfico, com o placeholder `Cole os dados aqui...`.
+- **Processar** — lê o conteúdo atual da caixa, monta a tabela e mostra a contagem `<N> linhas processadas.` (no singular, `1 linha processada.`).
+- **Copiar resultado** — copia apenas a coluna de saída, sem cabeçalho e sem repetir a entrada, em valores separados por tabulação. O rótulo muda para `Copiado` por cerca de 1,6 segundo e volta para `Copiar resultado`.
+- **Limpar** — apaga o texto, esconde o bloco de resultado, limpa a tabela e a mensagem de erro e devolve o foco à caixa de texto.
+- O bloco de ajustes acima da caixa `Dados` não aparece: este toy não declara nenhum campo de configuração.
+
+## Resultado
+
+- Contagem de linhas processadas acima da tabela.
+- Tabela com uma única coluna, `Extraído`, com uma linha por valor de entrada na mesma ordem em que foi colado.
+- Área de transferência com um valor por linha, em texto separado por tabulação, sem cabeçalho.
+
+## Avisos e limitações
+
+- Linha sem nenhum dígito não gera aviso: a célula correspondente sai vazia.
+- Não há mensagem de erro prevista para este modo; nenhuma entrada faz o toy recusar o processamento.
+- O toy não soma, não arredonda e não interpreta moeda: ele apenas reescreve cada número.
+- Valores ambíguos, escritos com ponto como separador de milhar e sem vírgula, são lidos como decimais: `1.234` sai como `1,234`.
+- A saída é apenas a tela e a área de transferência; não há download nem gravação em arquivo.
+- Processar de novo substitui todo o resultado anterior, inclusive o texto guardado para copiar.
+
+## Detalhes técnicos
+
+- Para cada linha, o toy pega o trecho antes do primeiro `|` e remove todos os caracteres que não sejam dígito, vírgula, ponto ou hífen.
+- Quando o valor tem vírgula e ponto, a última ocorrência decide o formato: se a última vírgula vem depois do último ponto, os pontos são removidos e a vírgula vira ponto; caso contrário, as vírgulas são removidas. Em seguida todo ponto é trocado por vírgula, fixando a vírgula como separador decimal.
+- Quando o valor tem apenas ponto, todo ponto vira vírgula. Assim `R$ 1.500,00` sai como `1500`, `2.499,90` sai como `2.499,90` e `1.234.567` sai como `1,234,567`.
+- O sufixo `,00` é retirado do fim do resultado, o que transforma valores inteiros escritos com centavos em número simples.
+- O hífen é preservado junto dos dígitos, então valores negativos continuam negativos.
+- A cópia tenta a área de transferência do navegador e, quando ela é bloqueada, usa uma caixa de texto temporária com o comando de cópia para concluir a operação.
+    </script>
+
+    <script type="text/markdown" data-manual="ganjuntar" data-title="Juntar PDFs">
+# Juntar PDFs
+
+Une em um único PDF todos os PDFs de cada subpasta do diretório escolhido. Entra uma pasta com subpastas de PDFs; sai um arquivo `<nome da subpasta>.pdf` por subpasta, na raiz da pasta escolhida, além da lista de resultados na tela.
+
+## Requisitos
+- `pdf-lib` já vem no projeto (`vendor/pdf-lib/pdf-lib.min.js`); nenhum download é feito e nenhum arquivo é enviado para a internet.
+- Para gravar o PDF gerado de volta na pasta escolhida é necessária a File System Access API (`showDirectoryPicker`), com permissão de leitura e escrita.
+- Sem essa API, o toy usa o seletor clássico de pasta do navegador (input de diretório com `webkitdirectory`, `accept=".pdf,application/pdf"`) e o resultado sai apenas como link para abrir/baixar.
+- Quando a página roda em `file:` dentro do iframe do app, a File System Access API é bloqueada pela permissions policy: nesse caso o seletor clássico é usado automaticamente.
+- São considerados apenas arquivos cuja extensão termina em `.pdf` (sem diferenciar maiúsculas de minúsculas).
+
+## Passo a passo
+1. Clique em `Selecionar Pasta`.
+2. Escolha a pasta que contém as subpastas com os PDFs. No modo com File System Access API o navegador pede permissão de leitura e escrita.
+3. Confira o cartão que aparece: o nome da pasta, os contadores `Pastas` e `PDFs` e a lista `Subpastas` com a quantidade de PDFs de cada uma.
+4. Clique em `Juntar PDFs`. O botão só fica habilitado quando existe pelo menos uma subpasta com PDFs.
+5. Acompanhe a barra de progresso: ela mostra o nome da subpasta em processamento, o percentual e o detalhe `i/total - arquivo.pdf`.
+6. Ao terminar, leia a seção `Resultados` e os PDFs abertos em novas abas.
+
+## Campos e controles
+- **Selecionar Pasta** — botão que abre o seletor de pasta. Depois da escolha, o próprio texto do botão passa a ser o nome da pasta e ele ganha o estado visual de selecionado.
+- **Pastas** — contador de subpastas que contêm ao menos um PDF.
+- **PDFs** — contador do total de PDFs encontrados nessas subpastas.
+- **Subpastas** — lista de uma linha por subpasta, com o nome à esquerda e a quantidade de PDFs à direita.
+- **Juntar PDFs** — inicia a união. Fica desabilitado antes de qualquer seleção, quando não há subpastas com PDFs e enquanto o processamento está em andamento.
+- **Barra de progresso** — fica oculta até o processamento começar; em repouso exibe `-`, `0%` e `-`.
+
+## Resultado
+- Um arquivo `<nome da subpasta>.pdf` gravado na própria pasta escolhida, sobrescrevendo arquivo de mesmo nome quando já existe.
+- No modo clássico (sem File System Access API), nenhum arquivo é gravado: o PDF montado é oferecido como link e aberto em nova aba.
+- A seção `Resultados` lista um item por subpasta. Cada item mostra o nome do arquivo gerado, o rótulo `OK` e a quantidade de páginas no formato `N páginas`.
+- Cada PDF gerado com sucesso é aberto automaticamente em uma nova aba.
+- O caminho da pasta aparece acima dos contadores; no modo clássico ele vem com o sufixo `(modo offline)`.
+
+## Avisos e limitações
+- Se a seleção clássica não devolver nenhum PDF, aparece o aviso `Nenhum PDF encontrado na pasta selecionada.` e nada é processado.
+- Arquivos cujo nome começa com `Integral_` são ignorados, tanto no modo com File System Access API quanto no modo clássico.
+- Subpastas sem PDFs são descartadas da lista; no modo com File System Access API uma subpasta que não pode ser lida gera o aviso `Não foi possível ler subpasta: <nome>` no console e é pulada.
+- Os PDFs precisam estar diretamente dentro das subpastas: o toy não desce mais de um nível. No modo clássico, arquivos soltos na raiz entram em um grupo com o nome da própria pasta escolhida e arquivos em níveis mais profundos são agrupados pela primeira subpasta do caminho.
+- Um PDF que falha ao carregar é ignorado com o aviso `Erro ao processar <arquivo>:` no console; as páginas dos demais arquivos da mesma subpasta continuam sendo unidas.
+- Se a subpasta inteira falhar, o item aparece com o rótulo `Falha` e a mensagem de erro do navegador na linha seguinte, sem interromper as outras subpastas.
+- PDFs protegidos por senha são abertos com `ignoreEncryption: true`; se ainda assim não puderem ser lidos, valem as regras de falha acima.
+- O toy não reordena, não rotaciona e não remove páginas: as páginas entram na ordem alfabética dos arquivos.
+- Cancelar o seletor de pasta não faz nada e não mostra erro.
+
+## Detalhes técnicos
+- Os nomes de subpastas e de arquivos são ordenados com `localeCompare(..., 'pt-BR')`, tanto no modo com File System Access API quanto no clássico.
+- Cada subpasta gera um `PDFDocument.create()`; cada arquivo é carregado com `PDFDocument.load(arrayBuffer, { ignoreEncryption: true })` e suas páginas são copiadas com `copyPages` e adicionadas com `addPage`.
+- O progresso é calculado como `round(((subpastasProcessadas + (i + 1) / arquivosDaSubpasta) / totalDeSubpastas) * 100)`, com pausa de `10 ms` entre arquivos para a interface atualizar.
+- A gravação usa `getFileHandle(fileName, { create: true })` seguido de `createWritable()`, `write(blob)` e `close()`; o blob é do tipo `application/pdf`.
+- O nome de saída é exatamente `${nomeDaSubpasta}.pdf`, sem prefixo nem sufixo adicional.
+    </script>
+
+    <script type="text/markdown" data-manual="gannormalizadordocumentos" data-title="Normalizador CPF/CNPJ">
+# Normalizador CPF/CNPJ
+
+Recebe uma lista de documentos, um por linha, e devolve cada um no padrão oficial de CPF ou CNPJ, com o tipo identificado. Não grava arquivos: a saída fica na tela e na área de transferência.
+
+## Requisitos
+- Nenhuma dependência externa e nenhum download: o toy roda offline, dentro do próprio navegador.
+- Para `Copiar resultado` é preciso que a área de transferência esteja disponível; quando a API do navegador falha, o toy usa a cópia por seleção temporária de texto.
+- Os documentos não saem da máquina: todo o processamento é local.
+
+## Passo a passo
+1. Cole os documentos no campo `Dados`, um por linha.
+2. Clique em `Processar`.
+3. Confira a seção `Resultado`: o resumo com o número de linhas e a lista com o tipo e o valor normalizado de cada linha.
+4. Clique em `Copiar resultado` para levar a coluna normalizada para onde precisar.
+5. Clique em `Limpar` para esvaziar a entrada e esconder o resultado.
+
+## Campos e controles
+- **Dados** — área de texto livre, uma entrada por linha. Linhas em branco são descartadas, espaços no início e no fim de cada linha são ignorados e, em cada linha, só o trecho antes do primeiro `|` é considerado.
+- **Processar** — aplica a normalização ao conteúdo atual do campo e exibe o resultado. Sempre disponível, inclusive com o campo vazio.
+- **Copiar resultado** — copia apenas a coluna dos documentos normalizados, uma por linha, sem cabeçalho e sem a coluna de tipo. Depois da cópia o botão mostra `Copiado` por cerca de 1,6 segundo e volta ao texto `Copiar resultado`. Não faz nada enquanto não houver resultado.
+- **Limpar** — esvazia `Dados`, esconde a seção `Resultado` e devolve o foco para o campo.
+
+## Resultado
+- A seção `Resultado` mostra o resumo `N linhas processadas.`, ou `1 linha processada.` quando há uma única linha.
+- A lista tem duas colunas: `Tipo`, com `CPF`, `CNPJ` ou `INVÁLIDO`, e `Normalizado`, com o documento formatado.
+- Exemplo de transformação:
+
+```
+entrada: 12345678901          -> Tipo: CPF       Normalizado: 123.456.789-01
+entrada: 12.345.678/0001-95   -> Tipo: CNPJ      Normalizado: 12.345.678/0001-95
+entrada: abc                  -> Tipo: INVÁLIDO  Normalizado: (vazio)
+```
+
+- O texto copiado por `Copiar resultado` contém somente a segunda coluna, uma linha por documento, separada por tabulação.
+- O toy não cria nem altera arquivos ou pastas.
+
+## Avisos e limitações
+- Qualquer entrada cuja contagem de dígitos não seja 11 nem 14 recebe o rótulo `INVÁLIDO`, e a coluna `Normalizado` mostra os dígitos encontrados, que podem sair vazios quando a linha não tem nenhum dígito.
+- Não há validação de dígito verificador: a decisão depende exclusivamente da quantidade de dígitos.
+- Toda pontuação da entrada é descartada, não reaproveitada; a máscara é montada do zero a partir dos dígitos.
+- Tudo o que vem depois do primeiro `|` na linha é ignorado.
+- Este toy não produz mensagens de erro para o tipo de operação que executa; a área de aviso da tela só é usada por operações que retornam erro.
+- Se uma linha tiver mais de 14 dígitos, por exemplo um CPF e um CNPJ colados, o resultado é `INVÁLIDO` com todos os dígitos.
+
+## Detalhes técnicos
+- As linhas são obtidas por `text.split(/\r?\n/)`, com `trim` em cada uma e descarte das vazias.
+- Os dígitos saem de `line.split('|')[0].replace(/\D/g, '')`.
+- Com 11 dígitos a máscara é `###.###.###-##`; com 14 dígitos, `##.###.###/####-##`; qualquer outro tamanho devolve os dígitos sem máscara.
+- O pareamento entre entrada e saída é sempre posicional: cada linha de entrada gera exatamente uma linha de saída, na mesma ordem.
+    </script>
+
+    <script type="text/markdown" data-manual="gannormalizadornomes" data-title="Normalizador de Nomes">
+# Normalizador de Nomes
+
+Recebe textos de nomes, um por linha, e devolve cada valor em maiúsculas, sem acentos e limitado aos caracteres aceitos pelo cadastro. Não grava arquivos: a saída fica na tela e na área de transferência.
+
+## Requisitos
+- Nenhuma dependência externa e nenhum download: o toy roda offline, dentro do próprio navegador.
+- Para `Copiar resultado` é preciso que a área de transferência esteja disponível; quando a API do navegador falha, o toy usa a cópia por seleção temporária de texto.
+- Suporta colunas separadas por tabulação, o que permite colar direto de uma planilha.
+
+## Passo a passo
+1. Cole os nomes no campo `Dados`, um por linha. Para várias colunas, cole com tabulação entre elas, como vem de uma planilha.
+2. Clique em `Processar`.
+3. Confira a seção `Resultado`: o resumo com o número de linhas e a lista de valores já normalizados.
+4. Clique em `Copiar resultado` para levar a saída para onde precisar.
+5. Clique em `Limpar` para esvaziar a entrada e esconder o resultado.
+
+## Campos e controles
+- **Dados** — área de texto livre, uma entrada por linha. Linhas em branco são descartadas. Cada linha é dividida por tabulação, e cada célula é normalizada de forma independente.
+- **Processar** — aplica a normalização ao conteúdo atual do campo e exibe o resultado. Sempre disponível, inclusive com o campo vazio.
+- **Copiar resultado** — copia todas as colunas normalizadas, uma linha por linha, com as colunas separadas por tabulação, sem cabeçalho. Depois da cópia o botão mostra `Copiado` por cerca de 1,6 segundo e volta ao texto `Copiar resultado`. Não faz nada enquanto não houver resultado.
+- **Limpar** — esvazia `Dados`, esconde a seção `Resultado` e devolve o foco para o campo.
+
+## Resultado
+- A seção `Resultado` mostra o resumo `N linhas processadas.`, ou `1 linha processada.` quando há uma única linha.
+- Com uma coluna, a lista tem o cabeçalho `Normalizado`. Com mais de uma, os cabeçalhos são `Normalizado 1`, `Normalizado 2` e assim por diante, na ordem das colunas de entrada.
+- As colunas são preservadas na mesma ordem e todas as linhas são completadas com valor vazio até o número de colunas da linha mais larga do lote.
+- Exemplo de transformação:
+
+```
+entrada: João da Silva|123     -> saída: JOAO DA SILVA
+entrada: MARIA;SILVA           -> saída: MARIA;SILVA
+entrada: José  Carlos          -> saída: JOSE  CARLOS
+entrada: sem oab                -> saída: 0
+```
+
+- O texto copiado por `Copiar resultado` contém todas as colunas, sem cabeçalho, com tabulação entre as colunas.
+- O toy não cria nem altera arquivos ou pastas.
+
+## Avisos e limitações
+- O que é corrigido: acentuação e cedilha são removidas, o texto vira maiúsculo, espaços no início e no fim da célula são removidos, e três marcadores internos são traduzidos depois da normalização: `SEM ADV` vira `SEM ADVOGADO`, `SEM OAB` vira `0` e `SEM UF` vira `TJ`.
+- O que é removido: todo caractere fora das letras sem acento, dos dígitos, do espaço, do sublinhado, do hífen e do ponto e vírgula. Isso inclui pontos, vírgulas, barras, parênteses, aspas, arrobas e sinais como `&`.
+- O que é preservado: dígitos, sublinhado, hífen, ponto e vírgula e os espaços internos, inclusive quando há mais de um espaço seguido entre as palavras.
+- O trecho depois do primeiro `|` é descartado na célula, mesmo quando contém informação útil.
+- As traduções de `SEM ADV`, `SEM OAB` e `SEM UF` só valem quando a célula inteira, já normalizada, é exatamente esse texto; sozinhas ou em outra posição elas não são alteradas.
+- Células vazias continuam vazias, inclusive as criadas para completar linhas com menos colunas.
+- Este toy não produz mensagens de erro para o tipo de operação que executa; a área de aviso da tela só é usada por operações que retornam erro.
+- O pareamento é posicional: cada linha de entrada gera exatamente uma linha de saída, na mesma ordem.
+
+## Detalhes técnicos
+- As linhas vêm de `text.split(/\r?\n/)`, mantendo somente as que têm conteúdo após remover espaços; as células vêm de `line.split('\t')`.
+- A normalização de cada célula usa decomposição NFKD e remoção de tudo o que não seja letra sem acento, dígito, espaço, sublinhado, hífen ou ponto e vírgula, seguida de conversão para maiúsculas e remoção de espaços nas pontas.
+- Cabeçalhos: uma única coluna gera `Normalizado`; mais de uma gera `Normalizado N`, começando em `Normalizado 1`.
+    </script>
+
+    <script type="text/markdown" data-manual="gannormalizadoriris" data-title="Normalizador de Pastas IRIS">
+# Normalizador de Pastas IRIS
+
+Recebe uma lista de identificadores de pastas IRIS, um por linha, e devolve cada valor sem o prefixo `IRIS` e sem zeros à esquerda. Não toca em arquivos nem em pastas do disco: a saída fica na tela e na área de transferência.
+
+## Requisitos
+- Nenhuma dependência externa e nenhum download: o toy roda offline, dentro do próprio navegador.
+- Para `Copiar resultado` é preciso que a área de transferência esteja disponível; quando a API do navegador falha, o toy usa a cópia por seleção temporária de texto.
+- Nenhuma permissão de pasta é pedida: o toy não lê nem grava no sistema de arquivos.
+
+## Passo a passo
+1. Cole os identificadores no campo `Dados`, um por linha, no formato mostrado na dica da tela: `IRIS00998585`.
+2. Clique em `Processar`.
+3. Confira a seção `Resultado`: o resumo com o número de linhas e a lista com o valor normalizado de cada linha.
+4. Clique em `Copiar resultado` para levar a lista normalizada para onde precisar.
+5. Clique em `Limpar` para esvaziar a entrada e esconder o resultado.
+
+## Campos e controles
+- **Dados** — área de texto livre, uma entrada por linha. Linhas em branco são descartadas e espaços no início e no fim de cada linha são ignorados. Não há campo de configuração nesta ferramenta.
+- **Processar** — aplica a normalização ao conteúdo atual do campo e exibe o resultado. Sempre disponível, inclusive com o campo vazio.
+- **Copiar resultado** — copia a coluna normalizada, uma linha por linha, sem cabeçalho. Depois da cópia o botão mostra `Copiado` por cerca de 1,6 segundo e volta ao texto `Copiar resultado`. Não faz nada enquanto não houver resultado.
+- **Limpar** — esvazia `Dados`, esconde a seção `Resultado` e devolve o foco para o campo.
+
+## Resultado
+- A seção `Resultado` mostra o resumo `N linhas processadas.`, ou `1 linha processada.` quando há uma única linha.
+- A lista tem uma única coluna, com o cabeçalho `Normalizado`.
+- Exemplo de transformação:
+
+```
+entrada: IRIS00998585   -> saída: 998585
+entrada: iris-000123    -> saída: 123
+entrada: IRIS 0025      -> saída: 25
+entrada: IRIS000        -> saída: 0
+entrada: 000123         -> saída: 123
+```
+
+- O texto copiado por `Copiar resultado` tem uma linha por entrada, sem cabeçalho.
+- O pareamento é posicional: cada linha de entrada gera exatamente uma linha de saída, na mesma ordem.
+- O toy não cria, renomeia nem move arquivos ou pastas.
+
+## Avisos e limitações
+- O prefixo é removido apenas no início do valor, sem diferenciar maiúsculas de minúsculas e aceitando, no máximo, um separador opcional entre o prefixo e o número, entre `-`, `_`, `:` e `/`, com espaços ao redor permitidos.
+- Quando o prefixo aparece repetido, só a primeira ocorrência é removida: `IRISIRIS001` sai como `IRIS001`.
+- Os zeros à esquerda são removidos apenas enquanto houver um dígito depois deles. Um valor só de zeros, como `IRIS000`, sai como `0`.
+- Zeros no meio do valor são preservados: `IRIS1000` sai como `1000`.
+- O restante do texto não é alterado: maiúsculas e minúsculas são mantidas e nenhuma pontuação interna é removida. `IRIS PASTA 01` sai como `PASTA 01`.
+- Valores sem o prefixo `IRIS` passam pelo mesmo tratamento: só os zeros à esquerda são removidos, como em `000123`, que sai como `123`.
+- Como o toy só produz texto, renomear pastas ou arquivos depende de você aplicar a lista no gerenciador de arquivos ou em outro processo.
+- Este toy não produz mensagens de erro para o tipo de operação que executa; a área de aviso da tela só é usada por operações que retornam erro.
+
+## Detalhes técnicos
+- As linhas vêm de `text.split(/\r?\n/)`, com `trim` em cada uma e descarte das vazias.
+- O prefixo é removido com a expressão `^iris\s*[-_:/]?\s*`, aplicada sem diferenciar maiúsculas de minúsculas.
+- Os zeros à esquerda são removidos com a expressão `^0+(?=\d)`, que exige um dígito logo depois dos zeros removidos.
+- O cabeçalho da saída é sempre `Normalizado`, uma coluna por linha.
+    </script>
+
+    <script type="text/markdown" data-manual="ganpadronizadorcnj" data-title="Padronizador CNJ">
+# Padronizador CNJ
+
+Converte uma lista de números de processo entre o formato pontuado e o formato despontuado. A entrada é uma lista de processos, um por linha; a saída é a mesma lista no formato escolhido, com cada linha marcada como convertida ou inválida.
+
+## Requisitos
+- Navegador com JavaScript habilitado. Todo o processamento acontece na página.
+- Nenhum arquivo é lido ou gravado, e nada é enviado para a internet.
+- O botão de cópia usa a área de transferência do navegador.
+
+## Passo a passo
+1. Cole os processos no campo `Lista de processos`, um por linha.
+2. Escolha o `Modo`: `Pontuar` (opção marcada por padrão) ou `Despontuar`.
+3. Clique em `Processar Lista`.
+4. Confira a lista de resultados: cada item mostra o valor final, o selo `OK` ou `Inválido`, a linha `Original: ...` e a mensagem da conversão.
+5. Clique em `Copiar para a Memória` para levar todas as linhas de saída para a área de transferência, na ordem da entrada.
+
+## Campos e controles
+- **Lista de processos** — área de texto livre, um processo por linha. O campo mostra como exemplo `00000018920238260100` e `0000002-90.2024.8.26.0100`. Linhas vazias ou só com espaços são descartadas; espaços no início e no fim de cada linha são removidos antes da conversão.
+- **Modo** — grupo de opções com `Pontuar` e `Despontuar`. Só a opção marcada é usada; `Pontuar` já vem selecionada.
+- **Processar Lista** — reprocessa todo o conteúdo atual do campo. Rodar de novo substitui o resultado anterior.
+- **Copiar para a Memória** — copia uma linha de texto por item. Fica desabilitado quando não há nenhum item com conteúdo. Depois de copiar, o rótulo vira `Copiado` e volta a `Copiar para a Memória` após 1,6 segundo; se a cópia falhar, mostra `Falha ao copiar` pelo mesmo intervalo.
+
+## Resultado
+- Resumo no topo da seção: `N de M linhas convertidas.`, contando apenas as linhas aceitas.
+- Quando nenhuma linha tem conteúdo, a seção mostra `Nenhuma linha para processar.` e a mensagem `Nenhuma linha válida informada.`, e o botão de cópia fica desabilitado.
+- Cada item da lista exibe o valor convertido, o selo `OK` ou `Inválido`, a linha iniciada por `Original: ` seguida do texto digitado, e a mensagem `Convertido para formato pontuado.` ou `Convertido para formato despontuado.`; nas linhas recusadas a mensagem de erro aparece destacada.
+- A cópia gera as linhas de saída na ordem da entrada. As linhas recusadas entram sem alteração, exatamente como foram digitadas (já sem os espaços das pontas).
+- O toy não cria arquivos nem pastas; a saída é apenas a lista na tela e o texto copiado.
+
+## Avisos e limitações
+- Linha cuja quantidade de dígitos não é exatamente 20 é recusada com `Linha inválida: o CNJ precisa ter 20 dígitos.` e recebe o selo `Inválido`; ela continua aparecendo na saída, sem conversão.
+- Não há validação de dígito verificador: a única checagem é a contagem de dígitos. Um número com 20 dígitos e dígito verificador errado é aceito normalmente.
+- Letras e qualquer outro caractere que não seja dígito são descartados antes da contagem, então uma linha com texto extra pode ser aceita se sobrarem 20 dígitos.
+
+## Detalhes técnicos
+- O texto é dividido por quebras de linha (`\r?\n`); cada linha é aparada e as vazias são ignoradas.
+- Todos os caracteres que não são dígitos são removidos da linha antes da checagem e da conversão.
+- No modo `Pontuar`, os 20 dígitos são recortados por posição e remontados no formato `NNNNNNN-DD.AAAA.J.TR.OOOO`: posições 1 a 7 número sequencial, 8 a 9 dígito verificador, 10 a 13 ano, 14 segmento da justiça, 15 a 16 tribunal e 17 a 20 origem. Não há recálculo de dígito verificador.
+- No modo `Despontuar`, a saída é a sequência dos 20 dígitos, sem separadores.
+    </script>
+
+    <script type="text/markdown" data-manual="ganremovedorsufixouf" data-title="Removedor por Wildcard">
+# Removedor por Wildcard
+
+Remove ou substitui trechos de cada linha usando um padrão wildcard. A entrada é uma lista de textos, um por linha; a saída é uma tabela com a linha original e a linha resultante.
+
+## Requisitos
+- Navegador com JavaScript habilitado. Nada é enviado para a internet e nenhum arquivo é lido ou gravado.
+- A cópia usa a área de transferência do navegador, com alternativa interna quando o navegador bloqueia o acesso direto.
+
+## Passo a passo
+1. Cole os dados no campo `Dados`, um item por linha.
+2. Confira o `Modo`: `Remover` (padrão) ou `Substituir`.
+3. Ajuste o `Padrão (aceita * e ?)` — o valor inicial é `-*`.
+4. No modo `Substituir`, preencha `Substituir por` com o texto que entra no lugar de cada trecho encontrado.
+5. Clique em `Processar`.
+6. Use `Copiar resultado` para copiar a tabela em TSV, ou `Limpar` para zerar a entrada, voltar os campos aos valores iniciais e esconder o resultado.
+
+## Campos e controles
+- **Dados** — área de texto livre. O exemplo do campo é `Cole os dados aqui...`. Cada linha é aparada e as linhas vazias são descartadas.
+- **Modo** — `Remover` apaga todos os trechos que casam com o padrão; `Substituir` troca cada trecho casado pelo conteúdo de `Substituir por`.
+- **Padrão (aceita * e ?)** — `*` representa qualquer sequência (inclusive vazia) e `?` representa exatamente um caractere. Parênteses agrupam o padrão e são repassados para a expressão regular. Valor inicial `-*`, que apaga do primeiro hífen até o fim da linha. Fica sempre habilitado, inclusive no modo `Remover`.
+- **Substituir por** — só aparece quando o `Modo` é `Substituir`. Começa vazio, o que faz o trecho casado ser apagado. É ocultado novamente ao voltar para `Remover`.
+- **Processar** — aplica o padrão ao conteúdo atual do campo.
+- **Limpar** — esvazia `Dados`, restaura `Modo` para `Remover` e o padrão para `-*`, limpa os resultados e devolve o foco ao campo `Dados`.
+- **Copiar resultado** — copia as linhas da tabela em TSV, sem cabeçalho e com as duas colunas. Fica sem efeito enquanto não houver resultado.
+
+## Resultado
+- Resumo `N linhas processadas.` — no singular, `1 linha processada.`.
+- Tabela com a coluna `Original` e uma segunda coluna que muda com o modo: `Sem trecho` em `Remover` e `Substituído` em `Substituir`.
+- Linhas em que o padrão não casa aparecem com o mesmo texto nas duas colunas.
+- A cópia gera uma linha por item, com as colunas separadas por tabulação.
+- O toy não cria arquivos nem pastas.
+
+## Avisos e limitações
+- Com o campo de padrão vazio, o processamento é interrompido com `Informe um padrão.` e nenhuma tabela é montada.
+- Padrão que não pode ser compilado, por exemplo com parênteses desbalanceados, gera `O padrão informado não pôde ser processado.`
+- A comparação diferencia maiúsculas de minúsculas.
+- Não há retrorreferência: os parênteses agrupam, mas não existe sintaxe para repetir o grupo capturado na saída.
+- O mesmo padrão é aplicado a todas as ocorrências da linha, não só à primeira.
+
+## Detalhes técnicos
+- Conversão do padrão para expressão regular: `*` vira `.*`, cada `?` vira `.`, os parênteses são mantidos como delimitadores de grupo e todos os demais caracteres são escapados. A expressão é criada com a flag `g` (todas as ocorrências) e sem a flag `i` (sensível a maiúsculas).
+- O texto de `Substituir por` é passado direto para a substituição nativa do navegador, então sequências como `$&` e `$1` são interpretadas ali, não escritas literalmente.
+- Exemplos de padrão: `-*` transforma `123-PI` em `123`; `-?` transforma `1234-PI` em `1234I`, porque apaga o hífen e o caractere seguinte; `-PI` apaga apenas as ocorrências de `-PI`; `*.pdf` apaga a linha inteira quando ela termina em `.pdf`, porque `*` é guloso.
+- Cada `?` vale um caractere isolado: o padrão `-??` só casa onde houver hífen, um caractere, outro hífen e mais um caractere (como em `A-B-1`).
+- A substituição é global: `A-1-B-2` com o padrão `-*` vira `A`.
+    </script>
+
+    <script type="text/markdown" data-manual="ganrenomeador" data-title="Renomeador em Massa">
+# Renomeador em Massa
+
+Renomeia arquivos de uma pasta local aplicando um padrão wildcard com substituição. A entrada é uma pasta escolhida pelo usuário; a saída é a lista de nomes novos e um relatório por arquivo, depois que a renomeação é confirmada.
+
+## Requisitos
+- Navegador compatível com a File System Access API (Chromium e derivados). O seletor de pasta é aberto pelo aplicativo que hospeda o toy.
+- A pasta é aberta com permissão de leitura e escrita; a permissão é pedida no momento da seleção.
+- Nenhum conteúdo de arquivo é lido: o toy trabalha apenas com os nomes dentro da pasta escolhida. Nada é enviado para a internet.
+
+## Passo a passo
+1. Clique em `Selecionar pasta` e escolha a pasta dos arquivos. O texto `Nenhuma pasta selecionada` é substituído pelo nome da pasta.
+2. Escolha um `Preset` ou preencha à mão o `Padrão a encontrar (aceita * e ?)`.
+3. Preencha `Substituir por` com o texto de destino, usando `$1`, `$2` e assim por diante para reinserir os curingas.
+4. Marque `Normalizar extensão (letras maiúsculas para minúsculas)` e `Incluir subpastas` conforme a necessidade.
+5. Clique em `Visualizar`. A seção `Prévia da renomeação` lista cada arquivo afetado no formato `nome atual → novo nome`.
+6. Confira a prévia e clique em `Renomear`. O relatório final mostra uma linha por arquivo, começando por `RENOMEADO` ou `ERRO`.
+
+## Campos e controles
+- **Pasta dos arquivos** / **Selecionar pasta** — abre o seletor de pasta em modo leitura e escrita. Cancelar o seletor não altera nada e não mostra erro.
+- **Preset** — `Personalizado` (sem preset) mais três combinações prontas: `Integral → Integral_`, que usa o padrão `Integral - *.pdf` com substituição `Integral_$1.pdf`; `Inicial → Inicial_`, com `Inicial - *.pdf` e `Inicial_$1.pdf`; e `Docs Inicial → Docs_`, com `Docs Inicial - *.pdf` e `Docs_$1.pdf`.
+- **Padrão a encontrar (aceita * e ?)** — `*` casa com qualquer sequência e `?` com um caractere. Exemplo do campo: `Ex.: Integral - *.pdf`. Cada `*` conta como um curinga e cada sequência de `?` conta como um único curinga, na ordem em que aparecem.
+- **Substituir por** — texto que entra no lugar do que casou. Exemplo do campo: `Ex.: Integra_$1.pdf`. Deixar vazio apaga o trecho casado. Para usar a substituição é preciso ter um padrão preenchido.
+- **Normalizar extensão (letras maiúsculas para minúsculas)** — depois da substituição, reescreve a extensão do nome final em minúsculas. Não afeta arquivos cujo nome não casa com o padrão.
+- **Incluir subpastas** — marcado, varre a pasta escolhida e todas as subpastas recursivamente; desmarcado, olha só os arquivos do nível raiz.
+- **Visualizar** — fica desabilitado enquanto não houver pasta selecionada e padrão não vazio. Gera o plano de renomeação e o guarda para a etapa seguinte.
+- **Renomear** — fica desabilitado enquanto não existir uma prévia com pelo menos um arquivo a renomear, e é desabilitado junto com `Visualizar` durante a execução.
+- Alterar o padrão, a substituição, qualquer uma das duas caixas de seleção, o preset ou a pasta descarta a prévia anterior e volta a exigir `Visualizar`.
+
+## Resultado
+- Título da prévia: `Prévia da renomeação — N arquivo(s) de TOTAL`, em que `N` é a quantidade de arquivos que mudam de nome e `TOTAL` é a quantidade de arquivos varridos.
+- Cada linha da prévia mostra o caminho relativo do arquivo (com as subpastas, quando houver) e o novo nome.
+- Sumário com os contadores `Arquivos`, `A renomear` e `Erros`, atualizado depois da renomeação.
+- `Relatório da operação` com uma linha por arquivo processado: `RENOMEADO` seguido de `caminho → novo nome`, ou `ERRO` seguido de `caminho: motivo`.
+- O toy não cria nem apaga arquivos e não gera arquivos de relatório: ele apenas troca os nomes dentro da pasta escolhida, e o relatório existe só na tela.
+
+## Avisos e limitações
+- Falha ao montar a prévia abre um alerta começando por `Não foi possível gerar a prévia: ` seguido do motivo; falha ao renomear abre um alerta começando por `Não foi possível renomear os arquivos: `.
+- Se a pasta guardada não estiver mais acessível, a prévia falha com `A pasta selecionada não está mais disponível. Selecione-a novamente.`
+- Se o plano tiver sido descartado, a renomeação falha com `A prévia expirou. Gere uma nova prévia antes de renomear.`
+- Arquivo cujo nome de destino já existe na mesma pasta falha com `já existe um arquivo com esse nome`; os demais arquivos do plano continuam sendo processados.
+- Conflitos não são avisados na prévia: se dois arquivos apontarem para o mesmo nome novo, o primeiro é renomeado e o segundo falha na execução.
+- Sem resposta do aplicativo hospedeiro, a operação é encerrada com `A operação de renomeação não respondeu.` após 120 segundos, e a seleção de pasta com `A seleção de pasta não respondeu.` após 60 segundos.
+- Não existe desfazer: depois de renomear, o plano é descartado e não há como voltar aos nomes anteriores.
+- Arquivos cujo nome não casa com o padrão não entram na prévia e nunca são renomeados, mesmo com `Normalizar extensão` marcado.
+- A busca percorre todos os arquivos da pasta, inclusive os ocultos, sem filtro de extensão.
+
+## Detalhes técnicos
+- Conversão do padrão: `*` vira um grupo `(.*)` e cada sequência de `?` vira um grupo `(.{n})`, em que `n` é a quantidade de `?` seguidos; os demais caracteres são escapados. A expressão é compilada sem distinção entre maiúsculas e minúsculas.
+- A expressão não é global, então apenas a primeira ocorrência do padrão no nome é substituída.
+- `$1`, `$2` e assim por diante correspondem, na ordem, aos curingas do padrão.
+- A substituição é aplicada ao nome do arquivo, nunca ao caminho; o caminho só é usado para exibir a linha da prévia.
+- Arquivos cujo nome final ficaria igual ao atual são omitidos da prévia.
+- Normalização de extensão: o trecho após o último ponto é reescrito em minúsculas; nomes sem ponto ou terminados em ponto ficam intactos, e extensões que já estão em minúsculas não são tocadas.
+    </script>
+
+    <script type="text/markdown" data-manual="ganresolvercarteirareu" data-title="Resolver Carteira/Réu">
+# Resolver Carteira/Réu
+
+Encontra o réu correspondente a uma carteira, cliente ou apelido informado. A entrada é uma lista de consultas, uma por linha; a saída é uma tabela com a consulta, a carteira encontrada e o réu correspondente.
+
+## Requisitos
+- Navegador com JavaScript habilitado. A tabela de carteiras e réus vem embutida no próprio toy; nada é enviado para a internet e nenhum arquivo é lido.
+- A cópia usa a área de transferência do navegador, com alternativa interna quando o acesso direto é bloqueado.
+
+## Passo a passo
+1. Cole as consultas no campo `Dados`, uma por linha. Cada linha pode ser o nome da carteira, o nome do réu, um apelido curto ou um trecho do nome.
+2. Clique em `Processar`.
+3. Confira a tabela: a coluna `Consulta` repete o que você digitou, e as colunas `Carteira` e `Réu` mostram o que foi encontrado.
+4. Clique em `Copiar resultado` para levar a saída para a área de transferência, ou `Limpar` para esvaziar o campo e esconder o resultado.
+
+## Campos e controles
+- **Dados** — área de texto livre, uma consulta por linha. O exemplo do campo é `Cole os dados aqui...`. Cada linha é aparada e as linhas vazias são descartadas. Esta ferramenta não tem campos de configuração: só o campo de dados e os botões.
+- **Processar** — resolve todas as linhas do campo. Rodar de novo substitui o resultado anterior.
+- **Limpar** — esvazia `Dados`, limpa a tabela e a mensagem de erro e devolve o foco ao campo.
+- **Copiar resultado** — copia a saída em TSV, sem cabeçalho e sem a coluna `Consulta`, ou seja, apenas os pares de carteira e réu, na ordem das linhas. Não faz nada enquanto não houver resultado.
+
+## Resultado
+- Resumo `N linhas processadas.` — no singular, `1 linha processada.`
+- Tabela com as colunas `Consulta`, `Carteira` e `Réu`, uma linha por consulta, na mesma ordem da entrada.
+- Consulta que não encontra nada aparece com `Carteira` e `Réu` vazios, sem mensagem de erro e sem destaque de falha.
+- A cópia gera uma linha por consulta com dois campos separados por tabulação, pronta para colar em planilha.
+- O toy não grava arquivos nem pastas e não guarda nada no navegador: além da tabela na tela, a única saída é o texto copiado para a área de transferência.
+
+## Avisos e limitações
+- A ferramenta não emite mensagens de erro próprias: entrada não reconhecida simplesmente devolve células vazias.
+- A correspondência é heurística, por apelido exato, nome do réu contido na consulta e semelhança de palavras. Consultas parecidas podem cair na carteira errada.
+- Várias empresas compartilham a mesma carteira: `Saneamento - BRK` e `Mercado Livre` aparecem repetidas na tabela interna, e um apelido genérico devolve a primeira entrada listada para aquele nome.
+- Acentos, pontuação e sinais são descartados na comparação, com exceção do `+`, que é preservado.
+- A comparação não diferencia maiúsculas de minúsculas.
+- Empates de pontuação são resolvidos pela ordem da tabela interna, não por proximidade do texto digitado.
+
+## Detalhes técnicos
+- Normalização das consultas: decomposição de acentos (NFKD), troca de todo caractere que não seja letra, dígito ou `+` por espaço, espaços repetidos colapsados, texto em maiúsculas e sem espaços nas pontas.
+- Passo 1: apelido exato. A consulta normalizada é procurada numa tabela fixa de apelidos, como `ml`, `ml vc` e `vc` para `Mercado Livre - Mercado Livre - JC`/`REU A DEFINIR`, `mljec`, `jec` e `cejusc` para `Mercado Livre - Mercado Livre - JEC`/`REU A DEFINIR`, `prolagos`, `prolagos consumidor`, `prolagos cobranca`, `brk` e variantes como `brk recife`, `brk goias`, `brk sumare`, `saneatins`, `mercado pago`, `mercado envios`, `mercado credito`, `ebazar`, `ibazar`, `kangu`, `k21`, `naturgy`, `ceg`, `gas natural` e `bradesco`.
+- Passo 2: nome do réu contido na consulta. Se a consulta normalizada contiver o nome normalizado de algum réu da tabela, vale a primeira entrada nessa ordem.
+- Passo 3: pontuação por semelhança. São testadas três variantes da consulta: a normalizada, a normalizada sem espaços e a normalizada com um espaço inserido entre letra e dígito. Cada entrada da tabela recebe a maior pontuação entre as variantes: igualdade exata com o nome da carteira ou do réu vale 10000; carteira e réu concatenados contendo a variante vale 5000 mais o comprimento da variante; caso contrário, 100 para cada palavra com mais de um caractere em comum.
+- A maior pontuação vence, e a comparação é estrita, então a primeira entrada da tabela com a pontuação máxima fica com o resultado. Consulta que não soma nenhum ponto volta sem carteira e sem réu.
+- Linha vazia depois da normalização é devolvida em branco sem passar pelos passos de busca.
+    </script>
+<!-- manuals:end -->
+
+    <script>
+        (function () {
+            'use strict';
+
+            var grid = document.getElementById('manualGrid');
+            var overlay = document.getElementById('manualOverlay');
+            var nav = document.getElementById('manualNav');
+            var titleEl = document.getElementById('manualTitle');
+            var contentEl = document.getElementById('manualContent');
+            var closeBtn = document.getElementById('manualClose');
+            var lastFocus = null;
+
+            if (!grid || !overlay || !nav || !titleEl || !contentEl || !closeBtn) return;
+
+            // ---------------------------------------------------------------
+            // Markdown: subconjunto usado nos manuais (títulos, parágrafos,
+            // listas planas, negrito, código, blocos cercados, citação e régua).
+            // O texto é escapado antes de virar HTML.
+            // ---------------------------------------------------------------
+
+            function escapar(texto) {
+                return String(texto)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function aplicarInline(texto) {
+                var pedacos = [];
+                var guardado = String(texto).replace(/`([^`]+)`/g, function (todo, codigo) {
+                    pedacos.push('<code>' + escapar(codigo) + '</code>');
+                    return '\u0000' + (pedacos.length - 1) + '\u0000';
+                });
+
+                guardado = escapar(guardado)
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (todo, rotulo, href) {
+                        return '<a href="' + escapar(href) + '">' + rotulo + '</a>';
+                    });
+
+                // O \u0000 é o marcador interno dos trechos de código já convertidos.
+                // eslint-disable-next-line no-control-regex
+                return guardado.replace(/\u0000(\d+)\u0000/g, function (todo, indice) {
+                    return pedacos[Number(indice)];
+                });
+            }
+
+            var LINHA_ESPECIAL = /^\s*(?:#{1,4}\s|>|[-*+]\s|\d+[.)]\s|```|---|\*\*\*|___)/;
+
+            function renderizar(markdown) {
+                var linhas = String(markdown).replace(/\r\n?/g, '\n').split('\n');
+                var saida = [];
+                var listaAberta = null;
+                var i = 0;
+
+                function fecharLista() {
+                    if (!listaAberta) return;
+                    saida.push(listaAberta === 'ul' ? '</ul>' : '</ol>');
+                    listaAberta = null;
+                }
+
+                while (i < linhas.length) {
+                    var linha = linhas[i];
+
+                    if (/^\s*$/.test(linha)) { fecharLista(); i += 1; continue; }
+
+                    if (/^\s*```/.test(linha)) {
+                        fecharLista();
+                        var bloco = [];
+                        i += 1;
+                        while (i < linhas.length && !/^\s*```/.test(linhas[i])) { bloco.push(linhas[i]); i += 1; }
+                        i += 1;
+                        saida.push('<pre><code>' + escapar(bloco.join('\n')) + '</code></pre>');
+                        continue;
+                    }
+
+                    var titulo = linha.match(/^(#{1,4})\s+(.*?)\s*$/);
+                    if (titulo) {
+                        fecharLista();
+                        var nivel = titulo[1].length;
+                        saida.push('<h' + nivel + '>' + aplicarInline(titulo[2]) + '</h' + nivel + '>');
+                        i += 1;
+                        continue;
+                    }
+
+                    if (/^\s*(?:---|\*\*\*|___)\s*$/.test(linha)) {
+                        fecharLista();
+                        saida.push('<hr>');
+                        i += 1;
+                        continue;
+                    }
+
+                    if (/^\s*>\s?/.test(linha)) {
+                        fecharLista();
+                        var citacao = [];
+                        while (i < linhas.length && /^\s*>\s?/.test(linhas[i])) {
+                            citacao.push(linhas[i].replace(/^\s*>\s?/, ''));
+                            i += 1;
+                        }
+                        saida.push('<blockquote><p>' + aplicarInline(citacao.join(' ')) + '</p></blockquote>');
+                        continue;
+                    }
+
+                    var item = linha.match(/^\s*(?:[-*+]|\d+[.)])\s+(.*)$/);
+                    if (item) {
+                        var tipo = /^\s*\d/.test(linha) ? 'ol' : 'ul';
+                        if (listaAberta !== tipo) { fecharLista(); saida.push(tipo === 'ol' ? '<ol>' : '<ul>'); listaAberta = tipo; }
+                        saida.push('<li>' + aplicarInline(item[1]) + '</li>');
+                        i += 1;
+                        continue;
+                    }
+
+                    fecharLista();
+                    var paragrafo = [linha];
+                    i += 1;
+                    while (i < linhas.length && !/^\s*$/.test(linhas[i]) && !LINHA_ESPECIAL.test(linhas[i])) {
+                        paragrafo.push(linhas[i]);
+                        i += 1;
+                    }
+                    saida.push('<p>' + aplicarInline(paragrafo.join(' ')) + '</p>');
+                }
+
+                fecharLista();
+                return saida.join('\n');
+            }
+
+            // ---------------------------------------------------------------
+            // Manuais embutidos na própria página (fonte: toys/help/manual/*.md,
+            // sincronizada por `node build/manual.mjs`).
+            // ---------------------------------------------------------------
+
+            var manuais = Object.create(null);
+
+            Array.prototype.forEach.call(document.querySelectorAll('script[type="text/markdown"][data-manual]'), function (no) {
+                manuais[no.dataset.manual] = {
+                    titulo: no.dataset.title || no.dataset.manual,
+                    html: renderizar(no.textContent.replace(/^\n+/, '').replace(/\s+$/, ''))
+                };
+            });
+
+            // O índice do popup é montado a partir da grade: um card = uma entrada.
+            Array.prototype.forEach.call(grid.querySelectorAll('[data-manual]'), function (card) {
+                var slug = card.dataset.manual;
+                var manual = manuais[slug];
+                if (!manual) return;
+
+                var botao = document.createElement('button');
+                botao.type = 'button';
+                botao.className = 'manual-nav-item';
+                botao.dataset.manual = slug;
+
+                var icone = card.querySelector('.bi');
+                if (icone) {
+                    var marca = document.createElement('i');
+                    marca.className = icone.className;
+                    marca.setAttribute('aria-hidden', 'true');
+                    botao.appendChild(marca);
+                }
+
+                var rotulo = document.createElement('span');
+                rotulo.textContent = manual.titulo;
+                botao.appendChild(rotulo);
+
+                nav.appendChild(botao);
+            });
+
+            var aberto = false;
+
+            function abrir(slug, disparador) {
+                var manual = manuais[slug];
+                if (!manual) return;
+
+                lastFocus = disparador || document.activeElement;
+                titleEl.textContent = manual.titulo;
+                contentEl.innerHTML = manual.html;
+                contentEl.scrollTop = 0;
+
+                Array.prototype.forEach.call(nav.querySelectorAll('.manual-nav-item'), function (botao) {
+                    botao.classList.toggle('active', botao.dataset.manual === slug);
+                });
+
+                overlay.classList.add('open');
+                document.body.classList.add('modal-aberto');
+                aberto = true;
+                closeBtn.focus();
+            }
+
+            function fechar() {
+                if (!aberto) return;
+                overlay.classList.remove('open');
+                document.body.classList.remove('modal-aberto');
+                aberto = false;
+                if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+            }
+
+            grid.addEventListener('click', function (evento) {
+                var card = evento.target.closest('[data-manual]');
+                if (card) abrir(card.dataset.manual, card);
+            });
+
+            nav.addEventListener('click', function (evento) {
+                var botao = evento.target.closest('.manual-nav-item');
+                if (botao) abrir(botao.dataset.manual, botao);
+            });
+
+            closeBtn.addEventListener('click', fechar);
+
+            overlay.addEventListener('click', function (evento) {
+                if (evento.target === overlay) fechar();
+            });
+
+            document.addEventListener('keydown', function (evento) {
+                if (evento.key === 'Escape') fechar();
+            });
+        })();
+    </script>
+</body>
+</html>

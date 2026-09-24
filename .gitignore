@@ -1,2 +1,12 @@
 # Artefato gerado (bundle único). Regenerado pelo workflow em push na main.
 dist/
+
+# Dependências de desenvolvimento (suíte de testes, lint, benchmarks).
+node_modules/
+
+# Saída das ferramentas: cobertura por parcial (V8/istanbul) e relatório HTML.
+.coverage/
+coverage/
+
+# Resultado dos benchmarks da última execução (número de máquina, não de código).
+bench/resultados.json

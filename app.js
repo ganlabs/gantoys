@@ -292,7 +292,6 @@ const GANTOYS = {
         const v = visualThemes[chosenVisual][mode];
         const radiusCard = chosenVisual === "neobrutalism" ? "0px" : chosenVisual === "material" ? "12px" : chosenVisual === "japandi" ? "4px" : chosenVisual === "claymorphism" ? "24px" : "16px";
         const radiusControl = chosenVisual === "neobrutalism" ? "0px" : chosenVisual === "japandi" ? "4px" : "12px";
-        const borderWidth = chosenVisual === "neobrutalism" ? "2px" : "1px";
         const backdrop = chosenVisual === "glassmorphism" ? `blur(${v.blur})` : "none";
         const surfaceAlt =
             chosenVisual === "glassmorphism"
@@ -313,7 +312,6 @@ const GANTOYS = {
                         : "#F8F6F2"
                     : v.surfaceSolid;
         const accentSoft = mode === "dark" ? "rgba(255, 215, 0, 0.10)" : "rgba(255, 215, 0, 0.14)";
-        const secondaryHover = mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)";
         const inputBg =
             chosenVisual === "glassmorphism"
                 ? mode === "dark"

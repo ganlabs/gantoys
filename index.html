@@ -91,6 +91,10 @@
                     <i class="bi bi-diagram-3"></i>
                     <span>Resolver Carteira/Réu</span>
                 </a>
+                <a href="#" class="nav-item" data-toy="help">
+                    <i class="bi bi-question-circle"></i>
+                    <span>Ajuda</span>
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">
@@ -409,8 +413,15 @@
                 }
             });
 
+            // Toy salvo que não existe mais (removido do menu) cai no Início:
+            // sem isso nenhum item do menu ficaria destacado.
+            const toysDoMenu = new Set(
+                [...document.querySelectorAll('.nav-item[data-toy]')].map((item) => item.dataset.toy)
+            );
+            const toyInicial = toysDoMenu.has(savedToy) ? savedToy : 'home';
+
             document.querySelectorAll('.nav-item').forEach(item => {
-                if (item.dataset.toy === (savedToy || 'home')) {
+                if (item.dataset.toy === toyInicial) {
                     item.classList.add('active');
                 } else {
                     item.classList.remove('active');
