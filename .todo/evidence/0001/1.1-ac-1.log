@@ -1,0 +1,34 @@
+TASK: 1.1
+CHECK: AC-1
+COMMAND: node --test test/shared-kit.test.js
+EXIT: 0
+OUTPUT:
+✔ kit — extract-polos filtra pelo polo e formata nome e documento (445.728725ms)
+✔ kit — extract-polos sem cabeçalho obrigatório devolve o erro com as colunas que faltam (131.194247ms)
+✔ kit — extract-columns seleciona colunas por nome, na ordem pedida (136.797297ms)
+✔ kit — extract-columns com coluna inexistente lista as disponíveis (130.552881ms)
+✔ kit — extract-columns-santander exige o cabeçalho completo (181.335059ms)
+✔ kit — list-reus-ml devolve a lista fixa de réus (116.82432ms)
+✔ kit — tipo desconhecido devolve o erro padrão (113.190978ms)
+✔ kit — inputLines e createTable tratam quebras de linha e células vazias (125.622988ms)
+✔ kit — renderSettings monta os campos do tipo, com visibilidade condicional (138.791779ms)
+✔ kit — getSettings lê campos de texto e checkbox (221.426394ms)
+✔ kit — initTool liga processar, copiar, limpar e o erro (1803.463971ms)
+✔ kit — copiar cai no caminho alternativo quando a área de transferência falha (1853.955456ms)
+✔ kit — resolve-carteira-reu e normalize-documents copiam sem a primeira coluna (133.007257ms)
+✔ kit — tabela separada por espaços e linhas curtas preenchem com vazio (89.248079ms)
+✔ kit — extract-columns-santander sem cabeçalho lista todas as colunas obrigatórias (81.915996ms)
+✔ kit — extract-columns-santander realinha quando a coluna volátil vem preenchida (81.1471ms)
+✔ kit — substituir sem campo de substituição e sem padrão informado (86.175746ms)
+✔ kit — padronização do número de processo em CNJ (136.079378ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7109.597303
+
+VERDICT: PASS
+CHAIN_HASH: 651cc8da889136a9ac355cf7f614dfca1dcc7d423edd209ab27b6da171efa8ed

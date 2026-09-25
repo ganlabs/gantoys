@@ -1,4 +1,4 @@
-/* exported initTool, renderSettings, getSettings, createTable, inputLines, runTool */
+/* exported initTool, renderSettings, getSettings, createTable, inputLines, runTool, cnjDigits, formatCnj */
 
 /* ==========================================================================
    GAN Toys — kit compartilhado dos toys de texto.
@@ -317,6 +317,22 @@ function formatDocument(value) {
     if (digits.length === 11) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
     if (digits.length === 14) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
     return digits;
+}
+
+/** Só os dígitos do número de processo — aceita o valor já pontuado ou cru. */
+function cnjDigits(value) {
+    return String(value ?? '').replace(/\D/g, '');
+}
+
+/**
+ * Número de processo no padrão CNJ (NNNNNNN-DD.AAAA.J.TR.OOOO).
+ * Fora de 20 dígitos devolve null: quem chama decide o que fazer com o valor
+ * inválido (manter o original, recusar a linha, contar como não convertido).
+ */
+function formatCnj(value) {
+    const digits = cnjDigits(value);
+    if (digits.length !== 20) return null;
+    return `${digits.slice(0, 7)}-${digits.slice(7, 9)}.${digits.slice(9, 13)}.${digits.slice(13, 14)}.${digits.slice(14, 16)}.${digits.slice(16, 20)}`;
 }
 
 function extractPolos(text, polo = 'ATIVO') {

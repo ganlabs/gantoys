@@ -1,0 +1,96 @@
+{
+  "contract_version": "4.0",
+  "task_id": "1.1",
+  "work_id": "0001",
+  "title": "cnjDigits e formatCnj no kit compartilhado",
+  "risk": {
+    "level": "L3",
+    "reasons": [
+      "Altera toys/shared/kit.js, consumido por todos os toys de texto e pelo bundle",
+      "Altera as globais reconhecidas pelo lint dos toys",
+      "Altera o hash de um asset monitorado no manifesto de integridade"
+    ]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-1.1-01",
+        "given": "Um valor de processo com 20 dígitos, já pontuado ou só com dígitos",
+        "when": "formatCnj é chamado pelo kit",
+        "then": "Devolve NNNNNNN-DD.AAAA.J.TR.OOOO"
+      },
+      {
+        "id": "SCENARIO-1.1-02",
+        "given": "Um valor com menos de 20 dígitos",
+        "when": "formatCnj e cnjDigits são chamados pelo kit",
+        "then": "formatCnj devolve null e cnjDigits devolve apenas os dígitos encontrados"
+      },
+      {
+        "id": "SCENARIO-1.1-03",
+        "given": "A suíte completa depois da mudança no kit",
+        "when": "npm test roda",
+        "then": "Nenhum toy de texto regride e o piso de cobertura continua respeitado"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": [
+      "toys/shared/kit.js",
+      "eslint.config.mjs",
+      "tools/integridade-assets.json",
+      "test/shared-kit.test.js"
+    ],
+    "affected_components": ["kit-compartilhado"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "toys/shared/kit.js continua só com function declarations de topo, carregadas como script clássico em file://",
+      "Nenhuma dependência nova, nenhuma execução dinâmica de código",
+      "As funções existentes do kit não mudam de contrato"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/shared-kit.test.js",
+      "npm run lint",
+      "npm run assets:integrity",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0001/1.1-red.log",
+      ".todo/evidence/0001/1.1-green.log",
+      ".todo/attestations/0001/1.1-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": [
+      "toys/shared/**",
+      "eslint.config.mjs",
+      "tools/integridade-assets.json",
+      "test/**",
+      ".todo/**",
+      ".pwn/**"
+    ],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": [
+      "Migrar os formatadores locais dos toys existentes",
+      "Alterar o contrato das demais funções do kit",
+      "Alterar a ponte do app"
+    ]
+  },
+  "budget_contract": {
+    "max_tokens": 80000,
+    "max_cost_usd": 2.0,
+    "max_duration_minutes": 40,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 40,
+    "max_tool_calls": 80,
+    "max_shell_executions": 25
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

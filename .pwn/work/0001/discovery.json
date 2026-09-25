@@ -1,0 +1,34 @@
+{
+  "work_id": "0001",
+  "title": "Toy gancadastro: planilha de cadastro processada com formatação, abas e nomes preservados",
+  "grilling_depth": "deep",
+  "problem": "O app não tem como padronizar em lote uma planilha de cadastro de processos. Hoje a limpeza é manual: o número CNJ chega despontuado, nomes de advogado/comarca chegam com acento e caixa irregular, e o valor da causa chega em formatos mistos. Reescrever a planilha com uma biblioteca de planilha perde a formatação, a quantidade de abas e os nomes das abas.",
+  "actors": [
+    "ACT-001"
+  ],
+  "objectives": [
+    "Abrir um arquivo .xlsx de cadastro escolhido pelo usuário e reportar abas e colunas reconhecidas",
+    "Padronizar o número do processo em CNJ pontuado",
+    "Normalizar nomes de advogado adverso, OAB, UF da OAB e comarca pelo procedimento de normalização de nomes",
+    "Normalizar o valor da causa pela ferramenta de extração de valores",
+    "Gerar uma planilha de saída com a mesma formatação, a mesma quantidade de abas e os mesmos nomes de abas",
+    "Gravar a saída na pasta de destino escolhida como Cadastro-<DD-MM-YYYY_HH-MM>.xlsx",
+    "Centralizar a transformação CNJ no kit compartilhado em vez de duplicá-la",
+    "Entregar manual, navegação, integridade de assets e bundle coerentes"
+  ],
+  "constraints": [
+    "file:// é requisito: scripts clássicos, caminhos relativos, sem fetch de arquivo local e sem módulo ES",
+    "Nenhuma dependência nova: JSZip já está vendorizado; SheetJS CE não escreve estilos e não entra no bundle",
+    "Casca, tokens --toy-* e vocabulário de componentes de toys/shared, sem emoji e só Bootstrap Icons",
+    "Cobertura mínima de 90% em linhas, branches, funções e statements por toy e no total",
+    "A suíte existente (incluindo os goldens de Novodiv e dos toys de texto) permanece verde",
+    "A ponte do app é quem escolhe a pasta e grava o arquivo; o toy não usa showDirectoryPicker direto"
+  ],
+  "evidence": [
+    "archive/toys/ganordenatabela/santa-cadastro-31.xlsx: amostra real com 50 colunas e 2 abas (Plan1, Planilha1)",
+    "archive/toys/ganordenatabela/script.js: precedente de patch cirúrgico de célula OOXML com JSZip preservando o atributo s",
+    "toys/shared/kit.js: normalizeNameValue, normalizeNames e extractMoney já existem; CNJ não existe no kit",
+    "toys/ganpadronizadorcnj/script.js:16-22, toys/gandivisorsantander/scripts.js:765-781, toys/gannovodiv/index.html:932-938: três cópias independentes do formatador CNJ",
+    "vendor/jszip/jszip.min.js (registrado em tools/integridade-assets.json) e vendor/xlsx/xlsx.full.min.js (CE 0.20.0, sem writer de estilos)"
+  ]
+}

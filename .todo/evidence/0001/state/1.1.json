@@ -1,0 +1,118 @@
+{
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/shared-kit.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-ac-1.log",
+      "log_sha256": "3e974e2dac712fe12b367e338a114b549568026f4acebc5a8b75d57263d50172",
+      "recorded_at": "2026-09-25T16:02:42.716Z"
+    },
+    "AC-2": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-ac-2.log",
+      "log_sha256": "2b665cec72c5881f1818a7817c88a3a0a4a50990b87fcb1cebf99ddd0da4b04f",
+      "recorded_at": "2026-09-25T16:02:44.962Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "assets:integrity"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-ac-3.log",
+      "log_sha256": "3ddf36ac2bdf515e23d3fed498db3dffcb444a81482f5bffcf135255cd672456",
+      "recorded_at": "2026-09-25T16:02:45.368Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-regression.log",
+      "log_sha256": "a586665522eb51dcc5b29a69b99a63d36b8256d29511ff7a8bc149c22e56a43f",
+      "recorded_at": "2026-09-25T16:03:34.483Z"
+    }
+  },
+  "baseline_implementation": {
+    "toys/shared/kit.js": {
+      "exists": true,
+      "sha256": "bbebf1ab60f96f50fb533d1359e4515a5ff865bf40029883590f5ca8dbebfb06"
+    },
+    "eslint.config.mjs": {
+      "exists": true,
+      "sha256": "7bfcf00d11bf2f011b75ef69e6e23442e9e8625e306d0f3d7ae96f3f0323ceed"
+    },
+    "tools/integridade-assets.json": {
+      "exists": true,
+      "sha256": "5ec6cf617e561d50aa3ee83c5f81e7dc2721285ec0c4ab5b5dbc0fc514601e30"
+    }
+  },
+  "baseline_tests": {
+    "test/shared-kit.test.js": {
+      "exists": true,
+      "sha256": "501e82ab5845cff009dbd4934421d8448c520a2b293b9981a57c7656bef3613e"
+    }
+  },
+  "created_at": "2026-09-25T15:58:56.113Z",
+  "green_expect": null,
+  "green_implementation": {
+    "toys/shared/kit.js": {
+      "exists": true,
+      "sha256": "2cf2b351bd0196370b2b00a5e030211b6b72158108db61f14aed6a5cc68a3f76"
+    },
+    "eslint.config.mjs": {
+      "exists": true,
+      "sha256": "087eedd5aba663743d2f7aa132e47690d583005a1654daee6e42d9ebac6b60b9"
+    },
+    "tools/integridade-assets.json": {
+      "exists": true,
+      "sha256": "3181242506ec3867914428ec7ddfe9cd3f4cf1b5b213e8cb72ab12825655bef1"
+    }
+  },
+  "green_tests": {
+    "test/shared-kit.test.js": {
+      "exists": true,
+      "sha256": "ca67991047000d603769cdf2514ec8dfd1b9bb4fb323e9a46cd940918b336572"
+    }
+  },
+  "implementation_files": [
+    "toys/shared/kit.js",
+    "eslint.config.mjs",
+    "tools/integridade-assets.json"
+  ],
+  "red_command": [
+    "node",
+    "--test",
+    "test/shared-kit.test.js"
+  ],
+  "red_expect": "o kit compartilhado expõe cnjDigits e formatCnj",
+  "red_tests": {
+    "test/shared-kit.test.js": {
+      "exists": true,
+      "sha256": "ca67991047000d603769cdf2514ec8dfd1b9bb4fb323e9a46cd940918b336572"
+    }
+  },
+  "task": "1.1",
+  "test_files": [
+    "test/shared-kit.test.js"
+  ]
+}

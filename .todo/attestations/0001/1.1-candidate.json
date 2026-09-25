@@ -1,0 +1,89 @@
+{
+  "version": 2,
+  "kind": "task-acceptance-candidate",
+  "harness_version": "0.1.0",
+  "gate_version": "1",
+  "work_id": "0001",
+  "task_id": "1.1",
+  "result": "pass",
+  "plan": {
+    "path": ".todo/0001-tasks.md",
+    "sha256": "8661de8a64f3ac68f6358afe6e2bf9ca25275f281efa065a788a717630267ddd"
+  },
+  "implementation": {
+    "toys/shared/kit.js": {
+      "exists": true,
+      "sha256": "2cf2b351bd0196370b2b00a5e030211b6b72158108db61f14aed6a5cc68a3f76"
+    },
+    "eslint.config.mjs": {
+      "exists": true,
+      "sha256": "087eedd5aba663743d2f7aa132e47690d583005a1654daee6e42d9ebac6b60b9"
+    },
+    "tools/integridade-assets.json": {
+      "exists": true,
+      "sha256": "3181242506ec3867914428ec7ddfe9cd3f4cf1b5b213e8cb72ab12825655bef1"
+    }
+  },
+  "tests": {
+    "test/shared-kit.test.js": {
+      "exists": true,
+      "sha256": "ca67991047000d603769cdf2514ec8dfd1b9bb4fb323e9a46cd940918b336572"
+    }
+  },
+  "evidence_sha256": "9eba5bcce34c6f01047c9a825ce77fc26c3d28c6a2e651c79254c7e4f3391b47",
+  "evidence_chain_head": "89fe89a489bc0bd6bc79add6d049cc26f80bbea905961b7466d60dcf9b3e534a",
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/shared-kit.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-ac-1.log",
+      "log_sha256": "3e974e2dac712fe12b367e338a114b549568026f4acebc5a8b75d57263d50172",
+      "recorded_at": "2026-09-25T16:02:42.716Z"
+    },
+    "AC-2": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-ac-2.log",
+      "log_sha256": "2b665cec72c5881f1818a7817c88a3a0a4a50990b87fcb1cebf99ddd0da4b04f",
+      "recorded_at": "2026-09-25T16:02:44.962Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "assets:integrity"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-ac-3.log",
+      "log_sha256": "3ddf36ac2bdf515e23d3fed498db3dffcb444a81482f5bffcf135255cd672456",
+      "recorded_at": "2026-09-25T16:02:45.368Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.1-regression.log",
+      "log_sha256": "a586665522eb51dcc5b29a69b99a63d36b8256d29511ff7a8bc149c22e56a43f",
+      "recorded_at": "2026-09-25T16:03:34.483Z"
+    }
+  },
+  "generated_at": "2026-09-25T16:03:42.325Z"
+}

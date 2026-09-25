@@ -1,0 +1,7 @@
+{
+  "work_id": "0001",
+  "created_at": "2026-09-25T15:54:04.780Z",
+  "objective": "Criar o toy gancadastro: abrir uma planilha .xlsx de cadastro, processar as colunas de processo (CNJ), advogado adverso, OAB/UF da OAB, comarca e valor da causa, e gravar uma cópia processada na pasta de destino escolhida, preservando formatação, abas e nomes.",
+  "requester": "operator",
+  "status": "draft"
+}

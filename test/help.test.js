@@ -95,11 +95,29 @@ test('Ajuda — cada card da grade casa com um bloco de manual embutido', async 
     const pagina = await abrirAjuda(t);
 
     const naGrade = slugsDaGrade(pagina);
-    assert.equal(SLUGS.length, 17, 'a Ajuda publica um manual por arquivo de toys/help/manual');
+    assert.equal(SLUGS.length, 18, 'a Ajuda publica um manual por arquivo de toys/help/manual');
     assert.equal(naGrade.length, SLUGS.length);
     assert.deepEqual([...naGrade].sort(), SLUGS, 'um card por arquivo de toys/help/manual');
     assert.deepEqual(slugsEmbutidos(pagina).sort(), SLUGS, 'um <script type="text/markdown"> por manual');
     assert.deepEqual(pagina.mensagens(), []);
+});
+
+test('Ajuda — o manual do cadastro entra na grade, no índice e nos blocos embutidos', async (t) => {
+    const pagina = await abrirAjuda(t);
+
+    // Ordem, ícone e título do manual vêm da navegação do app e do H1 do arquivo.
+    assert.deepEqual(
+        slugsDaGrade(pagina).slice(0, 3),
+        ['index', 'gancadastro', 'ganclassificadorvara'],
+        'a grade da Ajuda precisa de um card para o manual do gancadastro, na ordem da navegação'
+    );
+    assert.ok(slugsEmbutidos(pagina).includes('gancadastro'), 'o manual do cadastro precisa estar embutido na página');
+    assert.ok(slugsDoIndice(pagina).includes('gancadastro'), 'o manual do cadastro precisa estar no índice');
+
+    const card = pagina.seletor('#manualGrid [data-manual="gancadastro"]');
+    assert.equal(card.querySelector('.manual-card-title').textContent, tituloDoMarkdown(manualEmDisco('gancadastro')));
+    assert.equal(card.querySelector('i').className, 'bi bi-file-earmark-spreadsheet');
+    assert.ok(card.querySelector('.manual-card-desc').textContent.startsWith('Processa uma planilha de cadastro'), 'a descrição do card é o primeiro parágrafo do manual');
 });
 
 test('Ajuda — o índice do popup repete a grade em ordem, com o mesmo ícone e título', async (t) => {

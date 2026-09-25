@@ -1,0 +1,113 @@
+TASK: 1.2
+CHECK: RED
+COMMAND: node --test test/toys/gancadastro.test.js
+EXIT: 1
+OUTPUT:
+✖ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (3684.332663ms)
+✖ gancadastro — o botão de processar só libera com planilha e pasta (3306.729236ms)
+✖ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (3324.456741ms)
+✖ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (3326.330761ms)
+✖ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (3343.665009ms)
+✖ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (3305.885935ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (225.752602ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (237.241573ms)
+✖ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (3239.643899ms)
+✖ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (3310.384768ms)
+✖ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (3280.281682ms)
+✖ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (3275.362573ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 2
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 34779.01344
+
+✖ failing tests:
+
+test at test/toys/gancadastro.test.js:276:1
+✖ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (3684.332663ms)
+  Error: Tempo esgotado aguardando o toy precisa pedir a pasta de destino pela ponte do app.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async escolherDestino (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:259:5)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:282:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at test/toys/gancadastro.test.js:326:1
+✖ gancadastro — o botão de processar só libera com planilha e pasta (3306.729236ms)
+  Error: Tempo esgotado aguardando nome da planilha no toy.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:333:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:341:1
+✖ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (3324.456741ms)
+  Error: Tempo esgotado aguardando nome da planilha no toy.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:346:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:359:1
+✖ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (3326.330761ms)
+  Error: Tempo esgotado aguardando mensagem de cadastro.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:364:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:371:1
+✖ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (3343.665009ms)
+  Error: Tempo esgotado aguardando o toy precisa pedir a pasta de destino pela ponte do app.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async escolherDestino (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:259:5)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:378:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:422:1
+✖ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (3305.885935ms)
+  Error: Tempo esgotado aguardando mensagem de cadastro.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:428:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:461:1
+✖ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (3239.643899ms)
+  Error: Tempo esgotado aguardando mensagem de formato.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:466:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:474:1
+✖ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (3310.384768ms)
+  Error: Tempo esgotado aguardando mensagem de leitura.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:479:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:486:1
+✖ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (3280.281682ms)
+  Error: Tempo esgotado aguardando nome da planilha no toy.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:491:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/toys/gancadastro.test.js:503:1
+✖ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (3275.362573ms)
+  Error: Tempo esgotado aguardando o toy precisa pedir a pasta de destino pela ponte do app.
+      at Object.aguardar (file:///home/passoz/dev/gan/gantoys/testkit/pagina.js:279:48)
+      at async escolherDestino (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:259:5)
+      at async TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:510:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+VERDICT: PASS
+CHAIN_HASH: cdd65a58cf2d64bea43e48fe8d529c0036582f41f9e4de55de3161666d2e49bd

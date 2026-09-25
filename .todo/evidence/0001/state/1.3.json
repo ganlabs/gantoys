@@ -1,0 +1,119 @@
+{
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/help.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.3-ac-1.log",
+      "log_sha256": "623f057673d2a7cf88427c6cb907edbbd54c7a87845c651cd07c70b549673720",
+      "recorded_at": "2026-09-25T16:18:15.009Z"
+    },
+    "AC-2": {
+      "command": [
+        "npm",
+        "run",
+        "check:bundle"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.3-ac-2.log",
+      "log_sha256": "7ce10395da733fb9cbfa163d01234c3854708e1e41ea9cfea71a93f2439a2a56",
+      "recorded_at": "2026-09-25T16:18:15.543Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "assets:integrity"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.3-ac-3.log",
+      "log_sha256": "9be4a13eecb09334d4323407591a2e470926c587e88f6ee1cd2fd73b8eaf66a3",
+      "recorded_at": "2026-09-25T16:18:15.995Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "run",
+        "verify"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.3-regression.log",
+      "log_sha256": "ef6f0d2034f835e6046dba134af0409721b556000b1fcf581ebe36914ab0b0d5",
+      "recorded_at": "2026-09-25T16:19:33.861Z"
+    }
+  },
+  "baseline_implementation": {
+    "index.html": {
+      "exists": true,
+      "sha256": "874ad5c34d55756da56456a730c5b372b69031489487d438d73d650104155f49"
+    },
+    "toys/help/manual/gancadastro.md": {
+      "exists": false,
+      "sha256": null
+    },
+    "toys/help/index.html": {
+      "exists": true,
+      "sha256": "6a1525a866b30afba234abb242e0b7d5d0731ea09547e66804da9e7508045b08"
+    }
+  },
+  "baseline_tests": {
+    "test/help.test.js": {
+      "exists": true,
+      "sha256": "e5b2a80db238ae1c8e201e1b5c1efd06fe4642d82a72a52e9860d955be3a4da0"
+    }
+  },
+  "created_at": "2026-09-25T16:17:13.275Z",
+  "green_expect": null,
+  "green_implementation": {
+    "index.html": {
+      "exists": true,
+      "sha256": "77d748bb6a34a2359d667a29259ebf2357b929c37179abe028e797b072316405"
+    },
+    "toys/help/manual/gancadastro.md": {
+      "exists": true,
+      "sha256": "f10c451ee26ae202408948b363ffdbe2ab03745869bc056cf73f4898831d0bc9"
+    },
+    "toys/help/index.html": {
+      "exists": true,
+      "sha256": "40aaef37dfe73d186755046cd9e2cfd269fec3f91ed5a60505a37a18627bbcad"
+    }
+  },
+  "green_tests": {
+    "test/help.test.js": {
+      "exists": true,
+      "sha256": "67bd92015aad020b590eff446c27f1f53c638b3270d128e5d9e6c05cecc3ebfa"
+    }
+  },
+  "implementation_files": [
+    "index.html",
+    "toys/help/manual/gancadastro.md",
+    "toys/help/index.html"
+  ],
+  "red_command": [
+    "node",
+    "--test",
+    "test/help.test.js"
+  ],
+  "red_expect": "a grade da Ajuda precisa de um card para o manual do gancadastro, na ordem da navegação",
+  "red_tests": {
+    "test/help.test.js": {
+      "exists": true,
+      "sha256": "67bd92015aad020b590eff446c27f1f53c638b3270d128e5d9e6c05cecc3ebfa"
+    }
+  },
+  "task": "1.3",
+  "test_files": [
+    "test/help.test.js"
+  ]
+}

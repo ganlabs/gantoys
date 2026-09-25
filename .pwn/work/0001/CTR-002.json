@@ -1,0 +1,98 @@
+{
+  "contract_version": "4.0",
+  "task_id": "1.2",
+  "work_id": "0001",
+  "title": "Toy gancadastro: processa a planilha e grava a saída pela ponte",
+  "risk": {
+    "level": "L3",
+    "reasons": [
+      "Grava arquivo no disco do usuário em pasta escolhida por ele",
+      "Reescreve o pacote OOXML da planilha de origem, com risco de corromper a saída",
+      "Introduz página nova no bundle e no contrato visual"
+    ]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-1.2-01",
+        "given": "Uma planilha com cabeçalho na linha 1 nas colunas Núm. Processo, Advogado Adverso, OAB Advogado Adverso, UF OAB Advogado Adverso, Comarca e Valor da Causa",
+        "when": "O operador processa o arquivo com uma pasta de destino escolhida",
+        "then": "Cada célula dessas colunas sai no formato padronizado e as demais células e abas saem idênticas"
+      },
+      {
+        "id": "SCENARIO-1.2-02",
+        "given": "Uma aba sem nenhuma coluna reconhecida",
+        "when": "O toy processa a planilha",
+        "then": "O XML dessa aba sai byte a byte igual ao da origem"
+      },
+      {
+        "id": "SCENARIO-1.2-03",
+        "given": "Um arquivo com extensão diferente de .xlsx ou .xlsm",
+        "when": "O operador seleciona o arquivo",
+        "then": "A tela mostra Formato de arquivo não suportado. Use um arquivo .xlsx ou .xlsm. e o processamento segue desabilitado"
+      },
+      {
+        "id": "SCENARIO-1.2-04",
+        "given": "Uma planilha válida e uma pasta de destino escolhida",
+        "when": "O processamento termina",
+        "then": "Exatamente um arquivo Cadastro-DD-MM-AAAA_HH-MM.xlsx é gravado na pasta escolhida"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": [
+      "toys/gancadastro/index.html",
+      "toys/gancadastro/styles.css",
+      "toys/gancadastro/script.js",
+      "test/toys/gancadastro.test.js"
+    ],
+    "affected_components": ["toy-gancadastro"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "file://: scripts clássicos, caminhos relativos, sem fetch de arquivo local e sem módulo ES",
+      "Casca canônica do shared, tokens --toy-*, apenas Bootstrap Icons e nenhum emoji",
+      "HTML montado só por createElement e textContent, nunca por interpolação",
+      "Pasta de destino e gravação exclusivamente pela ponte do app",
+      "Sem dependência nova: JSZip do vendor e nenhuma biblioteca de planilha",
+      "As transformações por coluna vêm do kit compartilhado"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/toys/gancadastro.test.js",
+      "node --test test/preambulo.test.js",
+      "npm run lint",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0001/1.2-red.log",
+      ".todo/evidence/0001/1.2-green.log",
+      ".todo/attestations/0001/1.2-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": ["toys/gancadastro/**", "test/**", ".todo/**", ".pwn/**"],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": [
+      "Suporte a .xls (BIFF) e a macros de .xlsm",
+      "Colunas de processamento além das seis pedidas",
+      "Alterar a ponte, o seletor de pasta do app ou o kit compartilhado"
+    ]
+  },
+  "budget_contract": {
+    "max_tokens": 120000,
+    "max_cost_usd": 3.0,
+    "max_duration_minutes": 60,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 60,
+    "max_tool_calls": 120,
+    "max_shell_executions": 40
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

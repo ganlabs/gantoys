@@ -1,0 +1,45 @@
+TASK: 1.3
+CHECK: AC-2
+COMMAND: npm run check:bundle
+EXIT: 0
+OUTPUT:
+
+> gantoys@1.0.0 check:bundle
+> node build/check-bundle.mjs
+
+JSON GANTOYS_TOYS OK — toys: 18
+toys: gancadastro, ganclassificadorvara, gancompressor, ganconverterrito, gancopy, gandivisorsantander, ganextratorvalores, ganjuntar, gannormalizadordocumentos, gannormalizadoriris, gannormalizadornomes, gannovodiv, ganpadronizadorcnj, ganpdf, ganremovedorsufixouf, ganrenomeador, ganresolvercarteirareu, help
+JSON GANTOYS_ASSETS OK — assets: 11
+  srcdoc gancadastro: 4 ocorrência(s) — ctx: "orwardPointer, { capture: true, passive: true });\n    })();\n</script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganclassificadorvara: 4 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc gancompressor: 4 ocorrência(s) — ctx: "inter, { capture: true, passive: true });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganconverterrito: 4 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc gancopy: 2 ocorrência(s) — ctx: "ta.theme, e.data.visual, e.data.css);\n        });\n    })();\n</script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc gandivisorsantander: 4 ocorrência(s) — ctx: "inter, { capture: true, passive: true });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganextratorvalores: 4 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganjuntar: 3 ocorrência(s) — ctx: "inter, { capture: true, passive: true });\n        })();\n    </script>\n  <meta charset=\"UTF-8\">\n  <me"
+  srcdoc gannormalizadordocumentos: 4 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc gannormalizadoriris: 3 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc gannormalizadornomes: 4 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc gannovodiv: 5 ocorrência(s) — ctx: "isual, event.data.css);\n            }\n        });\n    })();\n</script>\n<meta charset=\"UTF-8\">\n<meta n"
+  srcdoc ganpadronizadorcnj: 2 ocorrência(s) — ctx: "inter, { capture: true, passive: true });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganpdf: 4 ocorrência(s) — ctx: "inter, { capture: true, passive: true });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganremovedorsufixouf: 4 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganrenomeador: 3 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc ganresolvercarteirareu: 4 ocorrência(s) — ctx: "data.visual, e.data.css);\n            });\n        })();\n    </script>\n    <meta charset=\"UTF-8\">\n   "
+  srcdoc help: 20 ocorrência(s) — ctx: "ta.theme, e.data.visual, e.data.css);\n        });\n    })();\n</script>\n    <meta charset=\"UTF-8\">\n   "
+srcdocs com </script> cru: 82
+referências locais restantes nos toys: 0
+toys fora do contrato de layout: 0
+referências de asset órfãs: 0
+worker do pdf como asset: true
+runtime de assets no app.js: true
+tesseract CDN (externo, intencional): true
+registry MB: 2.62 | assets: 11
+data:image: 35
+data:font: 2
+tamanho total MB: 3.40
+VALIDAÇÃO OK
+
+VERDICT: PASS
+CHAIN_HASH: c1563b0b990d6d1186cdcc6aa2da332b1bc6751c81e1c57e49309b1b461e8fb7

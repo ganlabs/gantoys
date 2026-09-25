@@ -1,0 +1,54 @@
+TASK: 1.1
+CHECK: RED
+COMMAND: node --test test/shared-kit.test.js
+EXIT: 1
+OUTPUT:
+✔ kit — extract-polos filtra pelo polo e formata nome e documento (381.601921ms)
+✔ kit — extract-polos sem cabeçalho obrigatório devolve o erro com as colunas que faltam (160.831224ms)
+✔ kit — extract-columns seleciona colunas por nome, na ordem pedida (103.879411ms)
+✔ kit — extract-columns com coluna inexistente lista as disponíveis (86.98282ms)
+✔ kit — extract-columns-santander exige o cabeçalho completo (98.94707ms)
+✔ kit — list-reus-ml devolve a lista fixa de réus (142.154861ms)
+✔ kit — tipo desconhecido devolve o erro padrão (88.664892ms)
+✔ kit — inputLines e createTable tratam quebras de linha e células vazias (89.753382ms)
+✔ kit — renderSettings monta os campos do tipo, com visibilidade condicional (100.31272ms)
+✔ kit — getSettings lê campos de texto e checkbox (94.14163ms)
+✔ kit — initTool liga processar, copiar, limpar e o erro (1729.692598ms)
+✔ kit — copiar cai no caminho alternativo quando a área de transferência falha (1736.226342ms)
+✔ kit — resolve-carteira-reu e normalize-documents copiam sem a primeira coluna (144.870737ms)
+✔ kit — tabela separada por espaços e linhas curtas preenchem com vazio (118.224998ms)
+✔ kit — extract-columns-santander sem cabeçalho lista todas as colunas obrigatórias (77.327091ms)
+✔ kit — extract-columns-santander realinha quando a coluna volátil vem preenchida (74.212021ms)
+✔ kit — substituir sem campo de substituição e sem padrão informado (72.734471ms)
+✖ kit — padronização do número de processo em CNJ (62.803442ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 17
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6393.636565
+
+✖ failing tests:
+
+test at test/shared-kit.test.js:326:1
+✖ kit — padronização do número de processo em CNJ (62.803442ms)
+  AssertionError [ERR_ASSERTION]: o kit compartilhado expõe cnjDigits e formatCnj
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/shared-kit.test.js:332:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+VERDICT: PASS
+CHAIN_HASH: 85b42430341e3d9f7e33e78bbe83ff9f2eeb6bd08c43ef0569b4d2f496424e3d

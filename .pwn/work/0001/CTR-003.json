@@ -1,0 +1,89 @@
+{
+  "contract_version": "4.0",
+  "task_id": "1.3",
+  "work_id": "0001",
+  "title": "Entrega: navegação, manual embutido e bundle validado",
+  "risk": {
+    "level": "L2",
+    "reasons": [
+      "Altera a navegação do app em index.html e o help gerado",
+      "O entregável oficial dist/index.html é regenerado"
+    ]
+  },
+  "validation_strategy": "regression-guarded",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-1.3-01",
+        "given": "A central de manuais carregada",
+        "when": "O índice e a grade são montados",
+        "then": "Existe card e bloco embutido para o manual do gancadastro, com a descrição vinda do primeiro parágrafo do markdown"
+      },
+      {
+        "id": "SCENARIO-1.3-02",
+        "given": "O bundle regenerado",
+        "when": "node build/check-bundle.mjs roda",
+        "then": "O toy novo respeita o contrato de layout, o registro de assets e não deixa referência local quebrada"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": [
+      "index.html",
+      "toys/help/manual/gancadastro.md",
+      "toys/help/index.html",
+      "test/help.test.js"
+    ],
+    "affected_components": ["entrega"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "toys/help/manual/*.md é a fonte da verdade: o HTML do help é gerado, nunca editado à mão",
+      "A ordem e o ícone do manual saem da navegação do index.html",
+      "O markdown aceito continua sendo o subconjunto do renderizador, sem tabela, imagem, HTML cru ou emoji"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/help.test.js",
+      "npm run check:bundle",
+      "npm run assets:integrity",
+      "npm run verify"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0001/1.3-red.log",
+      ".todo/evidence/0001/1.3-green.log",
+      ".todo/attestations/0001/1.3-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": [
+      "index.html",
+      "toys/help/**",
+      "test/help.test.js",
+      "test/**",
+      "dist/**",
+      ".todo/**",
+      ".pwn/**"
+    ],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": [
+      "Reestilizar a central de manuais ou a navegação do app",
+      "Editar toys/help/index.html à mão fora das regiões geradas"
+    ]
+  },
+  "budget_contract": {
+    "max_tokens": 60000,
+    "max_cost_usd": 1.5,
+    "max_duration_minutes": 40,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 30,
+    "max_tool_calls": 80,
+    "max_shell_executions": 25
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

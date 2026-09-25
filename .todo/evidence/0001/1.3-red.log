@@ -1,0 +1,78 @@
+TASK: 1.3
+CHECK: RED
+COMMAND: node --test test/help.test.js
+EXIT: 1
+OUTPUT:
+✖ Ajuda — cada card da grade casa com um bloco de manual embutido (415.00059ms)
+✖ Ajuda — o manual do cadastro entra na grade, no índice e nos blocos embutidos (128.575104ms)
+✔ Ajuda — o índice do popup repete a grade em ordem, com o mesmo ícone e título (130.901768ms)
+✔ Ajuda — abrir pelo card move cabeçalho, h1 e item ativo juntos (107.278601ms)
+✔ Ajuda — o índice troca de manual sem fechar e zera o scroll do artigo (114.687546ms)
+✔ Ajuda — Esc e o botão fecham o popup e devolvem o foco a quem abriu (146.458386ms)
+✔ Ajuda — a tecla que não é Esc não fecha o popup (104.176376ms)
+✔ Ajuda — clique no fundo do overlay fecha; clique dentro do modal não (95.485967ms)
+✔ Ajuda — Esc com o popup já fechado não mexe na tela (93.483679ms)
+✔ Ajuda — clique no vão da grade ou do índice não abre nada (123.161763ms)
+✔ Ajuda — o manual renderizado traz exatamente os títulos de seção do .md em disco (333.597464ms)
+✔ Ajuda — o renderizador produz as tags de cada construção do Markdown (91.317762ms)
+✔ Ajuda — manual sem data-title usa o slug no índice e no cabeçalho (82.8ms)
+✔ Ajuda — card sem manual embutido não entra no índice nem abre (95.148257ms)
+✔ Ajuda — card sem ícone entra no índice só com o título (85.562205ms)
+✔ Ajuda — abrir por um card que não aceita foco ainda fecha sem erro (78.568644ms)
+✔ Ajuda — sem o índice na página o toy não arma nada (67.345433ms)
+✔ Ajuda — o popup funciona com o tema guardado e com a troca de tema do app (116.095562ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 16
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3262.165943
+
+✖ failing tests:
+
+test at test/help.test.js:94:1
+✖ Ajuda — cada card da grade casa com um bloco de manual embutido (415.00059ms)
+  AssertionError [ERR_ASSERTION]: a Ajuda publica um manual por arquivo de toys/help/manual
+  
+  17 !== 18
+  
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/help.test.js:98:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 17,
+    expected: 18,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/help.test.js:105:1
+✖ Ajuda — o manual do cadastro entra na grade, no índice e nos blocos embutidos (128.575104ms)
+  AssertionError [ERR_ASSERTION]: a grade da Ajuda precisa de um card para o manual do gancadastro, na ordem da navegação
+  + actual - expected
+  
+    [
+      'index',
+  -   'gancadastro',
+      'ganclassificadorvara',
+  +   'gancompressor'
+    ]
+  
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/help.test.js:109:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'index', 'ganclassificadorvara', 'gancompressor' ],
+    expected: [ 'index', 'gancadastro', 'ganclassificadorvara' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+VERDICT: PASS
+CHAIN_HASH: af68b07443c00e022c69c8e31df105443a40276a6f90b267c2b1d49ea7e0174c

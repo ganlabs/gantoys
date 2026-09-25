@@ -1,0 +1,269 @@
+{
+  "$schema": "../../../schemas/prd.schema.json",
+  "id": "PRD-0001",
+  "meta": {
+    "version": "1.0",
+    "created_at": "2026-09-25T15:54:04.780Z",
+    "author": "omp",
+    "grilling_depth": "deep"
+  },
+  "title": "PRD — Toy gancadastro: planilha de cadastro processada preservando formatação, abas e nomes",
+  "status": "approved",
+  "scenario": "brownfield",
+  "problem": {
+    "statement": "Padronizar em lote uma planilha .xlsx de cadastro exige hoje trabalho manual: o número do processo chega despontuado, nomes e comarca chegam com acento e caixa irregulares e o valor da causa chega em formatos mistos. Reescrever a planilha com uma biblioteca de planilha descartaria a formatação e as abas, e o app não tem nenhum caminho que preserve o pacote original.",
+    "context": "O app já tem as transformações pedidas (normalização de nomes e extração de valores no kit compartilhado) e já tem a ponte que escolhe pasta e grava arquivo. O que falta é o toy que lê o pacote .xlsx, aplica as transformações só nas células certas e devolve o mesmo pacote com os valores trocados.",
+    "impact": "Sem o toy, cada cadastro é corrigido célula a célula; com ele, o operador lê a planilha original, escolhe a pasta de destino e recebe Cadastro-<data>.xlsx com os mesmos estilos, abas e nomes.",
+    "evidence": [
+      "archive/toys/ganordenatabela/santa-cadastro-31.xlsx",
+      "archive/toys/ganordenatabela/script.js",
+      "toys/shared/kit.js",
+      "toys/ganpadronizadorcnj/script.js:16-22",
+      "vendor/xlsx/xlsx.full.min.js (SheetJS CE 0.20.0 — writer de estilos ausente)"
+    ]
+  },
+  "solution": {
+    "statement": "Um toy novo (gancadastro) que abre o .xlsx com JSZip, lê cabeçalho e células com DOMParser, aplica as transformações do kit compartilhado e regrava apenas as células alteradas dentro do worksheet XML — trocando cada célula por um texto inline que preserva o índice de estilo. O pacote OOXML original é reempacotado sem tocar em estilos, abas ou nomes; o resultado é gravado na pasta escolhida pela ponte do app como Cadastro-<DD-MM-YYYY_HH-MM>.xlsx.",
+    "approach": "Patch cirúrgico no pacote OOXML (JSZip + DOMParser) em vez de round-trip por biblioteca de planilha.",
+    "alternatives_considered": [
+      {
+        "name": "Round-trip por SheetJS (XLSX.read + XLSX.write)",
+        "description": "Ler o workbook, transformar o modelo de células e regravar o arquivo.",
+        "reason_rejected": "A build Community 0.20.0 reescreve xl/styles.xml com fontes, fills e bordas fixos: bold, cor, fundo, borda e alinhamento são descartados em silêncio, o que viola o requisito de formatação idêntica. Além disso a lib entraria no bundle (+940 KB) sem resolver o requisito."
+      },
+      {
+        "name": "Round-trip por ExcelJS",
+        "description": "Usar a biblioteca que já existe em archive/toys/ganordenatabela/exceljs.min.js.",
+        "reason_rejected": "Traz uma dependência nova (não vendorizada, não registrada no manifesto de integridade) e ainda reconstrói o pacote, com risco de perder recursos que o modelo dela não cobre (formatação condicional, validação de dados, tabelas, filtros)."
+      },
+      {
+        "name": "Reimplementar as transformações dentro do toy",
+        "description": "Copiar a pontuação CNJ e a normalização de nomes para o script do toy.",
+        "reason_rejected": "Criaria a quarta cópia do formatador CNJ e divergiria do kit compartilhado que o app já mantém; o requisito do produto é reusar o que existe."
+      }
+    ],
+    "risks": [
+      {
+        "description": "Célula cujo valor é fórmula seria substituída por texto, mudando a semântica da planilha.",
+        "level": "medium",
+        "mitigation": "Célula com <f> é ignorada e contabilizada no relatório como ignorada por fórmula."
+      },
+      {
+        "description": "Planilha gerada por ferramenta que omite o atributo r de linha/célula.",
+        "level": "medium",
+        "mitigation": "Endereço ausente é reconstruído pela posição sequencial antes de mapear cabeçalho e células."
+      },
+      {
+        "description": "Mudar toys/shared/kit.js altera o hash do asset e o lint dos toys que passam a usar as novas funções.",
+        "level": "medium",
+        "mitigation": "Manifesto de integridade regenerado e globais registrados em eslint.config.mjs na mesma task; suíte completa como rede de proteção."
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "DEC-001",
+      "statement": "Gravar a saída por patch cirúrgico do pacote OOXML com JSZip e DOMParser, não por round-trip de biblioteca de planilha.",
+      "rationale": "É a única forma barata de garantir formatação, quantidade de abas e nomes idênticos; JSZip já é asset compartilhado registrado no manifesto.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-002",
+      "statement": "Não adicionar dependência nova ao projeto; vendor/xlsx (SheetJS) continua fora do bundle.",
+      "rationale": "O requisito de formatação é atendido sem ela e o bundle já é o entregável oficial; somar 940 KB sem resolver o requisito é custo puro.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-003",
+      "statement": "Mover a transformação CNJ para toys/shared/kit.js como cnjDigits e formatCnj, reusada pelo toy novo; as cópias locais de ganpadronizadorcnj, gandivisorsantander e gannovodiv ficam fora deste Work.",
+      "rationale": "O toy novo precisa da transformação e o kit é o lugar onde as demais transformações dos toys já vivem. Migrar os três consumidores é refatoração sem mudança observável (contratos de retorno distintos em ganpadronizadorcnj, que decide pontuar ou despontuar), o que a cadeia TDD deste Work não consegue provar com RED próprio; fica para um Work dedicado em vez de ampliar o escopo pedido.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-004",
+      "statement": "Contrato de formatCnj: devolve NNNNNNN-DD.AAAA.J.TR.OOOO quando cnjDigits tem exatamente 20 dígitos e null caso contrário.",
+      "rationale": "É a semântica já usada por gandivisorsantander e gannovodiv, e permite ganpadronizadorcnj distinguir valor inválido com cnjDigits.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-005",
+      "statement": "Escolher a pasta de destino e gravar o arquivo pela ponte do app (gantoys-directory-picker-request / gantoys-file-request), como gancopy e ganrenomeador.",
+      "rationale": "É o caminho que funciona no iframe e no bundle em file://; showDirectoryPicker direto é barrado pela permissions policy no iframe.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-006",
+      "statement": "A linha 1 de cada aba é o cabeçalho; aba sem nenhuma coluna reconhecida não é tocada.",
+      "rationale": "O cadastro real tem cabeçalho na linha 1 e uma segunda aba de tabelas auxiliares que precisa sair intacta.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-007",
+      "statement": "Só reescrever a célula quando o valor transformado difere do valor atual.",
+      "rationale": "Diff mínimo na planilha de saída, efeito idempotente e nenhuma conversão silenciosa de célula numérica que já está correta.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-008",
+      "statement": "Nome do arquivo de saída Cadastro-DD-MM-AAAA_HH-MM.xlsx com o relógio local, e mesmo nome solicitado de novo no mesmo minuto sobrescreve.",
+      "rationale": "É o nome pedido pelo operador e evita depender de fuso; a resolução de minuto já separa execuções consecutivas.",
+      "status": "accepted",
+      "made_by": "omp"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "FR-001",
+      "type": "functional",
+      "statement": "O toy lê o .xlsx escolhido, lista as abas e reconhece as colunas de cadastro pelo cabeçalho.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "lista as abas e as colunas reconhecidas por aba",
+        "rejeita extensão fora de .xlsx/.xlsm e pacote inválido com mensagem própria"
+      ]
+    },
+    {
+      "id": "FR-002",
+      "type": "functional",
+      "statement": "A coluna de número do processo é reescrita no padrão CNJ pontuado quando tem 20 dígitos.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "20 dígitos, pontuados ou não, saem no formato NNNNNNN-DD.AAAA.J.TR.OOOO",
+        "fora de 20 dígitos o valor fica intacto e é contabilizado como não convertido"
+      ]
+    },
+    {
+      "id": "FR-003",
+      "type": "functional",
+      "statement": "Advogado adverso, OAB, UF da OAB e comarca passam pelo procedimento de normalização de nomes do kit.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "sem acento, caixa alta, espaços normalizados, corte no primeiro |",
+        "SEM ADV, SEM OAB e SEM UF viram SEM ADVOGADO, 0 e TJ"
+      ]
+    },
+    {
+      "id": "FR-004",
+      "type": "functional",
+      "statement": "A coluna de valor da causa passa pelo procedimento do extrator de valores do kit.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "separadores normalizados para o padrão brasileiro",
+        "sufixo de centavos zerado removido"
+      ]
+    },
+    {
+      "id": "FR-005",
+      "type": "functional",
+      "statement": "A planilha de saída preserva formatação, quantidade de abas e nomes das abas.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "mesmas abas, na mesma ordem, com os mesmos nomes",
+        "styles.xml e workbook.xml inalterados e célula reescrita mantendo o índice de estilo",
+        "nenhuma reescrita quando o valor transformado é igual ao atual"
+      ]
+    },
+    {
+      "id": "FR-006",
+      "type": "functional",
+      "statement": "A saída é gravada na pasta de destino escolhida com o nome Cadastro-DD-MM-AAAA_HH-MM.xlsx.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "a pasta é escolhida pela ponte do app e o nome aparece na tela",
+        "exatamente um arquivo gravado, com o nome datado"
+      ]
+    },
+    {
+      "id": "FR-007",
+      "type": "constraint",
+      "statement": "A transformação CNJ do toy novo vem de toys/shared/kit.js (cnjDigits e formatCnj), sem cópia local no script do toy.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "kit expõe cnjDigits e formatCnj com o contrato do PRD",
+        "o script do toy não implementa o formatador CNJ por conta própria"
+      ]
+    },
+    {
+      "id": "FR-008",
+      "type": "constraint",
+      "statement": "A entrega inclui navegação, manual embutido, manifesto de integridade, checagem de segurança e bundle válido.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "manual embutido e card na central de manuais",
+        "check-bundle, assets:integrity e security aprovam"
+      ]
+    }
+  ],
+  "stakeholders": [
+    {
+      "name": "Operador humano",
+      "role": "Usuário do app que processa cadastros de processos"
+    },
+    {
+      "name": "Mantenedor do app",
+      "role": "Responsável pelo kit compartilhado, pelos testes e pelo bundle"
+    }
+  ],
+  "scope": {
+    "in_scope": [
+      "toys/gancadastro/** (página, estilo local e script do toy)",
+      "toys/shared/kit.js (cnjDigits e formatCnj) e migração de ganpadronizadorcnj, gandivisorsantander e gannovodiv",
+      "test/toys/gancadastro.test.js, test/shared-kit.test.js e ajustes de teste exigidos pelo manual novo",
+      "eslint.config.mjs, tools/integridade-assets.json, index.html (nav), toys/help/manual/gancadastro.md e o help gerado"
+    ],
+    "out_of_scope": [
+      "Alterar a ponte do app, o seletor de pasta ou o motor de cópia",
+      "Migrar as cópias locais do formatador CNJ de ganpadronizadorcnj, gandivisorsantander e gannovodiv para o kit",
+      "Suporte a .xls (BIFF) e a .xlsm com macros preservadas além do pacote OOXML",
+      "Trocar a biblioteca de planilha vendorizada ou adicionar dependências de runtime",
+      "Novas features de processamento depois das seis colunas pedidas"
+    ]
+  },
+  "assumptions": [
+    {
+      "statement": "A planilha de cadastro tem o cabeçalho na linha 1 e as colunas com os nomes usados nos cadastros reais (Núm. Processo, Advogado Adverso, OAB Advogado Adverso, UF OAB Advogado Adverso, Comarca, Valor da Causa).",
+      "validated": true
+    },
+    {
+      "statement": "O operador usa o app (não o toy isolado) quando precisa escolher pasta de destino.",
+      "validated": true
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "vendor/jszip/jszip.min.js",
+      "type": "technical",
+      "description": "Leitura e reescrita do pacote OOXML; já vendorizado e registrado no manifesto de integridade.",
+      "status": "resolved"
+    },
+    {
+      "name": "Ponte do app (gantoys-directory-picker-request, gantoys-file-request)",
+      "type": "technical",
+      "description": "Escolha da pasta de destino e gravação do arquivo; já implementada em app.js.",
+      "status": "resolved"
+    },
+    {
+      "name": "Transformações do kit compartilhado (normalizeNameValue, extractMoney)",
+      "type": "technical",
+      "description": "Reuso obrigatório pelas regras do produto; CNJ precisa ser extraído para o kit.",
+      "status": "resolved"
+    }
+  ],
+  "accepted_requirements": [
+    "FR-001",
+    "FR-002",
+    "FR-003",
+    "FR-004",
+    "FR-005",
+    "FR-006",
+    "FR-007",
+    "FR-008"
+  ]
+}

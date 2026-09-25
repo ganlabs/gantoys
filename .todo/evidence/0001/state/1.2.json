@@ -1,0 +1,118 @@
+{
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/toys/gancadastro.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.2-ac-1.log",
+      "log_sha256": "627fc8d3c0e75cbd23c744595436c53e11793a78918c17019bcaae2ca03ce0a0",
+      "recorded_at": "2026-09-25T16:15:20.125Z"
+    },
+    "AC-2": {
+      "command": [
+        "node",
+        "--test",
+        "test/preambulo.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.2-ac-2.log",
+      "log_sha256": "be7dd730c1b199ffc0cc92c088fb99a3bfe76c38dbc3515a8458d17ffe9ffc95",
+      "recorded_at": "2026-09-25T16:15:25.497Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.2-ac-3.log",
+      "log_sha256": "bcaea860dd292abf3ca3d51caf5f24136d159471ef7d394c66561fb527a31163",
+      "recorded_at": "2026-09-25T16:15:27.598Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.2-regression.log",
+      "log_sha256": "8dbe0e33d582c5d5dc251c5bff29250282a8006992c5de548aaeb005a2e8c986",
+      "recorded_at": "2026-09-25T16:16:12.580Z"
+    }
+  },
+  "baseline_implementation": {
+    "toys/gancadastro/index.html": {
+      "exists": true,
+      "sha256": "9966f75589d713e99135dad07837a7c72d3abc3c42e24abe7096f3f704e1010e"
+    },
+    "toys/gancadastro/styles.css": {
+      "exists": true,
+      "sha256": "12e224584d355316511333142441065e4b368f860530f8c0416d29fe42dcb875"
+    },
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "32280080e64d637687c8d2bfdc91088ddff8168e0866bdbe827ef34ebee7163f"
+    }
+  },
+  "baseline_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": false,
+      "sha256": null
+    }
+  },
+  "created_at": "2026-09-25T16:13:43.405Z",
+  "green_expect": null,
+  "green_implementation": {
+    "toys/gancadastro/index.html": {
+      "exists": true,
+      "sha256": "9966f75589d713e99135dad07837a7c72d3abc3c42e24abe7096f3f704e1010e"
+    },
+    "toys/gancadastro/styles.css": {
+      "exists": true,
+      "sha256": "12e224584d355316511333142441065e4b368f860530f8c0416d29fe42dcb875"
+    },
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "ec832e71020dc2dfdffe3a5d129d96b56a89a0bc6801d31ecff2b5114b321c7a"
+    }
+  },
+  "green_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "a91de86f5823ad0bc7a471aceebc3de8f4b6ad15e829f45cf46022aa1c261c80"
+    }
+  },
+  "implementation_files": [
+    "toys/gancadastro/index.html",
+    "toys/gancadastro/styles.css",
+    "toys/gancadastro/script.js"
+  ],
+  "red_command": [
+    "node",
+    "--test",
+    "test/toys/gancadastro.test.js"
+  ],
+  "red_expect": "o toy precisa pedir a pasta de destino pela ponte do app",
+  "red_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "a91de86f5823ad0bc7a471aceebc3de8f4b6ad15e829f45cf46022aa1c261c80"
+    }
+  },
+  "task": "1.2",
+  "test_files": [
+    "test/toys/gancadastro.test.js"
+  ]
+}

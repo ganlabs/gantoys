@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import globals from 'globals';
@@ -43,6 +43,22 @@ function funcoesDosHandlersInline() {
     };
     visitar(RAIZ);
     return [...nomes].sort();
+}
+
+/**
+ * Toys cujo `index.html` carrega o kit compartilhado: `../shared/kit.js`.
+ * As funções do kit são globais na página do toy (script clássico na mesma
+ * página), mas só valem como globais no lint de quem de fato carrega o arquivo —
+ * um toy com formatador próprio de mesmo nome não pode ser reprovado por
+ * redeclarar um global que a página dele não tem.
+ */
+function toysQueCarregamOKit() {
+    const dir = path.join(RAIZ, 'toys');
+    return readdirSync(dir)
+        .filter((nome) => statSync(path.join(dir, nome)).isDirectory())
+        .map((nome) => ({ nome, pagina: path.join(dir, nome, 'index.html') }))
+        .filter(({ pagina }) => existsSync(pagina) && readFileSync(pagina, 'utf8').includes('shared/kit.js'))
+        .map(({ nome }) => `toys/${nome}/script.js`);
 }
 
 const HANDLERS_INLINE = new RegExp(`^(${funcoesDosHandlersInline().join('|')})$`);
@@ -96,6 +112,10 @@ const GLOBAIS_DO_KIT = {
     createTable: 'readonly',
     inputLines: 'readonly',
     runTool: 'readonly',
+    cnjDigits: 'readonly',
+    formatCnj: 'readonly',
+    normalizeNameValue: 'readonly',
+    extractMoney: 'readonly',
 };
 
 export default [
@@ -131,7 +151,7 @@ export default [
         rules: REGRAS,
     },
     {
-        files: ['toys/*/script.js'],
+        files: toysQueCarregamOKit(),
         languageOptions: { globals: GLOBAIS_DO_KIT },
     },
     {

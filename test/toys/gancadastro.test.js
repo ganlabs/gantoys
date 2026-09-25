@@ -1,0 +1,520 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { carregarApp, carregarToy, montarArvore, VENDOR } from '../../testkit/index.js';
+
+/**
+ * Toy Cadastro (planilha) — `toys/gancadastro`.
+ *
+ * A fixture é um pacote OOXML montado com o JSZip real dentro da página: três
+ * abas (`Plan1` de cadastro, `Planilha1` de tabelas auxiliares e `Vazia`) e
+ * estilos com três cellXfs. Entre as células há string compartilhada, texto
+ * inline, número, célula vazia, célula com fórmula, célula inline sem texto,
+ * célula sem o atributo `r` e uma coluna fora do mapa.
+ *
+ * Os nomes de arquivo de saída dependem do relógio: o teste congela `Date`.
+ */
+
+const RELS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+const TIPOS_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+const CONTENT_TYPES = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+    '<Default Extension="xml" ContentType="application/xml"/>',
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+    '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>',
+    '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>',
+    '<Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>',
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>',
+    '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>',
+    '</Types>',
+].join('');
+
+const RELS_RAIZ = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    `<Relationships xmlns="${RELS}">`,
+    `<Relationship Id="rId1" Type="${TIPOS_REL}/officeDocument" Target="xl/workbook.xml"/>`,
+    '</Relationships>',
+].join('');
+
+/** Abas do pacote no formato de `workbook.xml`. */
+function workbook(abas) {
+    return [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
+        ` xmlns:r="${TIPOS_REL}">`,
+        '<sheets>',
+        ...abas.map((aba, indice) => `<sheet name="${aba.nome}" sheetId="${indice + 1}" r:id="${aba.rid}"/>`),
+        '</sheets>',
+        '</workbook>',
+    ].join('');
+}
+
+/** Relacionamentos do workbook: sheet1, sheet2, styles, sharedStrings e os extras. */
+function relsDoWorkbook(extras = []) {
+    return [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        `<Relationships xmlns="${RELS}">`,
+        `<Relationship Id="rId1" Type="${TIPOS_REL}/worksheet" Target="worksheets/sheet1.xml"/>`,
+        `<Relationship Id="rId2" Type="${TIPOS_REL}/worksheet" Target="worksheets/sheet2.xml"/>`,
+        `<Relationship Id="rId3" Type="${TIPOS_REL}/styles" Target="styles.xml"/>`,
+        `<Relationship Id="rId4" Type="${TIPOS_REL}/sharedStrings" Target="sharedStrings.xml"/>`,
+        ...extras.map(([id, alvo]) => `<Relationship Id="${id}" Type="${TIPOS_REL}/worksheet" Target="${alvo}"/>`),
+        '</Relationships>',
+    ].join('');
+}
+
+const ABAS_BASE = [
+    { nome: 'Plan1', rid: 'rId1' },
+    { nome: 'Planilha1', rid: 'rId2' },
+    { nome: 'Vazia', rid: 'rId5' },
+];
+
+/** `SemRelacao` não tem relacionamento e `SemParte` aponta para uma parte ausente. */
+const ABAS_QUEBRADAS = [
+    ...ABAS_BASE,
+    { nome: 'SemRelacao', rid: 'rId9' },
+    { nome: 'SemParte', rid: 'rId6' },
+];
+
+const ESTILOS = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    '<fonts count="3"><font><sz val="11"/><name val="Calibri"/></font>',
+    '<font><b/><sz val="11"/><name val="Calibri"/></font>',
+    '<font><i/><sz val="11"/><name val="Calibri"/></font></fonts>',
+    '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>',
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>',
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>',
+    '<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>',
+    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>',
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>',
+    '</styleSheet>',
+].join('');
+
+// Índices de sharedStrings usados pelas células da fixture.
+const STRINGS = [
+    'Núm. Processo',
+    'Advogado Adverso',
+    'OAB Advogado Adverso',
+    'UF OAB Advogado Adverso',
+    'Comarca',
+    'Valor da Causa',
+    'Observação',
+    '00044695120268050103',
+    'José  da Silva|observação interna',
+    'SEM OAB',
+    'SEM UF',
+    'Ilhéus',
+    '20.000,00',
+    'manter',
+    '1,234.56',
+    '0004469-51.2026.8.05.0103',
+    'Não encontrado',
+    'SEM ADV',
+    'Carteira',
+    'Rito',
+];
+
+const SHARED_STRINGS = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${STRINGS.length}" uniqueCount="${STRINGS.length}">`,
+    ...STRINGS.map((valor) => `<si><t>${valor.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</t></si>`),
+    '</sst>',
+].join('');
+
+const SHEET1 = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    '<dimension ref="A1:G5"/><sheetData>',
+    '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c>',
+    '<c r="D1" t="s"><v>3</v></c><c r="E1" t="s"><v>4</v></c><c r="F1" t="s"><v>5</v></c><c r="G1" t="s"><v>6</v></c></row>',
+    '<row r="2"><c r="A2" s="1" t="s"><v>7</v></c><c r="B2" t="s"><v>8</v></c><c r="C2" t="s"><v>9</v></c>',
+    '<c r="D2" t="s"><v>10</v></c><c r="E2" t="s"><v>11</v></c><c r="F2" t="s"><v>12</v></c><c r="G2" t="s"><v>13</v></c></row>',
+    '<row r="3"><c r="A3"><v>12345</v></c><c r="B3" s="2" t="s"><v>17</v></c>',
+    '<c r="D3" t="inlineStr"><is></is></c>',
+    '<c r="E3" t="s"><v>16</v></c><c r="F3" t="s"><v>14</v></c></row>',
+    '<row r="4"><c r="A4" t="s"><v>15</v></c><c r="B4"/>',
+    '<c r="C4"><f>UPPER(B3)</f><v>SEM ADV</v></c>',
+    '<c r="D4" t="inlineStr"><is><t>SEM UF</t></is></c>',
+    '<c r="F4" t="n"><v>1500.5</v></c></row>',
+    '<row r="5"><c r="B5" t="s"><v>8</v></c><c t="s"><v>13</v></c></row>',
+    '</sheetData></worksheet>',
+].join('');
+
+/** Mesma forma, sem nenhuma coluna de cadastro no cabeçalho. */
+const SHEET1_SEM_CADASTRO = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    '<dimension ref="A1:B2"/><sheetData>',
+    '<row r="1"><c r="A1" t="s"><v>18</v></c><c r="B1" t="s"><v>6</v></c></row>',
+    '<row r="2"><c r="A2" t="s"><v>13</v></c><c r="B2" t="s"><v>11</v></c></row>',
+    '</sheetData></worksheet>',
+].join('');
+
+const SHEET2 = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    '<dimension ref="A1:A2"/><sheetData>',
+    '<row r="1"><c r="A1" t="s"><v>18</v></c></row>',
+    '<row r="2"><c r="A2" t="s"><v>19</v></c></row>',
+    '</sheetData></worksheet>',
+].join('');
+
+/** Aba sem `sheetData`: nenhuma linha, nenhuma coluna. */
+const SHEET3 = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    '<dimension ref="A1"/></worksheet>',
+].join('');
+
+/** O relógio da página é congelado: o nome de saída depende da hora local. */
+const AGORA = '2026-09-25T14:30:00';
+const NOME_SAIDA = 'Cadastro-25-09-2026_14-30.xlsx';
+
+/** Primeira coisa que falta na casca: pedir a pasta de destino pela ponte. */
+const PEDE_A_PASTA = 'o toy precisa pedir a pasta de destino pela ponte do app';
+
+/** Segunda: liberar o processamento com planilha lida e pasta escolhida. */
+const AINDA_NAO_LIBERA = 'o processamento precisa liberar depois de ler a planilha e escolher a pasta';
+
+async function abrir(t) {
+    const app = await carregarApp();
+    // O toy lê o pacote com o JSZip real do vendor.
+    const pagina = await carregarToy('gancadastro', { vendor: [VENDOR.jszip] });
+    t.after(() => {
+        pagina.fechar();
+        app.fechar();
+    });
+    return { app, pagina, ponte: app.conectarToy(pagina) };
+}
+
+function congelarRelogio(pagina) {
+    pagina.script(`(() => {
+        const Real = Date;
+        const fixo = new Real(${JSON.stringify(AGORA)}).getTime();
+        function Falso(...args) { return args.length ? new Real(...args) : new Real(fixo); }
+        Falso.now = () => fixo;
+        Falso.parse = Real.parse;
+        Falso.UTC = Real.UTC;
+        Falso.prototype = Real.prototype;
+        window.Date = Falso;
+    })()`);
+}
+
+function selecionarArquivo(pagina, bytes, nome) {
+    pagina.janela.__ganEntrada = Array.from(bytes);
+    pagina.janela.__ganNome = nome;
+    pagina.script(`(() => {
+        const arquivo = new File([new Uint8Array(window.__ganEntrada)], window.__ganNome);
+        const input = document.getElementById('arquivo');
+        Object.defineProperty(input, 'files', { value: [arquivo], configurable: true });
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+}
+
+/** Monta a fixture dentro da página e devolve os bytes do pacote. */
+async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false } = {}) {
+    pagina.janela.__ganSheet1 = comCadastro ? SHEET1 : SHEET1_SEM_CADASTRO;
+    const abas = abasQuebradas ? ABAS_QUEBRADAS : ABAS_BASE;
+    const valor = (conteudo) => JSON.stringify(conteudo);
+    const bytes = await pagina.script(`(async () => {
+        const zip = new JSZip();
+        zip.file('[Content_Types].xml', ${valor(CONTENT_TYPES)});
+        zip.file('_rels/.rels', ${valor(RELS_RAIZ)});
+        zip.file('xl/workbook.xml', ${valor(workbook(abas))});
+        zip.file('xl/_rels/workbook.xml.rels', ${valor(relsDoWorkbook(abasQuebradas ? [['rId5', 'worksheets/sheet3.xml'], ['rId6', 'worksheets/sheet9.xml']] : [['rId5', 'worksheets/sheet3.xml']]))});
+        zip.file('xl/styles.xml', ${valor(ESTILOS)});
+        if (!${semSharedStrings}) zip.file('xl/sharedStrings.xml', ${valor(SHARED_STRINGS)});
+        zip.file('xl/worksheets/sheet1.xml', window.__ganSheet1);
+        zip.file('xl/worksheets/sheet2.xml', ${valor(SHEET2)});
+        zip.file('xl/worksheets/sheet3.xml', ${valor(SHEET3)});
+        const buffer = await zip.generateAsync({ type: 'arraybuffer' });
+        return Array.from(new Uint8Array(buffer));
+    })()`);
+    return Uint8Array.from(bytes);
+}
+
+/** Abre um pacote na página e devolve o texto de cada parte, para comparar. */
+async function abrirPacote(pagina, bytes) {
+    pagina.janela.__ganSaida = Array.from(bytes);
+    return pagina.script(`(async () => {
+        const zip = await JSZip.loadAsync(new Uint8Array(window.__ganSaida));
+        const nomes = Object.keys(zip.files).sort();
+        const partes = {};
+        for (const nome of nomes) {
+            const parte = zip.file(nome);
+            if (parte && !parte.dir) partes[nome] = await parte.async('string');
+        }
+        return { nomes, partes };
+    })()`);
+}
+
+/** Escolhe a pasta de destino pela ponte: só o lado do app é aguardado aqui. */
+async function escolherDestino({ app, pagina, ponte }, arvore) {
+    app.enfileirarPasta(arvore);
+    pagina.clicar('#escolher-destino');
+    await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: PEDE_A_PASTA });
+    await ponte.confirmarPasta();
+}
+
+/** O botão só libera com a planilha lida e a pasta escolhida. */
+async function aguardarProcessamentoLiberado(pagina) {
+    await pagina.aguardar(() => pagina.seletor('#processar').disabled === false, { descricao: AINDA_NAO_LIBERA });
+}
+
+async function processarEGravar(pagina, destino) {
+    pagina.clicar('#processar');
+    await pagina.aguardar(() => destino.escritas.length > 0, { descricao: 'a planilha processada precisa ser gravada na pasta de destino escolhida' });
+    await pagina.aguardar(() => pagina.seletor('#resultado').classList.contains('hidden') === false, { descricao: 'resultado na tela' });
+}
+
+// ---------------------------------------------------------------------------
+
+test('gancadastro — processa a planilha e grava o cadastro datado na pasta destino', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina, ponte } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina), 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    assert.deepEqual(destino.escritas, [NOME_SAIDA], 'as escritas na pasta de destino, na ordem');
+
+    // Ponte: pasta pedida em leitura/escrita e arquivo enviado como bytes.
+    const pedidos = ponte.enviados;
+    assert.deepEqual(
+        pedidos.filter((mensagem) => mensagem.type.endsWith('-request')).map((mensagem) => mensagem.type),
+        ['gantoys-directory-picker-request', 'gantoys-file-request']
+    );
+    assert.equal(pedidos[0].mode, 'readwrite');
+    const gravacao = pedidos.find((mensagem) => mensagem.type === 'gantoys-file-request');
+    assert.equal(gravacao.action, 'write');
+    assert.equal(gravacao.name, NOME_SAIDA);
+    assert.equal(typeof gravacao.directoryId, 'string');
+    assert.ok(['Uint8Array', 'ArrayBuffer'].includes(gravacao.bytes?.constructor?.name), 'os bytes vão na mensagem de gravação');
+
+    // Tela: pasta escolhida, resumo, números e uma linha por aba.
+    assert.equal(pagina.texto('#planilha-nome'), 'cadastro.xlsx');
+    assert.equal(pagina.texto('#destino-nome'), 'Destino');
+    assert.equal(pagina.texto('#resultado-resumo'), `${NOME_SAIDA} gravado em Destino.`);
+    assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['12', '1', '3', '1']);
+    assert.deepEqual(pagina.textos('#resultado-numeros .stat span'), ['alteradas', 'sem mudança', 'ignoradas', 'não convertidas']);
+    assert.deepEqual(pagina.textos('#resultado-lista .result-name'), ['Plan1', 'Planilha1', 'Vazia']);
+    assert.deepEqual(pagina.textos('#resultado-lista .result-status'), ['12 células alteradas', '0 células alteradas', '0 células alteradas']);
+    assert.deepEqual(pagina.textos('#log-area .log-line'), [
+        'Planilha lida: 3 abas.',
+        'Plan1: 6 de 6 colunas reconhecidas.',
+        'Planilha1: nenhuma coluna reconhecida.',
+        'Vazia: nenhuma coluna reconhecida.',
+        `Arquivo gravado: ${NOME_SAIDA}`,
+    ]);
+    assert.equal(pagina.seletor('#progresso').classList.contains('visible'), true, 'a barra de progresso aparece');
+    assert.equal(pagina.texto('#progresso-porcento'), '100%');
+    assert.equal(pagina.atributo('#progresso-barra', 'style'), 'width: 100%;');
+    assert.equal(pagina.texto('#progresso-titulo'), 'Concluído');
+    assert.equal(pagina.texto('#progresso-detalhe'), '3 abas processadas, 12 células alteradas.');
+    assert.equal(pagina.seletor('#mensagem').classList.contains('hidden'), true, 'sem erro na tela');
+    assert.equal(pagina.seletor('#processar').disabled, false, 'o botão volta a ficar disponível');
+});
+
+test('gancadastro — o botão de processar só libera com planilha e pasta', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    assert.equal(pagina.seletor('#processar').disabled, true, 'sem nada escolhido não processa');
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina), 'cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#planilha-nome') === 'cadastro.xlsx', { descricao: 'nome da planilha no toy' });
+    assert.equal(pagina.seletor('#processar').disabled, true, 'sem pasta de destino não processa');
+
+    await escolherDestino(ctx, montarArvore('Destino', {}));
+    await aguardarProcessamentoLiberado(pagina);
+    assert.equal(pagina.texto('#destino-nome'), 'Destino');
+});
+
+test('gancadastro — diagnóstico lista as abas e as colunas reconhecidas', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina), 'cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#planilha-nome') === 'cadastro.xlsx', { descricao: 'nome da planilha no toy' });
+
+    assert.equal(pagina.seletor('#diagnostico').classList.contains('hidden'), false, 'o diagnóstico aparece ao escolher a planilha');
+    assert.equal(pagina.texto('#diagnostico-resumo'), '3 abas, 1 com colunas reconhecidas.');
+    assert.deepEqual(pagina.textos('#diagnostico-lista .result-name'), ['Plan1', 'Planilha1', 'Vazia']);
+    assert.deepEqual(pagina.textos('#diagnostico-lista .badge'), ['5 linhas', '2 linhas', '0 linhas']);
+    assert.deepEqual(pagina.textos('#diagnostico-lista .result-meta'), [
+        'Colunas reconhecidas: Núm. Processo, Advogado Adverso, OAB Advogado Adverso, UF OAB Advogado Adverso, Comarca, Valor da Causa.',
+        'Nenhuma coluna reconhecida.',
+        'Nenhuma coluna reconhecida.',
+    ]);
+});
+
+test('gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina, { abasQuebradas: true, semSharedStrings: true }), 'cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#mensagem').length > 0, { descricao: 'mensagem de cadastro' });
+
+    assert.deepEqual(pagina.textos('#diagnostico-lista .result-name'), ['Plan1', 'Planilha1', 'Vazia'], 'as abas sem parte resolvida não entram');
+    assert.equal(pagina.texto('#diagnostico-resumo'), '3 abas, 0 com colunas reconhecidas.');
+    assert.equal(pagina.texto('#mensagem'), 'Nenhuma coluna de cadastro foi reconhecida na planilha.');
+});
+
+test('gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+    const entrada = await montarPlanilha(pagina);
+
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
+    const original = await abrirPacote(pagina, entrada);
+    const partes = saida.partes;
+
+    // Mesmas partes do pacote, mesmas abas, mesmos nomes.
+    assert.deepEqual(saida.nomes, original.nomes, 'as partes do pacote continuam as mesmas');
+    assert.equal(partes['xl/workbook.xml'], original.partes['xl/workbook.xml'], 'workbook.xml sai idêntico');
+    assert.equal(partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'styles.xml sai idêntico');
+    assert.equal(partes['xl/sharedStrings.xml'], original.partes['xl/sharedStrings.xml'], 'sharedStrings.xml sai idêntico');
+    assert.equal(partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
+    assert.equal(partes['xl/worksheets/sheet3.xml'], original.partes['xl/worksheets/sheet3.xml'], 'aba vazia sai idêntica');
+
+    // Células reescritas: valor transformado com o estilo original preservado.
+    const sheet1 = partes['xl/worksheets/sheet1.xml'];
+    const reescrita = (endereco, valor, estilo = '') => `<c r="${endereco}"${estilo} t="inlineStr"><is><t>${valor}</t></is></c>`;
+    assert.ok(sheet1.includes(reescrita('A2', '0004469-51.2026.8.05.0103', ' s="1"')), 'CNJ pontuado com o estilo da célula');
+    assert.ok(sheet1.includes(reescrita('B2', 'JOSE  DA SILVA')), 'advogado normalizado, cortando o |');
+    assert.ok(sheet1.includes(reescrita('C2', '0')), 'SEM OAB vira 0');
+    assert.ok(sheet1.includes(reescrita('D2', 'TJ')), 'SEM UF vira TJ');
+    assert.ok(sheet1.includes(reescrita('E2', 'ILHEUS')), 'comarca sem acento');
+    assert.ok(sheet1.includes(reescrita('F2', '20000')), 'valor da causa sem o sufixo de centavos');
+    assert.ok(sheet1.includes(reescrita('B3', 'SEM ADVOGADO', ' s="2"')), 'SEM ADV vira SEM ADVOGADO com o estilo da célula');
+    assert.ok(sheet1.includes(reescrita('E3', 'NAO ENCONTRADO')), 'comarca normalizada');
+    assert.ok(sheet1.includes(reescrita('F3', '1234,56')), 'valor no padrão brasileiro');
+    assert.ok(sheet1.includes(reescrita('D4', 'TJ')), 'célula de texto inline também é processada');
+    assert.ok(sheet1.includes(reescrita('F4', '1500,5')), 'valor numérico vira o padrão brasileiro');
+    assert.ok(sheet1.includes(reescrita('B5', 'JOSE  DA SILVA')), 'a normalização vale para todas as linhas');
+
+    // Células que não mudam ficam como estavam — a numérica inválida, a vazia,
+    // a que tem fórmula, a inline sem texto, a sem `r` e a coluna fora do mapa.
+    assert.ok(sheet1.includes('<c r="A3"><v>12345</v></c>'), 'valor fora de 20 dígitos fica intacto');
+    assert.ok(sheet1.includes('<c r="A4" t="s"><v>15</v></c>'), 'CNJ já pontuado não é reescrito');
+    assert.ok(sheet1.includes('<c r="B4"/>'), 'célula vazia fica intacta');
+    assert.ok(sheet1.includes('<c r="C4"><f>UPPER(B3)</f><v>SEM ADV</v></c>'), 'célula com fórmula é ignorada');
+    assert.ok(sheet1.includes('<c r="D3" t="inlineStr"><is></is></c>'), 'inline sem texto fica intacta');
+    assert.ok(sheet1.includes('<c t="s"><v>13</v></c>'), 'célula sem endereço fica intacta');
+    assert.ok(sheet1.includes('<c r="G2" t="s"><v>13</v></c>'), 'coluna fora do mapa fica intacta');
+});
+
+test('gancadastro — planilha sem nenhuma coluna de cadastro é recusada', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina, { comCadastro: false }), 'sem-cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#mensagem').length > 0, { descricao: 'mensagem de cadastro' });
+
+    assert.equal(pagina.texto('#mensagem'), 'Nenhuma coluna de cadastro foi reconhecida na planilha.');
+    assert.equal(pagina.texto('#diagnostico-resumo'), '3 abas, 0 com colunas reconhecidas.');
+
+    await escolherDestino(ctx, destino);
+    await pagina.tick(0);
+    assert.equal(pagina.seletor('#processar').disabled, true, 'sem coluna reconhecida o processamento não libera');
+    assert.deepEqual(destino.escritas, []);
+});
+
+test('gancadastro — o botão de escolher planilha abre o seletor de arquivo', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    pagina.script('(() => { window.__ganCliques = 0; document.getElementById("arquivo").addEventListener("click", () => { window.__ganCliques += 1; }); })()');
+    pagina.clicar('#escolher-planilha');
+    await pagina.tick(0);
+
+    assert.equal(pagina.janela.__ganCliques, 1, 'o clique no botão cai no campo de arquivo');
+});
+
+test('gancadastro — change sem arquivo escolhido não mexe na tela', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    pagina.disparar('#arquivo', 'change');
+    await pagina.tick(0);
+
+    assert.equal(pagina.texto('#planilha-nome'), 'Nenhuma planilha selecionada');
+    assert.equal(pagina.seletor('#processar').disabled, true);
+});
+
+test('gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    selecionarArquivo(pagina, Uint8Array.from([1, 2, 3]), 'cadastro.csv');
+    await pagina.aguardar(() => pagina.texto('#mensagem').length > 0, { descricao: 'mensagem de formato' });
+
+    assert.equal(pagina.texto('#mensagem'), 'Formato de arquivo não suportado. Use um arquivo .xlsx ou .xlsm.');
+    assert.equal(pagina.texto('#planilha-nome'), 'Nenhuma planilha selecionada');
+    assert.equal(pagina.seletor('#diagnostico').classList.contains('hidden'), true);
+    assert.equal(pagina.seletor('#processar').disabled, true);
+});
+
+test('gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    selecionarArquivo(pagina, Uint8Array.from([80, 75, 3, 4, 0, 0]), 'cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#mensagem').length > 0, { descricao: 'mensagem de leitura' });
+
+    assert.equal(pagina.texto('#mensagem'), 'Não foi possível ler a planilha. O arquivo não é um .xlsx válido.');
+    assert.equal(pagina.seletor('#diagnostico').classList.contains('hidden'), true);
+    assert.equal(pagina.seletor('#processar').disabled, true);
+});
+
+test('gancadastro — cancelar a escolha da pasta mantém a tela sem erro', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina, ponte } = ctx;
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina), 'cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#planilha-nome') === 'cadastro.xlsx', { descricao: 'nome da planilha no toy' });
+
+    pagina.clicar('#escolher-destino');
+    await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: PEDE_A_PASTA });
+    await ponte.cancelarPasta();
+    await pagina.tick(0);
+
+    assert.equal(pagina.texto('#destino-nome'), 'Nenhuma pasta selecionada');
+    assert.equal(pagina.seletor('#mensagem').classList.contains('hidden'), true);
+    assert.equal(pagina.seletor('#processar').disabled, true);
+});
+
+test('gancadastro — pasta de destino sem permissão de escrita mostra o erro do app', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+    destino.negarPermissao = true;
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina), 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    pagina.clicar('#processar');
+    await pagina.aguardar(() => pagina.texto('#mensagem').length > 0, { descricao: 'mensagem de permissão' });
+
+    assert.equal(pagina.texto('#mensagem'), 'É necessário conceder permissão de escrita na pasta de destino.');
+    assert.equal(pagina.texto('#progresso-titulo'), 'Interrompido');
+    assert.deepEqual(destino.escritas, []);
+    assert.equal(pagina.seletor('#processar').disabled, false, 'o operador pode tentar de novo');
+});

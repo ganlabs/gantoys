@@ -1,0 +1,134 @@
+{
+  "work_id": "0001",
+  "title": "Toy gancadastro: planilha de cadastro processada preservando formatação, abas e nomes",
+  "capabilities": [
+    {
+      "id": "CAP-001",
+      "name": "Leitura da planilha de origem",
+      "description": "Abrir o .xlsx escolhido, resolver abas e worksheets do pacote OOXML, ler cabeçalho e células e reportar abas e colunas reconhecidas.",
+      "rules": ["BR-001", "BR-002", "BR-003"]
+    },
+    {
+      "id": "CAP-002",
+      "name": "Padronização CNJ compartilhada",
+      "description": "cnjDigits e formatCnj no kit compartilhado, consumidos por gancadastro, ganpadronizadorcnj, gandivisorsantander e gannovodiv.",
+      "rules": ["BR-004", "BR-005"]
+    },
+    {
+      "id": "CAP-003",
+      "name": "Normalização de nomes e do valor da causa",
+      "description": "Aplicar normalizeNameValue às colunas de advogado adverso, OAB, UF da OAB e comarca, e extractMoney à coluna de valor da causa, célula a célula.",
+      "rules": ["BR-006", "BR-007"]
+    },
+    {
+      "id": "CAP-004",
+      "name": "Regravação do pacote preservando formatação",
+      "description": "Substituir apenas as células alteradas do worksheet XML por texto inline que preserva o índice de estilo, reempacotando o OOXML sem tocar em styles.xml, workbook.xml ou em abas não reconhecidas.",
+      "rules": ["BR-008", "BR-009", "BR-010"]
+    },
+    {
+      "id": "CAP-005",
+      "name": "Gravação na pasta de destino pela ponte do app",
+      "description": "Escolher a pasta destino por gantoys-directory-picker-request e gravar o ArrayBuffer por gantoys-file-request com o nome Cadastro-DD-MM-AAAA_HH-MM.xlsx.",
+      "rules": ["BR-011", "BR-012"]
+    },
+    {
+      "id": "CAP-006",
+      "name": "Entrega documental e de empacotamento",
+      "description": "Item de navegação, manual embutido pelo gerador, manifesto de integridade atualizado, checagem de segurança e bundle único validado.",
+      "rules": ["BR-013", "BR-014", "BR-015"]
+    }
+  ],
+  "rules": [
+    {
+      "id": "BR-001",
+      "statement": "Só .xlsx e .xlsm são aceitos; qualquer outra extensão é recusada com 'Formato de arquivo não suportado. Use um arquivo .xlsx ou .xlsm.' e pacote ilegível com 'Não foi possível ler a planilha. O arquivo não é um .xlsx válido.'",
+      "coverage": ["CAP-001"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-002",
+      "statement": "A resolução de abas segue xl/workbook.xml mais xl/_rels/workbook.xml.rels, na ordem do pacote; endereço de linha ou célula ausente é reconstruído pela posição sequencial.",
+      "coverage": ["CAP-001"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-003",
+      "statement": "O cabeçalho é a linha 1 de cada aba; o nome da coluna é comparado sem acento, em caixa alta, sem ponto e com espaços colapsados.",
+      "coverage": ["CAP-001"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-004",
+      "statement": "cnjDigits(value) devolve apenas os dígitos da entrada (pontuada ou não) e formatCnj(value) devolve NNNNNNN-DD.AAAA.J.TR.OOOO quando cnjDigits tem exatamente 20 dígitos, null caso contrário.",
+      "coverage": ["CAP-002"],
+      "evidence": "test/shared-kit.test.js"
+    },
+    {
+      "id": "BR-005",
+      "statement": "Nenhuma cópia local do formatador CNJ permanece nos toys que passam a consumir o kit.",
+      "coverage": ["CAP-002"],
+      "evidence": "toys/ganpadronizadorcnj/script.js, toys/gandivisorsantander/scripts.js, toys/gannovodiv/index.html"
+    },
+    {
+      "id": "BR-006",
+      "statement": "As colunas Advogado Adverso, OAB Advogado Adverso, UF OAB Advogado Adverso e Comarca usam normalizeNameValue; o valor da causa usa extractMoney.",
+      "coverage": ["CAP-003"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-007",
+      "statement": "Célula vazia, sem valor textual ou cujo valor transformado é igual ao atual não é reescrita.",
+      "coverage": ["CAP-003"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-008",
+      "statement": "A célula reescrita vira texto inline e mantém o atributo s e os demais atributos da célula original.",
+      "coverage": ["CAP-004"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-009",
+      "statement": "A saída tem a mesma quantidade de abas, os mesmos nomes, na mesma ordem; styles.xml e workbook.xml saem idênticos à origem.",
+      "coverage": ["CAP-004"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-010",
+      "statement": "Célula com fórmula é ignorada e contabilizada como ignorada por fórmula.",
+      "coverage": ["CAP-004"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-011",
+      "statement": "A pasta de destino vem da ponte (gantoys-directory-picker-request, mode readwrite) e o arquivo é gravado por gantoys-file-request com action write e bytes ArrayBuffer.",
+      "coverage": ["CAP-005"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-012",
+      "statement": "O nome do arquivo de saída é Cadastro-DD-MM-AAAA_HH-MM.xlsx conforme o relógio local; AbortError da escolha de pasta é tratado em silêncio.",
+      "coverage": ["CAP-005"],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-013",
+      "statement": "O toy usa a casca canônica de toys/shared/toy.css, tokens --toy-*, apenas Bootstrap Icons e nenhum emoji.",
+      "coverage": ["CAP-006"],
+      "evidence": "node build/check-bundle.mjs, test/preambulo.test.js"
+    },
+    {
+      "id": "BR-014",
+      "statement": "O manual toys/help/manual/gancadastro.md é a fonte da verdade e precisa ser embutido em toys/help/index.html pelo gerador.",
+      "coverage": ["CAP-006"],
+      "evidence": "node build/manual.mjs, test/help.test.js"
+    },
+    {
+      "id": "BR-015",
+      "statement": "Assets alterados de toys/shared entram no manifesto de integridade e a suíte mantém o piso de 90% de cobertura por toy e no total.",
+      "coverage": ["CAP-006"],
+      "evidence": "npm run assets:integrity, npm test"
+    }
+  ]
+}

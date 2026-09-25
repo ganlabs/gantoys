@@ -322,3 +322,31 @@ test('kit — substituir sem campo de substituição e sem padrão informado', a
         rows: [['ABC-XYZ', 'ABC']],
     });
 });
+
+test('kit — padronização do número de processo em CNJ', async (t) => {
+    const pagina = await abrirKit(t);
+    const kit = pagina.janela;
+
+    // As duas funções são o contrato do kit para o número de processo: sem elas
+    // cada toy volta a escrever o próprio formatador.
+    assert.equal(
+        typeof kit.cnjDigits === 'function' && typeof kit.formatCnj === 'function',
+        true,
+        'o kit compartilhado expõe cnjDigits e formatCnj'
+    );
+
+    // cnjDigits: só os dígitos, venha o valor pontuado, com separador solto ou numérico.
+    assert.equal(kit.cnjDigits('0004469-51.2026.8.05.0103'), '00044695120268050103');
+    assert.equal(kit.cnjDigits('0060882 02.2026.8.05.0001'), '00608820220268050001');
+    assert.equal(kit.cnjDigits(123456789012345), '123456789012345');
+    assert.equal(kit.cnjDigits(null), '');
+    assert.equal(kit.cnjDigits(undefined), '');
+
+    // formatCnj: pontua quando há 20 dígitos (idempotente) e devolve null fora disso.
+    assert.equal(kit.formatCnj('00044695120268050103'), '0004469-51.2026.8.05.0103');
+    assert.equal(kit.formatCnj('0004469-51.2026.8.05.0103'), '0004469-51.2026.8.05.0103');
+    assert.equal(kit.formatCnj('12345'), null);
+    assert.equal(kit.formatCnj('000446951202680501031'), null);
+    assert.equal(kit.formatCnj(''), null);
+    assert.equal(kit.formatCnj(null), null);
+});

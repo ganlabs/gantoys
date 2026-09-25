@@ -1,0 +1,191 @@
+{
+  "$schema": "../../../schemas/plan.schema.json",
+  "work_id": "0001",
+  "title": "Toy gancadastro: planilha de cadastro processada preservando formatação, abas e nomes",
+  "status": "in_progress",
+  "components": [
+    {
+      "name": "kit-compartilhado",
+      "purpose": "Transformações puras reusadas entre toys (toys/shared/kit.js)",
+      "root": "toys/shared/kit.js",
+      "regression": "test/shared-kit.test.js e os testes dos toys que consomem o kit",
+      "lint": "eslint.config.mjs registra as funções do kit como globais dos scripts de toy",
+      "security": "nenhuma execução dinâmica e nenhum HTML por interpolação",
+      "build": "toys/shared/kit.js entra no bundle como asset compartilhado único",
+      "health": "tools/integridade-assets.json confere o sha256 de toys/shared/kit.js"
+    },
+    {
+      "name": "toy-gancadastro",
+      "purpose": "Página e script do toy que processa a planilha e grava a saída",
+      "root": "toys/gancadastro/index.html",
+      "regression": "test/toys/gancadastro.test.js",
+      "lint": "npm run lint",
+      "security": "npm run security",
+      "build": "build/bundle.mjs embute o toy como srcdoc e resolve vendor/jszip como asset",
+      "health": "cobertura ≥90% do grupo gancadastro"
+    },
+    {
+      "name": "entrega",
+      "purpose": "Navegação, manual embutido e bundle validado",
+      "root": "index.html",
+      "regression": "test/help.test.js e test/build.test.js",
+      "lint": "npm run lint",
+      "security": "npm run security",
+      "build": "node build/manual.mjs && node build/bundle.mjs && node build/check-bundle.mjs",
+      "health": "npm run assets:integrity"
+    }
+  ],
+  "global_gates": [
+    "`npm test` — suíte completa com cobertura ≥90% por toy e no total passa com exit 0.",
+    "`npm run lint` — ESLint, incluindo o JS embutido nos HTML, passa com exit 0.",
+    "`npm run security` — checagens estáticas de segurança passam com exit 0.",
+    "`npm run assets:integrity` — sha256 dos assets monitorados bate com o manifesto.",
+    "`node build/check-bundle.mjs` — bundle único respeita o contrato de layout e de assets."
+  ],
+  "tasks": [
+    {
+      "id": "1.1",
+      "title": "cnjDigits e formatCnj no kit compartilhado",
+      "requirement_id": "FR-007",
+      "spec_reference": "CAP-002",
+      "contract_id": "CTR-001",
+      "complexity": "medium",
+      "depends_on": [],
+      "behavior": "toys/shared/kit.js passa a expor cnjDigits e formatCnj para os toys, com formatCnj devolvendo null fora de 20 dígitos, e as duas passam a valer como globais no lint",
+      "components": ["kit-compartilhado"],
+      "files": [
+        "toys/shared/kit.js",
+        "eslint.config.mjs",
+        "tools/integridade-assets.json",
+        "test/shared-kit.test.js"
+      ],
+      "implementation_files": [
+        "toys/shared/kit.js",
+        "eslint.config.mjs",
+        "tools/integridade-assets.json"
+      ],
+      "test_files": ["test/shared-kit.test.js"],
+      "red": {
+        "command": "node --test test/shared-kit.test.js",
+        "description": "a asserção que exige cnjDigits e formatCnj expostos pelo kit falha porque o kit ainda não tem as duas funções"
+      },
+      "implementation_steps": [
+        "Acrescentar ao teste do kit a asserção do contrato das duas funções e do valor devolvido para 20 dígitos, para valor já pontuado e para valor fora de 20 dígitos",
+        "Escrever cnjDigits e formatCnj em toys/shared/kit.js, registrar as globais novas no eslint.config.mjs e regravar o manifesto com node tools/assets-integrity.mjs --update"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/shared-kit.test.js",
+          "description": "o contrato de cnjDigits e formatCnj passa"
+        },
+        {
+          "command": "npm run lint",
+          "description": "as globais novas do kit passam no lint"
+        },
+        {
+          "command": "npm run assets:integrity",
+          "description": "o manifesto bate com toys/shared/kit.js alterado"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    },
+    {
+      "id": "1.2",
+      "title": "Toy gancadastro: processa a planilha e grava a saída pela ponte",
+      "requirement_id": "FR-001",
+      "spec_reference": "CAP-004",
+      "contract_id": "CTR-002",
+      "complexity": "high",
+      "depends_on": ["1.1"],
+      "behavior": "escolhido um .xlsx e uma pasta de destino, o toy reconhece as colunas de cadastro, reescreve as células com as transformações do kit, reempacota o pacote OOXML preservando formatação, abas e nomes, e grava Cadastro-DD-MM-AAAA_HH-MM.xlsx na pasta escolhida; atende FR-001 a FR-006",
+      "components": ["toy-gancadastro"],
+      "files": [
+        "toys/gancadastro/index.html",
+        "toys/gancadastro/styles.css",
+        "toys/gancadastro/script.js",
+        "test/toys/gancadastro.test.js"
+      ],
+      "implementation_files": [
+        "toys/gancadastro/index.html",
+        "toys/gancadastro/styles.css",
+        "toys/gancadastro/script.js"
+      ],
+      "test_files": ["test/toys/gancadastro.test.js"],
+      "red": {
+        "command": "node --test test/toys/gancadastro.test.js",
+        "description": "a asserção do fluxo ponta a ponta falha porque, com a casca do toy já no baseline, nada é processado nem gravado na pasta escolhida"
+      },
+      "implementation_steps": [
+        "Implementar no script a leitura do pacote OOXML (workbook, rels, sharedStrings e worksheets, com endereço reconstruído pela posição), o mapa de cabeçalho por apelido normalizado e as transformações por coluna reusando cnjDigits, formatCnj, normalizeNameValue e extractMoney do kit",
+        "Implementar a reescrita cirúrgica da célula como texto inline preservando o atributo s, o descarte de célula igual ou com fórmula e a gravação pela ponte da pasta destino com o nome Cadastro-DD-MM-AAAA_HH-MM.xlsx"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/toys/gancadastro.test.js",
+          "description": "o fluxo do toy, o patch do pacote e a gravação passam"
+        },
+        {
+          "command": "node --test test/preambulo.test.js",
+          "description": "o toy novo respeita o preâmbulo de tema e a casca canônica"
+        },
+        {
+          "command": "npm run lint",
+          "description": "o script do toy passa no lint"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    },
+    {
+      "id": "1.3",
+      "title": "Entrega: navegação, manual embutido e bundle validado",
+      "requirement_id": "FR-008",
+      "spec_reference": "CAP-006",
+      "contract_id": "CTR-003",
+      "complexity": "standard",
+      "depends_on": ["1.1", "1.2"],
+      "behavior": "o toy aparece na navegação do app, o manual em toys/help/manual entrou na central de manuais pelo gerador e o bundle único passa na validação de contrato e de integridade",
+      "components": ["entrega"],
+      "files": [
+        "index.html",
+        "toys/help/manual/gancadastro.md",
+        "toys/help/index.html",
+        "test/help.test.js"
+      ],
+      "implementation_files": [
+        "index.html",
+        "toys/help/manual/gancadastro.md",
+        "toys/help/index.html"
+      ],
+      "test_files": ["test/help.test.js"],
+      "red": {
+        "command": "node --test test/help.test.js",
+        "description": "a asserção que exige card e bloco embutido do manual do gancadastro na Ajuda falha porque o manual ainda não existe nem foi embutido"
+      },
+      "implementation_steps": [
+        "Acrescentar ao teste da Ajuda a asserção do card e do bloco embutido do manual do gancadastro",
+        "Escrever toys/help/manual/gancadastro.md, acrescentar o item de navegação data-toy ganacadastro no index.html, rodar node build/manual.mjs, node build/bundle.mjs e node build/check-bundle.mjs"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/help.test.js",
+          "description": "o manual novo aparece na grade e no índice da Ajuda"
+        },
+        {
+          "command": "npm run check:bundle",
+          "description": "o bundle único passa no contrato de layout e de assets"
+        },
+        {
+          "command": "npm run assets:integrity",
+          "description": "o manifesto bate com todos os assets monitorados"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    }
+  ]
+}

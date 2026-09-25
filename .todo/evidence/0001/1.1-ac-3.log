@@ -1,0 +1,13 @@
+TASK: 1.1
+CHECK: AC-3
+COMMAND: npm run assets:integrity
+EXIT: 0
+OUTPUT:
+
+> gantoys@1.0.0 assets:integrity
+> node tools/assets-integrity.mjs
+
+Integridade OK: 18 assets de terceiros conferidos por sha256.
+
+VERDICT: PASS
+CHAIN_HASH: c0399f4428c8ebdadc8f44a64d3961469ee7c2475520cfc52b5e90a8bd8b63c4

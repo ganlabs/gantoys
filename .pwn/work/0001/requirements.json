@@ -1,0 +1,86 @@
+{
+  "work_id": "0001",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "title": "Abrir a planilha de origem e reconhecer as colunas",
+      "user_story": "Como operador, quero escolher um .xlsx de cadastro e ver o que o toy reconheceu, para saber antes de processar se a planilha é a esperada",
+      "acceptance_criteria": [
+        "escolher um .xlsx lista as abas na ordem do pacote e marca quais colunas foram reconhecidas em cada aba",
+        "arquivo com extensão fora de .xlsx/.xlsm mostra a mensagem 'Formato de arquivo não suportado. Use um arquivo .xlsx ou .xlsm.' e não habilita o processamento",
+        "arquivo .xlsx corrompido mostra a mensagem 'Não foi possível ler a planilha. O arquivo não é um .xlsx válido.'"
+      ]
+    },
+    {
+      "id": "FR-002",
+      "title": "Padronizar o número do processo em CNJ pontuado",
+      "user_story": "Como operador, quero o número do processo no padrão CNJ pontuado, para reusar a planilha sem retrabalho de formatação",
+      "acceptance_criteria": [
+        "a coluna de número do processo é reescrita no formato NNNNNNN-DD.AAAA.J.TR.OOOO quando tem exatamente 20 dígitos, pontuada ou não na origem",
+        "valor que não chega a 20 dígitos fica exatamente como estava e entra na contagem de valores não convertidos",
+        "aplicar a padronização duas vezes produz o mesmo resultado (idempotente)"
+      ]
+    },
+    {
+      "id": "FR-003",
+      "title": "Normalizar advogado adverso, OAB, UF da OAB e comarca",
+      "user_story": "Como operador, quero os nomes padronizados, para comparar e agrupar registros sem variantes de acento e caixa",
+      "acceptance_criteria": [
+        "as quatro colunas passam pelo mesmo procedimento de normalização de nomes: sem acento, caixa alta, espaços normalizados e corte no primeiro |",
+        "os marcadores SEM ADV, SEM OAB e SEM UF são traduzidos para SEM ADVOGADO, 0 e TJ"
+      ]
+    },
+    {
+      "id": "FR-004",
+      "title": "Normalizar o valor da causa pelo extrator de valores",
+      "user_story": "Como operador, quero os valores da causa no padrão numérico brasileiro, para somar a carteira sem reinterpretar separadores",
+      "acceptance_criteria": [
+        "a coluna de valor da causa é reescrita pelo procedimento do extrator de valores (sufixo de centavos zerado removido, ponto de milhar removido, vírgula decimal preservada)",
+        "'R$ 1.234,56', '1,234.56', '1.234' e '20.000,00' produzem, respectivamente, '1234,56', '1234,56', '1,234' e '20000'"
+      ]
+    },
+    {
+      "id": "FR-005",
+      "title": "Gerar a planilha de saída preservando formatação, abas e nomes",
+      "user_story": "Como operador, quero a cópia processada idêntica à original em aparência, para continuar usando a planilha como sempre usei",
+      "acceptance_criteria": [
+        "a saída tem a mesma quantidade de abas e os mesmos nomes, na mesma ordem",
+        "xl/styles.xml, xl/workbook.xml e as abas sem coluna reconhecida saem byte a byte iguais à origem",
+        "a célula reescrita mantém o índice de estilo s e os demais atributos, mudando apenas o conteúdo para texto inline",
+        "nenhuma célula é reescrita quando o valor transformado é igual ao valor atual",
+        "célula com fórmula é ignorada e contabilizada como ignorada por fórmula"
+      ]
+    },
+    {
+      "id": "FR-006",
+      "title": "Gravar a saída na pasta de destino escolhida",
+      "user_story": "Como operador, quero escolher a pasta de destino e ter o arquivo gravado lá com nome datado, para não sobrescrever cadastros anteriores",
+      "acceptance_criteria": [
+        "o botão de pasta destino pede a pasta pela ponte do app e mostra o nome escolhido na tela",
+        "processar grava exatamente um arquivo na pasta escolhida, com o nome Cadastro-DD-MM-AAAA_HH-MM.xlsx",
+        "cancelar a escolha da pasta devolve a tela ao estado anterior sem erro visível",
+        "erro de gravação mostra a mensagem devolvida pelo app e mantém o botão de processar habilitado"
+      ]
+    },
+    {
+      "id": "FR-007",
+      "title": "Transformação CNJ no kit compartilhado, reusada pelo toy novo",
+      "user_story": "Como mantenedor, quero a transformação CNJ no kit compartilhado, para o toy novo reusar o código do app em vez de criar uma cópia",
+      "acceptance_criteria": [
+        "toys/shared/kit.js expõe cnjDigits e formatCnj, com formatCnj devolvendo null fora de 20 dígitos",
+        "cnjDigits e formatCnj contam como globais dos scripts de toy no lint e toys/shared/kit.js entra no manifesto de integridade atualizado"
+      ]
+    },
+    {
+      "id": "FR-008",
+      "title": "Entregar documentação, navegação e bundle coerentes",
+      "user_story": "Como usuário do app, quero encontrar o toy na navegação e ler o manual dele, para saber o que ele processa",
+      "acceptance_criteria": [
+        "toys/help/manual/gancadastro.md existe, é embutido pelo gerador e aparece como card na central de manuais",
+        "o item de navegação data-toy=\"gancadastro\" abre o toy no iframe do app",
+        "node build/check-bundle.mjs aprova o bundle com o toy novo",
+        "npm run assets:integrity e npm run security passam"
+      ]
+    }
+  ]
+}
