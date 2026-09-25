@@ -1,0 +1,14 @@
+/* Carga local do toy Cadastro (planilha): só o que é específico dele.
+   Cores, raios, sombras e fontes vêm dos tokens --toy-* do shared. */
+
+/* A lista de abas reconhecidas fica longa: o nome da coluna pode quebrar,
+   o badge de contagem não. */
+#diagnostico-lista .result-item-head {
+    align-items: flex-start;
+    gap: 10px;
+}
+
+#diagnostico-lista .result-value {
+    font-family: var(--toy-mono);
+    font-size: .82rem;
+}

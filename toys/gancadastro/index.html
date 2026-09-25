@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script>
+    (function () {
+        function syncThemeCss(cssText) {
+            try {
+                const css = cssText || localStorage.getItem('gantoys_theme_css');
+                if (!css || !document.head) return;
+                const existingStyle = document.getElementById('gantoys-theme-inject');
+                if (existingStyle) existingStyle.remove();
+                const style = document.createElement('style');
+                style.id = 'gantoys-theme-inject';
+                style.textContent = css;
+                document.head.appendChild(style);
+            } catch (e) {}
+        }
+        function applyTheme(theme, visual, cssText) {
+            if (theme) document.documentElement.setAttribute('data-theme', theme);
+            if (visual) document.documentElement.setAttribute('data-visual', visual);
+            if (cssText) { try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {} }
+            syncThemeCss(cssText);
+        }
+        try { applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
+        document.addEventListener('DOMContentLoaded', function () { syncThemeCss(); });
+        window.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'theme') applyTheme(e.data.theme, e.data.visual, e.data.css);
+        });
+        function forwardPointer(e) {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'toy-pointer', x: e.clientX, y: e.clientY }, '*');
+                }
+            } catch (err) {}
+        }
+        window.addEventListener('pointermove', forwardPointer, { capture: true, passive: true });
+        window.addEventListener('mousemove', forwardPointer, { capture: true, passive: true });
+    })();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro (planilha)</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="stylesheet" href="../shared/toy.css">
+    <link rel="stylesheet" href="../../vendor/bootstrap-icons/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="../../vendor/jszip/jszip.min.js"></script>
+</head>
+<body>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Cadastro (planilha)</h1>
+            <p>Processa uma planilha de cadastro: padroniza o número do processo em CNJ, normaliza os nomes e o valor da causa e grava a cópia na pasta escolhida, com a formatação, as abas e os nomes originais.</p>
+        </header>
+
+        <section class="glass-card" aria-label="Cadastro (planilha)">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2>1. Planilha de origem</h2>
+                    <p>Escolha o arquivo .xlsx ou .xlsm do cadastro.</p>
+                </div>
+                <button class="btn btn-primary btn-block" id="escolher-planilha" type="button">
+                    <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+                    <span>Escolher planilha</span>
+                </button>
+                <input type="file" id="arquivo" hidden accept=".xlsx,.xlsm">
+                <p class="folder-selected" id="planilha-nome">Nenhuma planilha selecionada</p>
+
+                <div class="stack hidden" id="diagnostico">
+                    <hr class="divider">
+                    <div class="card-heading">
+                        <h2>Abas e colunas reconhecidas</h2>
+                        <p id="diagnostico-resumo"></p>
+                    </div>
+                    <div class="result-list" id="diagnostico-lista"></div>
+                </div>
+
+                <hr class="divider">
+                <div class="card-heading">
+                    <h2>2. Pasta de destino</h2>
+                    <p>O arquivo processado é gravado como Cadastro-DD-MM-AAAA_HH-MM.xlsx.</p>
+                </div>
+                <button class="btn btn-primary btn-block" id="escolher-destino" type="button">
+                    <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                    <span>Escolher pasta de destino</span>
+                </button>
+                <p class="folder-selected" id="destino-nome">Nenhuma pasta selecionada</p>
+
+                <hr class="divider">
+                <div class="actions">
+                    <button class="btn btn-primary" id="processar" type="button" disabled>
+                        <i class="bi bi-play-fill" aria-hidden="true"></i>
+                        <span>Processar</span>
+                    </button>
+                </div>
+                <div class="message error hidden" id="mensagem"></div>
+
+                <div class="progress-area" id="progresso">
+                    <div class="progress-top">
+                        <span id="progresso-titulo">Processando</span>
+                        <span id="progresso-porcento">0%</span>
+                    </div>
+                    <div class="progress-wrap">
+                        <div class="progress-bar" id="progresso-barra"></div>
+                    </div>
+                    <p class="progress-detail" id="progresso-detalhe">-</p>
+                </div>
+
+                <div class="stack" id="log-area"></div>
+            </div>
+        </section>
+
+        <section class="glass-card hidden" id="resultado">
+            <div class="panel">
+                <div class="card-heading">
+                    <h2>Resultado</h2>
+                    <p id="resultado-resumo"></p>
+                </div>
+                <div class="summary visible" id="resultado-numeros"></div>
+                <div class="result-list" id="resultado-lista"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="../shared/kit.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
