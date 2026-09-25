@@ -719,3 +719,43 @@ test('gancadastro — aplica pintura condicional laranja e vermelha em styles.xm
     assert.ok(sheet1.includes('r="G6"'), 'rito sumario existe');
     assert.ok(sheet1.includes('r="H7"'), 'causa raiz existe');
 });
+
+test('gancadastro — carteira contendo Santander mantém carteira e réu intactos e sem pintura laranja', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    const stringsSantander = [
+        'Carteira', 'Parte Ré',
+        'Santander - Santander - Indenizatória', 'BANCO SANTANDER BRASIL S A',
+    ];
+    const sharedSantander = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${stringsSantander.length}" uniqueCount="${stringsSantander.length}">`,
+        ...stringsSantander.map((v) => `<si><t>${v}</t></si>`),
+        '</sst>',
+    ].join('');
+
+    const sheetSantander = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>',
+        '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>',
+        '<row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2" t="s"><v>3</v></c></row>',
+        '</sheetData></worksheet>',
+    ].join('');
+
+    const entrada = await montarPlanilha(pagina, { customSheet1: sheetSantander, customSharedStrings: sharedSantander });
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
+    const styles = saida.partes['xl/styles.xml'];
+    const sheet1 = saida.partes['xl/worksheets/sheet1.xml'];
+
+    assert.equal(styles.includes('FFFFA500'), false, 'carteira Santander não deve criar estilo laranja');
+    assert.equal(/<c[^>]*\bs=/.test(sheet1), false, 'células de Santander não devem receber estilo de pintura');
+    assert.ok(sheet1.includes('<c r="A2" t="s"><v>2</v></c>') && sheet1.includes('<c r="B2" t="s"><v>3</v></c>'), 'carteira e réu do Santander devem permanecer intactos');
+});

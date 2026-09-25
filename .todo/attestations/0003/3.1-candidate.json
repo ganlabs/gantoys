@@ -1,0 +1,72 @@
+{
+  "version": 2,
+  "kind": "task-acceptance-candidate",
+  "harness_version": "0.1.0",
+  "gate_version": "1",
+  "work_id": "0003",
+  "task_id": "3.1",
+  "result": "pass",
+  "plan": {
+    "path": ".todo/0003-tasks.md",
+    "sha256": "b0998e7263cc4476eb5dd45c1e1d0ea041e1ce1947b6c2031d7dbcc706d2648d"
+  },
+  "implementation": {
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "4bcaa2b6259a4e4755adede9172f81549099d0cdb2ee960d7f7b64780efb5654"
+    },
+    "toys/help/manual/gancadastro.md": {
+      "exists": true,
+      "sha256": "51c97a5966ea93d584d20d28747dcf6d3035ad755ed482ccf5c5c402300e4f69"
+    }
+  },
+  "tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "11442fe133ee053813a36dc6754816334b911db3beb337f4ff3bfcdf47b953b3"
+    }
+  },
+  "evidence_sha256": "b3a8b61e90a15de6c4100db9031d9d2be097b79771c1776657220415a5127386",
+  "evidence_chain_head": "8c0e3dc4fd2c6bc4e8b15854a468f3675ba976adc7a0bb82359d32069c528eaf",
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/toys/gancadastro.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0003/3.1-ac-1.log",
+      "log_sha256": "a461fdad8053e9e30f56c9b7f6460426aa0ffcc483b672a517838801f5f2e6d5",
+      "recorded_at": "2026-09-25T19:18:53.910Z"
+    },
+    "AC-2": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0003/3.1-ac-2.log",
+      "log_sha256": "fe0c447647006dbb6f103a9b5732a813958590ce2c0c9a9e134c1ad4842be354",
+      "recorded_at": "2026-09-25T19:18:55.817Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0003/3.1-regression.log",
+      "log_sha256": "136408e5e506253d810b6c7919728d6cb9da83ee6ca003f3f39833c44b36b743",
+      "recorded_at": "2026-09-25T19:19:39.241Z"
+    }
+  },
+  "generated_at": "2026-09-25T19:19:47.399Z"
+}

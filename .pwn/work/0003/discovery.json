@@ -1,0 +1,18 @@
+{
+  "work_id": "0003",
+  "title": "gancadastro: excecao Santander na carteira e parte re",
+  "grilling_depth": "deep",
+  "problem": "Ao processar carteiras Santander (ex: 'Santander - Santander - Indenizatória'), o código tentava resolver Parte Ré por resolveCarteiraReu e, por não haver correspondência na base de réus, caía na exceção de pintar Carteira e Parte Ré de laranja. O correto é que carteiras que contêm Santander não tenham nem Parte Ré nem Carteira modificadas por nenhuma regra, e não sejam pintadas de laranja.",
+  "actors": [
+    "ACT-001"
+  ],
+  "objectives": [
+    "Adicionar regra de exceção para Carteira contendo 'Santander' (case-insensitive).",
+    "Garantir que para Santander nem Carteira nem Parte Ré sejam alteradas ou pintadas de laranja.",
+    "Atualizar documentação e testes com a nova regra."
+  ],
+  "constraints": [
+    "Manter compatibilidade com todas as demais regras de Carteira, Parte Ré, Comarca e Causa Raiz.",
+    "Suíte 100% verde com cobertura >= 90%."
+  ]
+}

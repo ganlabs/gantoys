@@ -315,6 +315,8 @@ function calcularNovosValoresECores(mapaLinha) {
         const cartNorm = normalizarCabecalho(cart);
         if (cartNorm.includes('BRADESCO') && cartNorm.includes('INDENIZATORIA')) {
             if (mapaLinha.has('parteRe')) novos.set('parteRe', 'BANCO BRADESCO SA');
+        } else if (cartNorm.includes('SANTANDER')) {
+            // Se contiver Santander, a parte ré não é modificada e nem a carteira por nenhuma regra
         } else if (!cartNorm.includes('BRADESCO')) {
             const resolvido = pRe ? runTool('resolve-carteira-reu', pRe, {}) : null;
             const nCart = resolvido?.rows[0]?.[1] || '';

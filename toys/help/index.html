@@ -384,7 +384,7 @@ Processa uma planilha de cadastro em `.xlsx` e grava uma cópia padronizada na p
 
 ## Regras avançadas de cadastro
 
-- **Carteira e Parte Ré** — se a carteira contiver `Bradesco - Indenizatória` (qualquer caixa), a Parte Ré vira `BANCO BRADESCO SA`. Se a carteira não for Bradesco, a Parte Ré é resolvida pelo resolvedor de carteira/réu; se não resolver, Carteira e Parte Ré mantêm os valores originais e são pintadas de laranja.
+- **Carteira e Parte Ré** — se a carteira contiver `Santander` (qualquer caixa), nem a Carteira nem a Parte Ré são modificadas por nenhuma regra e não são pintadas. Se contiver `Bradesco - Indenizatória`, a Parte Ré vira `BANCO BRADESCO SA`. Se a carteira não for Bradesco nem Santander, a Parte Ré é resolvida pelo resolvedor de carteira/réu; se não resolver, Carteira e Parte Ré mantêm os valores originais e são pintadas de laranja.
 - **Comarca** — se o valor for igual a `capital`, é preenchido com a capital correspondente à coluna UF. Se contiver `capital` seguido de texto, apaga a palavra capital e deixa o restante limpo. Se for `LEOPOLDINA`: Órgão `VC` não altera; Órgão `JEC` com Num 10 vira `OLARIA`, com Num 11 vira `PENHA`. Se for `JACAREPAGUA`: Órgão `JEC` vira `FREGUESIA`, Órgão `VC` vira `TAQUARA`.
 - **Tipo Audiência** — se estiver vazio mas houver data na coluna Data Audiência, é preenchido com `AC`.
 

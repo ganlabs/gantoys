@@ -1,0 +1,49 @@
+TASK: 3.1
+CHECK: RED
+COMMAND: node --test test/toys/gancadastro.test.js
+EXIT: 1
+OUTPUT:
+✔ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (846.273502ms)
+✔ gancadastro — o botão de processar só libera com planilha e pasta (412.849735ms)
+✔ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (398.134072ms)
+✔ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (372.112583ms)
+✔ gancadastro — parte com BOM no prólogo é lida normalmente (353.941545ms)
+✔ gancadastro — pacote com prefixo de namespace é reescrito no mesmo namespace (506.174115ms)
+✔ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (541.432114ms)
+✔ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (340.505112ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (242.717271ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (235.17278ms)
+✔ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (244.002388ms)
+✔ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (235.932178ms)
+✔ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (348.670116ms)
+✔ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (391.082046ms)
+✔ gancadastro — aplica regras de carteira, comarca e audiência (439.184977ms)
+✔ gancadastro — aplica pintura condicional laranja e vermelha em styles.xml (511.193592ms)
+✖ gancadastro — carteira contendo Santander mantém carteira e réu intactos e sem pintura laranja (436.34614ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 16
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7723.046958
+
+✖ failing tests:
+
+test at test/toys/gancadastro.test.js:723:1
+✖ gancadastro — carteira contendo Santander mantém carteira e réu intactos e sem pintura laranja (436.34614ms)
+  AssertionError [ERR_ASSERTION]: carteira e réu do Santander devem permanecer intactos
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:760:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+VERDICT: PASS
+CHAIN_HASH: 3256461d5b8b1b64d2c2685c47839d60a924be742c43132b7c4194ac9d772905

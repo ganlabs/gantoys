@@ -1,0 +1,78 @@
+TASK: 3.1
+CHECK: GREEN
+COMMAND: node --test test/toys/gancadastro.test.js
+EXIT: 0
+OUTPUT:
+✔ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (858.587598ms)
+✔ gancadastro — o botão de processar só libera com planilha e pasta (467.599159ms)
+✔ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (413.839435ms)
+✔ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (332.811537ms)
+✔ gancadastro — parte com BOM no prólogo é lida normalmente (345.303268ms)
+✔ gancadastro — pacote com prefixo de namespace é reescrito no mesmo namespace (511.300241ms)
+✔ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (511.343725ms)
+✔ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (357.95496ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (264.407875ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (385.902174ms)
+✔ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (246.162598ms)
+✔ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (231.08555ms)
+✔ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (334.8986ms)
+✔ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (369.874143ms)
+✔ gancadastro — aplica regras de carteira, comarca e audiência (454.098585ms)
+✔ gancadastro — aplica pintura condicional laranja e vermelha em styles.xml (438.093058ms)
+✔ gancadastro — carteira contendo Santander mantém carteira e réu intactos e sem pintura laranja (426.827043ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7782.335329
+
+MUTATION_EXIT: 1
+MUTATION_OUTPUT:
+✔ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (892.457864ms)
+✔ gancadastro — o botão de processar só libera com planilha e pasta (437.448133ms)
+✔ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (394.342102ms)
+✔ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (351.063982ms)
+✔ gancadastro — parte com BOM no prólogo é lida normalmente (409.36372ms)
+✔ gancadastro — pacote com prefixo de namespace é reescrito no mesmo namespace (511.376097ms)
+✔ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (530.141954ms)
+✔ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (351.815325ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (294.211389ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (381.140016ms)
+✔ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (288.084039ms)
+✔ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (233.126671ms)
+✔ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (335.323255ms)
+✔ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (366.08926ms)
+✔ gancadastro — aplica regras de carteira, comarca e audiência (440.448558ms)
+✔ gancadastro — aplica pintura condicional laranja e vermelha em styles.xml (491.196235ms)
+✖ gancadastro — carteira contendo Santander mantém carteira e réu intactos e sem pintura laranja (475.243427ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 16
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7994.633977
+
+✖ failing tests:
+
+test at test/toys/gancadastro.test.js:723:1
+✖ gancadastro — carteira contendo Santander mantém carteira e réu intactos e sem pintura laranja (475.243427ms)
+  AssertionError [ERR_ASSERTION]: carteira e réu do Santander devem permanecer intactos
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:760:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+MUTATION_VERDICT: PASS
+VERDICT: PASS
+CHAIN_HASH: 9560e0348152c6762c974502d6fe0c00845c86bca7ccbf152ec3b97fdcacda3c

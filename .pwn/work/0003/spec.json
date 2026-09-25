@@ -1,0 +1,24 @@
+{
+  "work_id": "0003",
+  "title": "gancadastro: excecao Santander na carteira e parte re",
+  "capabilities": [
+    {
+      "id": "CAP-001",
+      "name": "Exceção Santander no processamento de carteiras",
+      "description": "Preservação estrita de Carteira e Parte Ré para carteiras Santander.",
+      "rules": [
+        "BR-001"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "BR-001",
+      "statement": "Quando a Carteira contiver 'santander' (case-insensitive), nenhuma alteração ou pintura deve ser aplicada a Carteira nem a Parte Ré.",
+      "coverage": [
+        "CAP-001"
+      ],
+      "evidence": "toys/gancadastro/script.js"
+    }
+  ]
+}

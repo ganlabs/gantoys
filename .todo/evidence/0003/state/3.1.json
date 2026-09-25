@@ -1,0 +1,96 @@
+{
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/toys/gancadastro.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0003/3.1-ac-1.log",
+      "log_sha256": "a461fdad8053e9e30f56c9b7f6460426aa0ffcc483b672a517838801f5f2e6d5",
+      "recorded_at": "2026-09-25T19:18:53.910Z"
+    },
+    "AC-2": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0003/3.1-ac-2.log",
+      "log_sha256": "fe0c447647006dbb6f103a9b5732a813958590ce2c0c9a9e134c1ad4842be354",
+      "recorded_at": "2026-09-25T19:18:55.817Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0003/3.1-regression.log",
+      "log_sha256": "136408e5e506253d810b6c7919728d6cb9da83ee6ca003f3f39833c44b36b743",
+      "recorded_at": "2026-09-25T19:19:39.241Z"
+    }
+  },
+  "baseline_implementation": {
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "327024229541407c121d84a036ac816f11021e852a060c3edf13a4db851d7be6"
+    },
+    "toys/help/manual/gancadastro.md": {
+      "exists": true,
+      "sha256": "8092c2d002b1b1843d67fa99de7ac2f446d8f50b0f8e957e365f6746d9af64c3"
+    }
+  },
+  "baseline_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "7ffabeec76bac2addba9abac86266484e9d668e920a72aa2bfcebd21b784703b"
+    }
+  },
+  "created_at": "2026-09-25T19:15:52.995Z",
+  "green_expect": null,
+  "green_implementation": {
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "4bcaa2b6259a4e4755adede9172f81549099d0cdb2ee960d7f7b64780efb5654"
+    },
+    "toys/help/manual/gancadastro.md": {
+      "exists": true,
+      "sha256": "51c97a5966ea93d584d20d28747dcf6d3035ad755ed482ccf5c5c402300e4f69"
+    }
+  },
+  "green_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "11442fe133ee053813a36dc6754816334b911db3beb337f4ff3bfcdf47b953b3"
+    }
+  },
+  "implementation_files": [
+    "toys/gancadastro/script.js",
+    "toys/help/manual/gancadastro.md"
+  ],
+  "red_command": [
+    "node",
+    "--test",
+    "test/toys/gancadastro.test.js"
+  ],
+  "red_expect": "carteira e réu do Santander devem permanecer intactos",
+  "red_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "11442fe133ee053813a36dc6754816334b911db3beb337f4ff3bfcdf47b953b3"
+    }
+  },
+  "task": "3.1",
+  "test_files": [
+    "test/toys/gancadastro.test.js"
+  ]
+}

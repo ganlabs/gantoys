@@ -1,0 +1,14 @@
+{
+  "work_id": "0003",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "title": "Exceção Santander para Carteira e Parte Ré",
+      "user_story": "Como operador, quero que carteiras que contenham 'Santander' fiquem inalteradas e não sejam marcadas de laranja, para manter os dados originais do banco.",
+      "acceptance_criteria": [
+        "Se Carteira contiver 'santander' (case-insensitive), Parte Ré não é modificada.",
+        "Se Carteira contiver 'santander', Carteira não é modificada por nenhuma regra e não é pintada de laranja."
+      ]
+    }
+  ]
+}

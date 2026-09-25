@@ -1,0 +1,57 @@
+{
+  "$schema": "../../../schemas/prd.schema.json",
+  "id": "PRD-0003",
+  "meta": {
+    "version": "1.0",
+    "created_at": "2026-09-25T19:00:00.000Z",
+    "author": "omp",
+    "grilling_depth": "deep"
+  },
+  "title": "PRD — gancadastro: excecao Santander na carteira e parte re",
+  "status": "approved",
+  "scenario": "brownfield",
+  "problem": {
+    "statement": "Carteiras Santander estavam caindo na exceção de Carteira não resolvida (porque resolveCarteiraReu não contempla o banco Santander), pintando indevidamente as células de laranja."
+  },
+  "solution": {
+    "statement": "Inserir checagem explícita de 'SANTANDER' na Carteira antes do fallback para resolveCarteiraReu, preservando os valores de Carteira e Parte Ré sem pintura."
+  },
+  "decisions": [
+    {
+      "id": "DEC-001",
+      "statement": "Se Carteira contiver 'santander' (case-insensitive), não modificar Carteira nem Parte Ré e não pintar de laranja.",
+      "status": "accepted",
+      "made_by": "operator"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "FR-001",
+      "type": "functional",
+      "statement": "Carteira com Santander preserva Carteira e Parte Ré intactas e sem destaque laranja.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "Valores originais de Carteira e Parte Ré preservados sem estilo laranja."
+      ]
+    }
+  ],
+  "stakeholders": [
+    {
+      "name": "Operador",
+      "role": "Usuário do gancadastro"
+    }
+  ],
+  "scope": {
+    "in_scope": [
+      "toys/gancadastro/script.js",
+      "test/toys/gancadastro.test.js",
+      "toys/help/manual/gancadastro.md"
+    ],
+    "out_of_scope": [
+      "Modificar outras regras já aprovadas"
+    ]
+  },
+  "accepted_requirements": [
+    "FR-001"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "contract_version": "4.0",
+  "task_id": "3.1",
+  "work_id": "0003",
+  "title": "Implementar exceção Santander para Carteira e Parte Ré",
+  "risk": {
+    "level": "L2",
+    "reasons": [
+      "Ajuste de regra de negócio em script.js"
+    ]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-3.1-01",
+        "given": "Uma linha de cadastro onde a Carteira contém 'Santander' (qualquer caixa)",
+        "when": "A planilha é processada",
+        "then": "Carteira e Parte Ré mantêm os valores originais e nenhuma das duas é pintada de laranja"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": [
+      "toys/gancadastro/script.js",
+      "test/toys/gancadastro.test.js",
+      "toys/help/manual/gancadastro.md"
+    ],
+    "affected_components": [
+      "toy-gancadastro"
+    ]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "Manter suíte verde e sem regressões"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/toys/gancadastro.test.js",
+      "node --test test/preambulo.test.js",
+      "npm run lint",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0003/3.1-red.log",
+      ".todo/evidence/0003/3.1-green.log",
+      ".todo/attestations/0003/3.1-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": [
+      "toys/gancadastro/**",
+      "toys/help/**",
+      "test/**",
+      "dist/**",
+      ".todo/**",
+      ".pwn/**"
+    ],
+    "write_deny": [
+      ".git/**",
+      "package.json",
+      "package-lock.json",
+      ".env*"
+    ],
+    "out_of_scope": [
+      "Alterar lógica fora de Santander"
+    ]
+  },
+  "budget_contract": {
+    "max_tokens": 40000,
+    "max_cost_usd": 1.0,
+    "max_duration_minutes": 20,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 20,
+    "max_tool_calls": 40,
+    "max_shell_executions": 15
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

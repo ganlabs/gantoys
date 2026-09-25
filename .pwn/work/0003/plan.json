@@ -1,0 +1,70 @@
+{
+  "$schema": "../../../schemas/plan.schema.json",
+  "work_id": "0003",
+  "title": "gancadastro: excecao Santander na carteira e parte re",
+  "status": "in_progress",
+  "components": [
+    {
+      "name": "toy-gancadastro",
+      "purpose": "Toy gancadastro com exceção Santander implementada",
+      "root": "toys/gancadastro/script.js",
+      "regression": "test/toys/gancadastro.test.js",
+      "lint": "npm run lint",
+      "security": "npm run security",
+      "build": "node build/bundle.mjs && node build/check-bundle.mjs",
+      "health": "cobertura >= 90%"
+    }
+  ],
+  "global_gates": [
+    "`npm test` — suíte completa verde.",
+    "`npm run lint` — ESLint sem erros."
+  ],
+  "tasks": [
+    {
+      "id": "3.1",
+      "title": "Implementar exceção Santander para Carteira e Parte Ré",
+      "requirement_id": "FR-001",
+      "spec_reference": "CAP-001",
+      "contract_id": "CTR-301",
+      "complexity": "standard",
+      "depends_on": [],
+      "behavior": "Se a Carteira contiver 'santander' (case-insensitive), o toy não modifica a Carteira nem a Parte Ré e não aplica pintura laranja nelas, mantendo os valores originais intactos.",
+      "components": [
+        "toy-gancadastro"
+      ],
+      "files": [
+        "toys/gancadastro/script.js",
+        "test/toys/gancadastro.test.js",
+        "toys/help/manual/gancadastro.md"
+      ],
+      "implementation_files": [
+        "toys/gancadastro/script.js",
+        "toys/help/manual/gancadastro.md"
+      ],
+      "test_files": [
+        "test/toys/gancadastro.test.js"
+      ],
+      "red": {
+        "command": "node --test test/toys/gancadastro.test.js",
+        "description": "a asserção que verifica que carteira Santander não vira laranja e mantém Parte Ré intacta falha antes da regra"
+      },
+      "implementation_steps": [
+        "Escrever teste com linha Santander comprovando preservação e ausência de estilo laranja",
+        "Adicionar verificação de 'SANTANDER' em calcularNovosValoresECores de script.js e atualizar manual"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/toys/gancadastro.test.js",
+          "description": "os testes de Santander passam"
+        },
+        {
+          "command": "npm run lint",
+          "description": "lint sem erros"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    }
+  ]
+}
