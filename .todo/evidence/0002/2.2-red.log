@@ -1,0 +1,47 @@
+TASK: 2.2
+CHECK: RED
+COMMAND: node --test test/toys/gancadastro.test.js
+EXIT: 1
+OUTPUT:
+✔ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (513.785036ms)
+✔ gancadastro — o botão de processar só libera com planilha e pasta (242.228733ms)
+✔ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (227.645738ms)
+✔ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (210.196434ms)
+✔ gancadastro — parte com BOM no prólogo é lida normalmente (207.234755ms)
+✔ gancadastro — pacote com prefixo de namespace é reescrito no mesmo namespace (388.679019ms)
+✔ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (354.750781ms)
+✔ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (227.981172ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (130.52271ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (146.912564ms)
+✔ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (225.149856ms)
+✔ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (122.490143ms)
+✔ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (210.841296ms)
+✔ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (242.679796ms)
+✖ gancadastro — aplica regras de carteira, comarca e audiência (302.841071ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 14
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4200.884121
+
+✖ failing tests:
+
+test at test/toys/gancadastro.test.js:595:1
+✖ gancadastro — aplica regras de carteira, comarca e audiência (302.841071ms)
+  AssertionError [ERR_ASSERTION]: regras de carteira e réu aplicadas
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:653:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+VERDICT: PASS
+CHAIN_HASH: 604df4613f90bb263230c9a12406bf4c55ddbaa8e86a556a8495781af1004a47

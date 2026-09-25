@@ -114,8 +114,8 @@ const STRINGS = [
     '0004469-51.2026.8.05.0103',
     'Não encontrado',
     'SEM ADV',
-    'Carteira',
-    'Rito',
+    'Auxiliar',
+    'Controle',
 ];
 
 const SHARED_STRINGS = [
@@ -226,7 +226,7 @@ function comNamespacePrefixo(xml, ns) {
 }
 
 /** Monta a fixture dentro da página e devolve os bytes do pacote. */
-async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false, comBom = false, comPrefixo = false } = {}) {
+async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false, comBom = false, comPrefixo = false, customSheet1 = null, customSharedStrings = null } = {}) {
     const abas = abasQuebradas ? ABAS_QUEBRADAS : ABAS_BASE;
     const relsExtras = abasQuebradas
         ? [['rId5', 'worksheets/sheet3.xml'], ['rId6', 'worksheets/sheet9.xml']]
@@ -241,13 +241,12 @@ async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = fals
         'xl/workbook.xml': bom + prefixo(workbook(abas), NS_PLANILHA),
         'xl/_rels/workbook.xml.rels': bom + prefixo(relsDoWorkbook(relsExtras), NS_RELS),
         'xl/styles.xml': ESTILOS,
-        'xl/sharedStrings.xml': prefixo(SHARED_STRINGS, NS_PLANILHA),
-        'xl/worksheets/sheet1.xml': prefixo(comCadastro ? SHEET1 : SHEET1_SEM_CADASTRO, NS_PLANILHA),
+        'xl/sharedStrings.xml': prefixo(customSharedStrings || SHARED_STRINGS, NS_PLANILHA),
+        'xl/worksheets/sheet1.xml': prefixo(customSheet1 || (comCadastro ? SHEET1 : SHEET1_SEM_CADASTRO), NS_PLANILHA),
         'xl/worksheets/sheet2.xml': prefixo(SHEET2, NS_PLANILHA),
         'xl/worksheets/sheet3.xml': prefixo(SHEET3, NS_PLANILHA)
     };
-    if (semSharedStrings) delete partes['xl/sharedStrings.xml'];
-
+    if (semSharedStrings && !customSharedStrings) delete partes['xl/sharedStrings.xml'];
     pagina.janela.__ganPartes = JSON.stringify(partes);
     const bytes = await pagina.script(`(async () => {
         const zip = new JSZip();
@@ -591,4 +590,74 @@ test('gancadastro — pasta de destino sem permissão de escrita mostra o erro d
     assert.equal(pagina.texto('#progresso-titulo'), 'Interrompido');
     assert.deepEqual(destino.escritas, []);
     assert.equal(pagina.seletor('#processar').disabled, false, 'o operador pode tentar de novo');
+});
+
+test('gancadastro — aplica regras de carteira, comarca e audiência', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    const stringsRegras = [
+        'Carteira', 'Parte Ré', 'Comarca', 'UF', 'Órgão', 'Num', 'Tipo Audiencia', 'Data Audiencia',
+        'Bradesco - Indenizatória', 'Qualquer Réu',
+        'Outra Carteira', 'EBAZAR.COM.BR LTDA.',
+        'Carteira Sem Match', 'Empresa Inexistente 999',
+        'capital', 'SP',
+        'Capital - Meier',
+        'LEOPOLDINA', 'JEC', '10',
+        '11',
+        'VC',
+        'JACAREPAGUA',
+        'Audiencia Marcada',
+        '15/10/2026',
+    ];
+    const sharedRegras = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${stringsRegras.length}" uniqueCount="${stringsRegras.length}">`,
+        ...stringsRegras.map((v) => `<si><t>${v}</t></si>`),
+        '</sst>',
+    ].join('');
+
+    const sheetRegras = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>',
+        '<row r="1">',
+        '<c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c>',
+        '<c r="D1" t="s"><v>3</v></c><c r="E1" t="s"><v>4</v></c><c r="F1" t="s"><v>5</v></c>',
+        '<c r="G1" t="s"><v>6</v></c><c r="H1" t="s"><v>7</v></c>',
+        '</row>',
+        '<row r="2"><c r="A2" t="s"><v>8</v></c><c r="B2" t="s"><v>9</v></c></row>',
+        '<row r="3"><c r="A3" t="s"><v>10</v></c><c r="B3" t="s"><v>11</v></c></row>',
+        '<row r="4"><c r="A4" t="s"><v>12</v></c><c r="B4" t="s"><v>13</v></c></row>',
+        '<row r="5"><c r="C5" t="s"><v>14</v></c><c r="D5" t="s"><v>15</v></c></row>',
+        '<row r="6"><c r="C6" t="s"><v>16</v></c></row>',
+        '<row r="7"><c r="C7" t="s"><v>17</v></c><c r="E7" t="s"><v>18</v></c><c r="F7" t="s"><v>19</v></c></row>',
+        '<row r="8"><c r="C8" t="s"><v>17</v></c><c r="E8" t="s"><v>18</v></c><c r="F8" t="s"><v>20</v></c></row>',
+        '<row r="9"><c r="C9" t="s"><v>17</v></c><c r="E9" t="s"><v>21</v></c></row>',
+        '<row r="10"><c r="C10" t="s"><v>22</v></c><c r="E10" t="s"><v>18</v></c></row>',
+        '<row r="11"><c r="C11" t="s"><v>22</v></c><c r="E11" t="s"><v>21</v></c></row>',
+        '<row r="12"><c r="G12" t="inlineStr"><is><t></t></is></c><c r="H12" t="s"><v>24</v></c></row>',
+        '</sheetData></worksheet>',
+    ].join('');
+
+    const entrada = await montarPlanilha(pagina, { customSheet1: sheetRegras, customSharedStrings: sharedRegras });
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
+    const sheet1 = saida.partes['xl/worksheets/sheet1.xml'];
+
+    assert.ok(sheet1.includes('BANCO BRADESCO SA'), 'regras de carteira e réu aplicadas');
+    assert.ok(sheet1.includes('Mercado Livre'), 'resolveCarteiraReu atualizou carteira');
+    assert.ok(sheet1.includes('<c r="A4" t="s"><v>12</v></c>') && sheet1.includes('<c r="B4" t="s"><v>13</v></c>'), 'exceção manteve carteira e réu originais');
+    assert.ok(sheet1.includes('SAO PAULO'), 'capital virou a capital da UF');
+    assert.ok(sheet1.includes('MEIER'), 'capital com sufixo virou o sufixo limpo');
+    assert.ok(sheet1.includes('OLARIA'), 'Leopoldina 10 JEC virou Olaria');
+    assert.ok(sheet1.includes('PENHA'), 'Leopoldina 11 JEC virou Penha');
+    assert.ok(sheet1.includes('FREGUESIA'), 'Jacarepagua JEC virou Freguesia');
+    assert.ok(sheet1.includes('TAQUARA'), 'Jacarepagua VC virou Taquara');
+    assert.ok(sheet1.includes('AC'), 'audiencia vazia com data virou AC');
 });

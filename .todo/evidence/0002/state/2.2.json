@@ -1,0 +1,100 @@
+{
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/toys/gancadastro.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.2-ac-1.log",
+      "log_sha256": "35b233ef7f3867cde6258f008caa9a8be33da4c6441897ec48d07b5f426615de",
+      "recorded_at": "2026-09-25T18:13:41.937Z"
+    },
+    "AC-2": {
+      "command": [
+        "node",
+        "--test",
+        "test/preambulo.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.2-ac-2.log",
+      "log_sha256": "20fa0c5d0ea26d28b222e407f077fdad50281027ebdcb64db4b6ae94dca31667",
+      "recorded_at": "2026-09-25T18:13:44.763Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.2-ac-3.log",
+      "log_sha256": "dc6dde2d9d0d7175134b77cb553533c0a3e6f0332a7ed307903da5b676103000",
+      "recorded_at": "2026-09-25T18:13:45.802Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.2-regression.log",
+      "log_sha256": "23dc5cd2beff149ceadba8550ebbad3dc6b4b638430eaae12f72edcd45c92afa",
+      "recorded_at": "2026-09-25T18:14:23.575Z"
+    }
+  },
+  "baseline_implementation": {
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "8e36ea3273a87f9445cd972d7781947a5508bacc9acf33b7718a7e8bc5d1b47b"
+    }
+  },
+  "baseline_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "42e5ba61441a297aad5a55658fb1a5505aa45b0e3755e0bcda06c67cc7e28f06"
+    }
+  },
+  "created_at": "2026-09-25T18:07:41.763Z",
+  "green_expect": null,
+  "green_implementation": {
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "c1db548f2b57dfe9985ac40c3a52a6478c4ab5a0e0f63be869ffe921bd4afff3"
+    }
+  },
+  "green_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "218fcab30426a8fb5bbda100efa37327dfc8c189c70c5d9cffb31031d56b046c"
+    }
+  },
+  "implementation_files": [
+    "toys/gancadastro/script.js"
+  ],
+  "red_command": [
+    "node",
+    "--test",
+    "test/toys/gancadastro.test.js"
+  ],
+  "red_expect": "regras de carteira e réu aplicadas",
+  "red_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "218fcab30426a8fb5bbda100efa37327dfc8c189c70c5d9cffb31031d56b046c"
+    }
+  },
+  "task": "2.2",
+  "test_files": [
+    "test/toys/gancadastro.test.js"
+  ]
+}

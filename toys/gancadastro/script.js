@@ -14,14 +14,33 @@ const MENSAGEM_FORMATO = 'Formato de arquivo não suportado. Use um arquivo .xls
 const MENSAGEM_PACOTE = 'Não foi possível ler a planilha. O arquivo não é um .xlsx válido.';
 const MENSAGEM_SEM_COLUNA = 'Nenhuma coluna de cadastro foi reconhecida na planilha.';
 
-/** Nome canônico no relatório, apelidos de cabeçalho e transformação de cada coluna. */
+const CAPITAIS_POR_UF = {
+    AC: 'RIO BRANCO', AL: 'MACEIO', AP: 'MACAPA', AM: 'MANAUS',
+    BA: 'SALVADOR', CE: 'FORTALEZA', DF: 'BRASILIA', ES: 'VITORIA',
+    GO: 'GOIANIA', MA: 'SAO LUIS', MT: 'CUIABA', MS: 'CAMPO GRANDE',
+    MG: 'BELO HORIZONTE', PA: 'BELEM', PB: 'JOAO PESSOA', PR: 'CURITIBA',
+    PE: 'RECIFE', PI: 'TERESINA', RJ: 'RIO DE JANEIRO', RN: 'NATAL',
+    RS: 'PORTO ALEGRE', RO: 'PORTO VELHO', RR: 'BOA VISTA', SC: 'FLORIANOPOLIS',
+    SP: 'SAO PAULO', SE: 'ARACAJU', TO: 'PALMAS'
+};
+
+/** Colunas de cadastro reconhecidas e suas transformações padrão. */
 const COLUNAS_DE_CADASTRO = [
-    { nome: 'Núm. Processo', apelidos: ['NUM PROCESSO', 'NUMERO DO PROCESSO', 'NUM PROC'], transformar: (valor) => formatCnj(valor) },
-    { nome: 'Advogado Adverso', apelidos: ['ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
-    { nome: 'OAB Advogado Adverso', apelidos: ['OAB ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
-    { nome: 'UF OAB Advogado Adverso', apelidos: ['UF OAB ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
-    { nome: 'Comarca', apelidos: ['COMARCA'], transformar: (valor) => normalizeNameValue(valor) },
-    { nome: 'Valor da Causa', apelidos: ['VALOR DA CAUSA'], transformar: (valor) => extractMoney(valor).rows[0][0] }
+    { chave: 'processo', nome: 'Núm. Processo', apelidos: ['NUM PROCESSO', 'NUMERO DO PROCESSO', 'NUM PROC'], transformar: (valor) => formatCnj(valor) },
+    { chave: 'advogado', nome: 'Advogado Adverso', apelidos: ['ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
+    { chave: 'oab', nome: 'OAB Advogado Adverso', apelidos: ['OAB ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
+    { chave: 'ufOab', nome: 'UF OAB Advogado Adverso', apelidos: ['UF OAB ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
+    { chave: 'comarca', nome: 'Comarca', apelidos: ['COMARCA'], transformar: (valor) => normalizeNameValue(valor) },
+    { chave: 'valor', nome: 'Valor da Causa', apelidos: ['VALOR DA CAUSA'], transformar: (valor) => extractMoney(valor).rows[0][0] },
+    { chave: 'carteira', nome: 'Carteira', apelidos: ['CARTEIRA'] },
+    { chave: 'parteRe', nome: 'Parte Ré', apelidos: ['PARTE RE', 'PARTE RÉ', 'PARTE REU', 'PARTE RÉU'] },
+    { chave: 'uf', nome: 'UF', apelidos: ['UF', 'ESTADO'] },
+    { chave: 'orgao', nome: 'Órgão', apelidos: ['ORGAO', 'ÓRGÃO'] },
+    { chave: 'num', nome: 'Num', apelidos: ['NUM', 'NUMERO', 'VARA'] },
+    { chave: 'rito', nome: 'Rito', apelidos: ['RITO'] },
+    { chave: 'tipoAudiencia', nome: 'Tipo Audiencia', apelidos: ['TIPO AUDIENCIA', 'TIPO DE AUDIENCIA'] },
+    { chave: 'dataAudiencia', nome: 'Data Audiencia', apelidos: ['DATA AUDIENCIA', 'DATA DE AUDIENCIA', 'AUDIENCIA'] },
+    { chave: 'causaRaiz', nome: 'Causa Raiz', apelidos: ['CAUSA RAIZ'] }
 ];
 
 
@@ -207,25 +226,118 @@ function reescreverCelula(xml, endereco, texto) {
 
 const VAZIO = { alteradas: 0, mantidas: 0, ignoradas: 0, naoConvertidas: 0 };
 
+/** Calcula as substituições condicionais de valores para as colunas da linha. */
+function calcularNovosValores(mapaLinha) {
+    const novos = new Map();
+    const texto = (chave) => (mapaLinha.get(chave) ? mapaLinha.get(chave).atual : '');
+
+    // Regra Carteira e Parte Ré:
+    const cart = texto('carteira');
+    const pRe = texto('parteRe');
+    if (cart) {
+        const cartNorm = normalizarCabecalho(cart);
+        if (cartNorm.includes('BRADESCO') && cartNorm.includes('INDENIZATORIA')) {
+            if (mapaLinha.has('parteRe')) novos.set('parteRe', 'BANCO BRADESCO SA');
+        } else if (!cartNorm.includes('BRADESCO')) {
+            if (pRe) {
+                const resolvido = runTool('resolve-carteira-reu', pRe, {});
+                const nCart = resolvido.rows[0]?.[1] || '';
+                const nReu = resolvido.rows[0]?.[2] || '';
+                if (nCart && nReu) {
+                    novos.set('carteira', nCart);
+                    novos.set('parteRe', nReu);
+                }
+            }
+        }
+    }
+
+    // Regra Comarca:
+    if (mapaLinha.has('comarca')) {
+        let com = normalizeNameValue(texto('comarca'));
+        const comNorm = normalizarCabecalho(com);
+        if (comNorm === 'CAPITAL') {
+            const uf = texto('uf').toUpperCase().trim();
+            if (CAPITAIS_POR_UF[uf]) com = CAPITAIS_POR_UF[uf];
+        } else if (comNorm.includes('CAPITAL')) {
+            const resto = com.replace(/\bCAPITAL\b/gi, '').replace(/^[\s\-_/:]+|[\s\-_/:]+$/g, '').trim();
+            if (!resto) {
+                const uf = texto('uf').toUpperCase().trim();
+                if (CAPITAIS_POR_UF[uf]) com = CAPITAIS_POR_UF[uf];
+            } else {
+                com = normalizeNameValue(resto);
+            }
+        } else if (comNorm === 'LEOPOLDINA') {
+            const orgao = normalizarCabecalho(texto('orgao'));
+            const num = texto('num').trim();
+            if (orgao === 'JEC') {
+                if (num === '10') com = 'OLARIA';
+                else if (num === '11') com = 'PENHA';
+            }
+        } else if (comNorm === 'JACAREPAGUA') {
+            const orgao = normalizarCabecalho(texto('orgao'));
+            if (orgao === 'JEC') com = 'FREGUESIA';
+            else if (orgao === 'VC') com = 'TAQUARA';
+        }
+        novos.set('comarca', com);
+    }
+
+    // Regra Tipo Audiencia:
+    if (mapaLinha.has('tipoAudiencia')) {
+        const tAud = texto('tipoAudiencia').trim();
+        const dAud = mapaLinha.has('dataAudiencia') ? mapaLinha.get('dataAudiencia').atual.trim() : '';
+        if (!tAud && dAud) {
+            novos.set('tipoAudiencia', 'AC');
+        }
+    }
+
+    return novos;
+}
+
 /**
  * Aplica as transformações de uma aba. Só reescreve a célula cujo valor
  * transformado difere do atual; célula vazia e célula com fórmula ficam como
- * estão — a fórmula continua sendo a fórmula.
+ * estão.
  */
 function processarAba(aba, strings) {
     const contagem = { ...VAZIO };
     const dados = aba.cabecalho ? aba.linhas.slice(1) : [];
     let xml = aba.xml;
+
     dados.forEach((celulas) => {
+        const mapaLinha = new Map();
         aba.colunas.forEach(({ coluna, letras }) => {
             const celula = celulas.get(letras);
-            if (!celula) return;
-            const atual = textoDaCelula(celula.elemento, strings);
-            if (!atual || primeiroFilho(celula.elemento, 'f')) {
+            if (celula) {
+                mapaLinha.set(coluna.chave, {
+                    coluna,
+                    celula,
+                    atual: textoDaCelula(celula.elemento, strings),
+                    temFormula: Boolean(primeiroFilho(celula.elemento, 'f'))
+                });
+            }
+        });
+
+        const novosValores = calcularNovosValores(mapaLinha);
+
+        mapaLinha.forEach(({ coluna, celula, atual, temFormula }, chave) => {
+            if (temFormula) {
                 contagem.ignoradas += 1;
                 return;
             }
-            const novo = coluna.transformar(atual);
+
+            let novo;
+            if (novosValores.has(chave)) {
+                novo = novosValores.get(chave);
+            } else if (coluna.transformar) {
+                if (!atual) {
+                    contagem.ignoradas += 1;
+                    return;
+                }
+                novo = coluna.transformar(atual);
+            } else {
+                return;
+            }
+
             if (novo === null) {
                 contagem.naoConvertidas += 1;
                 return;
@@ -234,6 +346,7 @@ function processarAba(aba, strings) {
                 contagem.mantidas += 1;
                 return;
             }
+
             xml = reescreverCelula(xml, celula.endereco, novo);
             contagem.alteradas += 1;
         });
