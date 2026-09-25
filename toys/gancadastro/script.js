@@ -59,8 +59,18 @@ const estado = {
 
 const analisador = new DOMParser();
 
+/**
+ * Texto da parte sem o BOM do prólogo. O cadastro exportado pelo Excel grava
+ * U+FEFF antes do `<?xml` de algumas partes e o parser do navegador devolve
+ * documento de erro quando o BOM chega junto do texto (o jsdom tolera, o
+ * Chromium não) — o toy enxergaria zero abas.
+ */
+function textoSemBom(texto) {
+    return String(texto).replace(/^\uFEFF/, '');
+}
+
 function analisarXml(texto) {
-    return analisador.parseFromString(String(texto), 'application/xml');
+    return analisador.parseFromString(textoSemBom(texto), 'application/xml');
 }
 
 function elementosPorNome(raiz, nome) {

@@ -1,0 +1,76 @@
+{
+  "contract_version": "4.0",
+  "task_id": "1.4",
+  "work_id": "0001",
+  "title": "Descartar o BOM do prólogo XML na leitura do pacote",
+  "risk": {
+    "level": "L2",
+    "reasons": [
+      "Altera o leitor de XML do toy que reescreve a planilha",
+      "Defeito encontrado fora da suíte jsdom, na verificação em navegador real"
+    ]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-1.4-01",
+        "given": "Um texto de parte que começa com U+FEFF",
+        "when": "O toy o entrega ao parser XML",
+        "then": "O BOM não chega ao parser e o documento é lido normalmente"
+      },
+      {
+        "id": "SCENARIO-1.4-02",
+        "given": "Uma planilha cujo .rels traz BOM no prólogo",
+        "when": "O operador a processa",
+        "then": "As abas e as colunas de cadastro são reconhecidas e a saída é gravada, como em qualquer outra planilha"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": ["toys/gancadastro/script.js", "test/toys/gancadastro.test.js"],
+    "affected_components": ["toy-gancadastro"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "O leitor continua sem dependência nova e sem executar HTML ou código do pacote",
+      "A remoção do BOM não altera o conteúdo das partes reescritas"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/toys/gancadastro.test.js",
+      "node --test test/preambulo.test.js",
+      "npm run lint",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0001/1.4-red.log",
+      ".todo/evidence/0001/1.4-green.log",
+      ".todo/attestations/0001/1.4-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": ["toys/gancadastro/**", "test/**", ".todo/**", ".pwn/**"],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": [
+      "Trocar o JSZip ou o DOMParser por outra biblioteca",
+      "Reformatar ou reescrever outras partes do pacote",
+      "Alterar a ponte do app"
+    ]
+  },
+  "budget_contract": {
+    "max_tokens": 40000,
+    "max_cost_usd": 1.0,
+    "max_duration_minutes": 30,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 20,
+    "max_tool_calls": 60,
+    "max_shell_executions": 20
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

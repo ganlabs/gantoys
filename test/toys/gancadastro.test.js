@@ -216,16 +216,18 @@ function selecionarArquivo(pagina, bytes, nome) {
 }
 
 /** Monta a fixture dentro da página e devolve os bytes do pacote. */
-async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false } = {}) {
+async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false, comBom = false } = {}) {
     pagina.janela.__ganSheet1 = comCadastro ? SHEET1 : SHEET1_SEM_CADASTRO;
     const abas = abasQuebradas ? ABAS_QUEBRADAS : ABAS_BASE;
     const valor = (conteudo) => JSON.stringify(conteudo);
+    // O cadastro exportado pelo Excel grava BOM no prólogo do .rels e do workbook.
+    const bom = comBom ? '\uFEFF' : '';
     const bytes = await pagina.script(`(async () => {
         const zip = new JSZip();
         zip.file('[Content_Types].xml', ${valor(CONTENT_TYPES)});
         zip.file('_rels/.rels', ${valor(RELS_RAIZ)});
-        zip.file('xl/workbook.xml', ${valor(workbook(abas))});
-        zip.file('xl/_rels/workbook.xml.rels', ${valor(relsDoWorkbook(abasQuebradas ? [['rId5', 'worksheets/sheet3.xml'], ['rId6', 'worksheets/sheet9.xml']] : [['rId5', 'worksheets/sheet3.xml']]))});
+        zip.file('xl/workbook.xml', ${JSON.stringify(bom)} + ${valor(workbook(abas))});
+        zip.file('xl/_rels/workbook.xml.rels', ${JSON.stringify(bom)} + ${valor(relsDoWorkbook(abasQuebradas ? [['rId5', 'worksheets/sheet3.xml'], ['rId6', 'worksheets/sheet9.xml']] : [['rId5', 'worksheets/sheet3.xml']]))});
         zip.file('xl/styles.xml', ${valor(ESTILOS)});
         if (!${semSharedStrings}) zip.file('xl/sharedStrings.xml', ${valor(SHARED_STRINGS)});
         zip.file('xl/worksheets/sheet1.xml', window.__ganSheet1);
@@ -366,6 +368,31 @@ test('gancadastro — aba sem relacionamento e parte ausente ficam de fora sem q
     assert.deepEqual(pagina.textos('#diagnostico-lista .result-name'), ['Plan1', 'Planilha1', 'Vazia'], 'as abas sem parte resolvida não entram');
     assert.equal(pagina.texto('#diagnostico-resumo'), '3 abas, 0 com colunas reconhecidas.');
     assert.equal(pagina.texto('#mensagem'), 'Nenhuma coluna de cadastro foi reconhecida na planilha.');
+});
+
+test('gancadastro — parte com BOM no prólogo é lida normalmente', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+
+    // O cadastro exportado pelo Excel começa o .rels com U+FEFF, e o parser do
+    // navegador devolve documento de erro quando o BOM chega junto do texto.
+    assert.equal(
+        typeof pagina.janela.textoSemBom,
+        'function',
+        'o leitor precisa limpar o BOM antes de parsear a parte'
+    );
+    assert.equal(pagina.janela.textoSemBom('\uFEFF<?xml version="1.0"?>'), '<?xml version="1.0"?>');
+    assert.equal(pagina.janela.textoSemBom('sem bom'), 'sem bom');
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina, { comBom: true }), 'cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#planilha-nome') === 'cadastro.xlsx', { descricao: 'nome da planilha no toy' });
+
+    assert.equal(pagina.texto('#diagnostico-resumo'), '3 abas, 1 com colunas reconhecidas.');
+    assert.deepEqual(pagina.textos('#diagnostico-lista .result-meta'), [
+        'Colunas reconhecidas: Núm. Processo, Advogado Adverso, OAB Advogado Adverso, UF OAB Advogado Adverso, Comarca, Valor da Causa.',
+        'Nenhuma coluna reconhecida.',
+        'Nenhuma coluna reconhecida.',
+    ]);
 });
 
 test('gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário', async (t) => {

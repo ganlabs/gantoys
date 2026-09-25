@@ -57,6 +57,11 @@
         "description": "Mudar toys/shared/kit.js altera o hash do asset e o lint dos toys que passam a usar as novas funções.",
         "level": "medium",
         "mitigation": "Manifesto de integridade regenerado e globais registrados em eslint.config.mjs na mesma task; suíte completa como rede de proteção."
+      },
+      {
+        "description": "Parte do pacote gravada com BOM no prólogo: o parser dedica-se a um documento de erro e o toy enxerga zero abas.",
+        "level": "high",
+        "mitigation": "Remoção do U+FEFF inicial antes do parse, com caso de teste da planilha com BOM e verificação em navegador real sobre o arquivo do repositório."
       }
     ]
   },
@@ -114,6 +119,13 @@
       "id": "DEC-008",
       "statement": "Nome do arquivo de saída Cadastro-DD-MM-AAAA_HH-MM.xlsx com o relógio local, e mesmo nome solicitado de novo no mesmo minuto sobrescreve.",
       "rationale": "É o nome pedido pelo operador e evita depender de fuso; a resolução de minuto já separa execuções consecutivas.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-009",
+      "statement": "Descartar o BOM (U+FEFF) do prólogo de cada parte XML antes de entregá-la ao DOMParser.",
+      "rationale": "Achado na verificação em navegador real: o .rels do cadastro exportado pelo Excel começa com BOM e o DOMParser do Chromium devolve parsererror, o que zerava as abas lidas. O jsdom tolera o BOM, então a suíte jsdom sozinha não pegaria o defeito.",
       "status": "accepted",
       "made_by": "omp"
     }
@@ -264,6 +276,7 @@
     "FR-005",
     "FR-006",
     "FR-007",
-    "FR-008"
+    "FR-008",
+    "EC-001"
   ]
 }

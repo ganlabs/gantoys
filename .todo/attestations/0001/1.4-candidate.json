@@ -1,0 +1,81 @@
+{
+  "version": 2,
+  "kind": "task-acceptance-candidate",
+  "harness_version": "0.1.0",
+  "gate_version": "1",
+  "work_id": "0001",
+  "task_id": "1.4",
+  "result": "pass",
+  "plan": {
+    "path": ".todo/0001-tasks.md",
+    "sha256": "0983b2e97a5f4096ee8781cfd5d1cc31e2454f353ee8d802596e0eeb7370ceed"
+  },
+  "implementation": {
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "875e0f0bee6e99843a3dedb4c8f075f7da9334e56add59c95343f0efdf470414"
+    }
+  },
+  "tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "2cce91f4b777948c0d2bb2e26ebf72e9e8e4547bc0dfbbefceddb52b3d642fb0"
+    }
+  },
+  "evidence_sha256": "1dcbd2b607d3f25c07216629b0f3ae26386185576b807aa1f2fd03521099372e",
+  "evidence_chain_head": "22f34c8e0943b219040715f1d08784bc2a0715bd7c758fa8fd91cf695f4da088",
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/toys/gancadastro.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.4-ac-1.log",
+      "log_sha256": "062d7991dae206a6daac3227823bfb7f997158a24502863018d6b430b1739bdf",
+      "recorded_at": "2026-09-25T16:30:12.922Z"
+    },
+    "AC-2": {
+      "command": [
+        "node",
+        "--test",
+        "test/preambulo.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.4-ac-2.log",
+      "log_sha256": "52f26967016c62525f261ac1555601d09ff240e39a3b10a3d9afee2ada2f23cf",
+      "recorded_at": "2026-09-25T16:30:16.356Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.4-ac-3.log",
+      "log_sha256": "0ad410f87e478b1cffb80a2b4365cff8cf3883c2214c9a3e7b5e0e1d7dae977a",
+      "recorded_at": "2026-09-25T16:30:17.572Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0001/1.4-regression.log",
+      "log_sha256": "3d060eed471190e2cf260121410530f21192106187897b3f1b5549c468e8ea10",
+      "recorded_at": "2026-09-25T16:30:57.861Z"
+    }
+  },
+  "generated_at": "2026-09-25T16:31:01.566Z"
+}

@@ -52,7 +52,9 @@
       "complexity": "medium",
       "depends_on": [],
       "behavior": "toys/shared/kit.js passa a expor cnjDigits e formatCnj para os toys, com formatCnj devolvendo null fora de 20 dígitos, e as duas passam a valer como globais no lint",
-      "components": ["kit-compartilhado"],
+      "components": [
+        "kit-compartilhado"
+      ],
       "files": [
         "toys/shared/kit.js",
         "eslint.config.mjs",
@@ -64,7 +66,9 @@
         "eslint.config.mjs",
         "tools/integridade-assets.json"
       ],
-      "test_files": ["test/shared-kit.test.js"],
+      "test_files": [
+        "test/shared-kit.test.js"
+      ],
       "red": {
         "command": "node --test test/shared-kit.test.js",
         "description": "a asserção que exige cnjDigits e formatCnj expostos pelo kit falha porque o kit ainda não tem as duas funções"
@@ -98,9 +102,13 @@
       "spec_reference": "CAP-004",
       "contract_id": "CTR-002",
       "complexity": "high",
-      "depends_on": ["1.1"],
+      "depends_on": [
+        "1.1"
+      ],
       "behavior": "escolhido um .xlsx e uma pasta de destino, o toy reconhece as colunas de cadastro, reescreve as células com as transformações do kit, reempacota o pacote OOXML preservando formatação, abas e nomes, e grava Cadastro-DD-MM-AAAA_HH-MM.xlsx na pasta escolhida; atende FR-001 a FR-006",
-      "components": ["toy-gancadastro"],
+      "components": [
+        "toy-gancadastro"
+      ],
       "files": [
         "toys/gancadastro/index.html",
         "toys/gancadastro/styles.css",
@@ -112,7 +120,9 @@
         "toys/gancadastro/styles.css",
         "toys/gancadastro/script.js"
       ],
-      "test_files": ["test/toys/gancadastro.test.js"],
+      "test_files": [
+        "test/toys/gancadastro.test.js"
+      ],
       "red": {
         "command": "node --test test/toys/gancadastro.test.js",
         "description": "a asserção do fluxo ponta a ponta falha porque, com a casca do toy já no baseline, nada é processado nem gravado na pasta escolhida"
@@ -146,9 +156,14 @@
       "spec_reference": "CAP-006",
       "contract_id": "CTR-003",
       "complexity": "standard",
-      "depends_on": ["1.1", "1.2"],
+      "depends_on": [
+        "1.1",
+        "1.2"
+      ],
       "behavior": "o toy aparece na navegação do app, o manual em toys/help/manual entrou na central de manuais pelo gerador e o bundle único passa na validação de contrato e de integridade",
-      "components": ["entrega"],
+      "components": [
+        "entrega"
+      ],
       "files": [
         "index.html",
         "toys/help/manual/gancadastro.md",
@@ -160,7 +175,9 @@
         "toys/help/manual/gancadastro.md",
         "toys/help/index.html"
       ],
-      "test_files": ["test/help.test.js"],
+      "test_files": [
+        "test/help.test.js"
+      ],
       "red": {
         "command": "node --test test/help.test.js",
         "description": "a asserção que exige card e bloco embutido do manual do gancadastro na Ajuda falha porque o manual ainda não existe nem foi embutido"
@@ -181,6 +198,56 @@
         {
           "command": "npm run assets:integrity",
           "description": "o manifesto bate com todos os assets monitorados"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    },
+    {
+      "id": "1.4",
+      "title": "Descartar o BOM do prólogo XML na leitura do pacote",
+      "requirement_id": "EC-001",
+      "spec_reference": "CAP-001",
+      "contract_id": "CTR-004",
+      "complexity": "low",
+      "depends_on": [
+        "1.2"
+      ],
+      "behavior": "o leitor de XML descarta um U+FEFF inicial de cada parte do pacote, de modo que uma planilha exportada pelo Excel (BOM no .rels) volte a ter as abas e as colunas de cadastro reconhecidas",
+      "components": [
+        "toy-gancadastro"
+      ],
+      "files": [
+        "toys/gancadastro/script.js",
+        "test/toys/gancadastro.test.js"
+      ],
+      "implementation_files": [
+        "toys/gancadastro/script.js"
+      ],
+      "test_files": [
+        "test/toys/gancadastro.test.js"
+      ],
+      "red": {
+        "command": "node --test test/toys/gancadastro.test.js",
+        "description": "a asserção que exige o texto da parte sem BOM falha porque o leitor ainda entrega o U+FEFF ao parser"
+      },
+      "implementation_steps": [
+        "Acrescentar ao teste do toy a asserção do texto sem BOM e o caso da planilha com BOM no .rels",
+        "Descartar o BOM no leitor de XML do toy antes de parsear cada parte do pacote"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/toys/gancadastro.test.js",
+          "description": "o caso do BOM e os demais casos do toy passam"
+        },
+        {
+          "command": "node --test test/preambulo.test.js",
+          "description": "o preâmbulo de tema do toy continua válido"
+        },
+        {
+          "command": "npm run lint",
+          "description": "o script do toy passa no lint"
         }
       ],
       "visual": "N/A",

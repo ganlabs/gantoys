@@ -1,0 +1,51 @@
+TASK: 1.4
+CHECK: RED
+COMMAND: node --test test/toys/gancadastro.test.js
+EXIT: 1
+OUTPUT:
+✔ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (541.650279ms)
+✔ gancadastro — o botão de processar só libera com planilha e pasta (256.581593ms)
+✔ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (242.140744ms)
+✔ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (228.705004ms)
+✖ gancadastro — parte com BOM no prólogo é lida normalmente (165.88657ms)
+✔ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (367.08844ms)
+✔ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (263.760942ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (178.483003ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (149.340242ms)
+✔ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (154.389429ms)
+✔ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (145.224716ms)
+✔ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (215.733353ms)
+✔ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (258.376908ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 12
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3654.216029
+
+✖ failing tests:
+
+test at test/toys/gancadastro.test.js:373:1
+✖ gancadastro — parte com BOM no prólogo é lida normalmente (165.88657ms)
+  AssertionError [ERR_ASSERTION]: o leitor precisa limpar o BOM antes de parsear a parte
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:379:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+VERDICT: PASS
+CHAIN_HASH: f3b0c0bb3b19348d75575b3c0366fec2783b06c35f4949ac405a3eaa3a2f5199

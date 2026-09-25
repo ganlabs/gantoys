@@ -92,3 +92,28 @@
 
 **Visual:** N/A
 **Documentation:** N/A
+
+### [ ] [1.4] Descartar o BOM do prólogo XML na leitura do pacote
+
+**Requirement:** EC-001
+**Depends on:** 1.2
+**Behavior:** o leitor de XML descarta um U+FEFF inicial de cada parte do pacote, de modo que uma planilha exportada pelo Excel (BOM no .rels) volte a ter as abas e as colunas de cadastro reconhecidas
+**Components:** toy-gancadastro
+**Files:** `toys/gancadastro/script.js`, `test/toys/gancadastro.test.js`
+**Implementation files:** `toys/gancadastro/script.js`
+**Test files:** `test/toys/gancadastro.test.js`
+
+**RED:**
+- `node --test test/toys/gancadastro.test.js` — a asserção que exige o texto da parte sem BOM falha porque o leitor ainda entrega o U+FEFF ao parser
+
+**Implementation:**
+1. Acrescentar ao teste do toy a asserção do texto sem BOM e o caso da planilha com BOM no .rels
+2. Descartar o BOM no leitor de XML do toy antes de parsear cada parte do pacote
+
+**ACs:**
+- [ ] `node --test test/toys/gancadastro.test.js` — o caso do BOM e os demais casos do toy passam
+- [ ] `node --test test/preambulo.test.js` — o preâmbulo de tema do toy continua válido
+- [ ] `npm run lint` — o script do toy passa no lint
+
+**Visual:** N/A
+**Documentation:** N/A

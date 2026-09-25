@@ -81,6 +81,15 @@
         "node build/check-bundle.mjs aprova o bundle com o toy novo",
         "npm run assets:integrity e npm run security passam"
       ]
+    },
+    {
+      "id": "EC-001",
+      "title": "Ler pacote cujo prólogo XML vem com BOM",
+      "user_story": "Como operador, quero processar planilhas exportadas pelo Excel, que gravam BOM no prólogo do .rels, para o toy não devolver 'nenhuma coluna reconhecida' num arquivo válido",
+      "acceptance_criteria": [
+        "o leitor descarta o BOM antes de entregar o texto ao parser XML de cada parte do pacote",
+        "planilha com BOM no .rels continua com as abas e as colunas de cadastro reconhecidas e gera a saída"
+      ]
     }
   ]
 }
