@@ -652,7 +652,7 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
 
     assert.ok(sheet1.includes('BANCO BRADESCO SA'), 'regras de carteira e réu aplicadas');
     assert.ok(sheet1.includes('Mercado Livre'), 'resolveCarteiraReu atualizou carteira');
-    assert.ok(sheet1.includes('<c r="A4" t="s"><v>12</v></c>') && sheet1.includes('<c r="B4" t="s"><v>13</v></c>'), 'exceção manteve carteira e réu originais');
+    assert.ok(sheet1.includes('r="A4"') && sheet1.includes('<v>12</v>') && sheet1.includes('r="B4"') && sheet1.includes('<v>13</v>'), 'exceção manteve carteira e réu originais');
     assert.ok(sheet1.includes('SAO PAULO'), 'capital virou a capital da UF');
     assert.ok(sheet1.includes('MEIER'), 'capital com sufixo virou o sufixo limpo');
     assert.ok(sheet1.includes('OLARIA'), 'Leopoldina 10 JEC virou Olaria');
@@ -660,4 +660,62 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
     assert.ok(sheet1.includes('FREGUESIA'), 'Jacarepagua JEC virou Freguesia');
     assert.ok(sheet1.includes('TAQUARA'), 'Jacarepagua VC virou Taquara');
     assert.ok(sheet1.includes('AC'), 'audiencia vazia com data virou AC');
+});
+
+test('gancadastro — aplica pintura condicional laranja e vermelha em styles.xml', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    const stringsPintura = [
+        'Carteira', 'Parte Ré', 'Valor da Causa', 'Advogado Adverso', 'Órgão', 'Num', 'Rito', 'Causa Raiz',
+        'Carteira Sem Match', 'Empresa Inexistente 999',
+        '0',
+        'SEM ADVOGADO', 'VC',
+        '0', 'VC',
+        'Sumário',
+        'Outra Carteira Comum', 'Falta de Documento',
+    ];
+    const sharedPintura = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${stringsPintura.length}" uniqueCount="${stringsPintura.length}">`,
+        ...stringsPintura.map((v) => `<si><t>${v}</t></si>`),
+        '</sst>',
+    ].join('');
+
+    const sheetPintura = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>',
+        '<row r="1">',
+        '<c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c>',
+        '<c r="D1" t="s"><v>3</v></c><c r="E1" t="s"><v>4</v></c><c r="F1" t="s"><v>5</v></c>',
+        '<c r="G1" t="s"><v>6</v></c><c r="H1" t="s"><v>7</v></c>',
+        '</row>',
+        '<row r="2"><c r="A2" t="s"><v>8</v></c><c r="B2" t="s"><v>9</v></c></row>',
+        '<row r="3"><c r="C3" t="s"><v>10</v></c></row>',
+        '<row r="4"><c r="D4" t="s"><v>11</v></c><c r="E4" t="s"><v>12</v></c></row>',
+        '<row r="5"><c r="F5" t="s"><v>13</v></c><c r="E5" t="s"><v>14</v></c></row>',
+        '<row r="6"><c r="G6" t="s"><v>15</v></c></row>',
+        '<row r="7"><c r="A7" t="s"><v>16</v></c><c r="H7" t="s"><v>17</v></c></row>',
+        '</sheetData></worksheet>',
+    ].join('');
+
+    const entrada = await montarPlanilha(pagina, { customSheet1: sheetPintura, customSharedStrings: sharedPintura });
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
+    const styles = saida.partes['xl/styles.xml'];
+    const sheet1 = saida.partes['xl/worksheets/sheet1.xml'];
+
+    assert.ok(styles.includes('FFFFA500') && styles.includes('FFFF0000'), 'styles.xml precisa conter os preenchimentos solido laranja e vermelho');
+    assert.ok(sheet1.includes('r="A2"') && sheet1.includes('r="B2"'), 'células da exceção de carteira existem');
+    assert.ok(sheet1.includes('r="C3"'), 'valor da causa 0 existe');
+    assert.ok(sheet1.includes('r="D4"'), 'advogado sem advogado existe');
+    assert.ok(sheet1.includes('r="F5"'), 'num 0 com VC existe');
+    assert.ok(sheet1.includes('r="G6"'), 'rito sumario existe');
+    assert.ok(sheet1.includes('r="H7"'), 'causa raiz existe');
 });

@@ -382,9 +382,21 @@ Processa uma planilha de cadastro em `.xlsx` e grava uma cópia padronizada na p
 - `.xls` não é aceito. `.xlsm` é lido como pacote OOXML: as macros não são interpretadas nem executadas.
 - O toy precisa da pasta escolhida pelo app; o arquivo é gravado pela ponte, sem download alternativo.
 
+## Regras avançadas de cadastro
+
+- **Carteira e Parte Ré** — se a carteira contiver `Bradesco - Indenizatória` (qualquer caixa), a Parte Ré vira `BANCO BRADESCO SA`. Se a carteira não for Bradesco, a Parte Ré é resolvida pelo resolvedor de carteira/réu; se não resolver, Carteira e Parte Ré mantêm os valores originais e são pintadas de laranja.
+- **Comarca** — se o valor for igual a `capital`, é preenchido com a capital correspondente à coluna UF. Se contiver `capital` seguido de texto, apaga a palavra capital e deixa o restante limpo. Se for `LEOPOLDINA`: Órgão `VC` não altera; Órgão `JEC` com Num 10 vira `OLARIA`, com Num 11 vira `PENHA`. Se for `JACAREPAGUA`: Órgão `JEC` vira `FREGUESIA`, Órgão `VC` vira `TAQUARA`.
+- **Tipo Audiência** — se estiver vazio mas houver data na coluna Data Audiência, é preenchido com `AC`.
+
+## Destaques visuais em cores
+
+- **Laranja** — aplicado em: Valor da Causa igual a `0`, Advogado Adverso `SEM ADVOGADO` com Órgão fora de JEC/JEA/JECrim, Num `0` com Órgão VC ou VU, Rito fora de Comum e Juizados, e exceções de Carteira e Parte Ré.
+- **Vermelho** — aplicado na célula de Causa Raiz quando a carteira final não contiver Bradesco nem Santander.
+- Os estilos de cor são injetados em `styles.xml` preservando fontes, bordas e formatos de número de cada célula.
+
 ## Relatório na tela
 
-O cartão de resultado mostra quantas células foram alteradas, quantas já estavam no formato, quantas foram ignoradas (vazias ou com fórmula) e quantas não puderam ser convertidas — número de processo que não chega a 20 dígitos, por exemplo.
+O cartão de resultado mostra quantas células foram alteradas, quantas foram pintadas com destaques, quantas já estavam no formato, quantas foram ignoradas (vazias ou com fórmula) e quantas não puderam ser convertidas.
     </script>
 
     <script type="text/markdown" data-manual="ganclassificadorvara" data-title="Classificador de Vara">

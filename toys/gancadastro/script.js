@@ -30,7 +30,7 @@ const COLUNAS_DE_CADASTRO = [
     { chave: 'advogado', nome: 'Advogado Adverso', apelidos: ['ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
     { chave: 'oab', nome: 'OAB Advogado Adverso', apelidos: ['OAB ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
     { chave: 'ufOab', nome: 'UF OAB Advogado Adverso', apelidos: ['UF OAB ADVOGADO ADVERSO'], transformar: (valor) => normalizeNameValue(valor) },
-    { chave: 'comarca', nome: 'Comarca', apelidos: ['COMARCA'], transformar: (valor) => normalizeNameValue(valor) },
+    { chave: 'comarca', nome: 'Comarca', apelidos: ['COMARCA'] },
     { chave: 'valor', nome: 'Valor da Causa', apelidos: ['VALOR DA CAUSA'], transformar: (valor) => extractMoney(valor).rows[0][0] },
     { chave: 'carteira', nome: 'Carteira', apelidos: ['CARTEIRA'] },
     { chave: 'parteRe', nome: 'Parte Ré', apelidos: ['PARTE RE', 'PARTE RÉ', 'PARTE REU', 'PARTE RÉU'] },
@@ -198,40 +198,117 @@ async function lerPacote(arquivo) {
     return { zip, strings, abas };
 }
 
-/* -------------------------------------------------- reescrita da célula -- */
+/* -------------------------------------------------- reescrita e estilos -- */
+
+const COR_LARANJA = 'FFFFA500';
+const COR_VERMELHA = 'FFFF0000';
 
 function escaparXml(texto) {
     return String(texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /**
- * Troca só o conteúdo da célula endereçada, mantendo os atributos (o `s` é o
- * índice de estilo). O valor sai como texto inline: o sharedStrings.xml não é
- * tocado, porque a mesma string pode estar em outras células.
- *
- * O elemento é localizado pelo endereço do atributo `r` qualquer que seja o
- * prefixo de namespace, e o texto inline é gravado com o MESMO prefixo: o Excel
- * escreve `x:c`/`x:is`/`x:t` sem namespace default, e um elemento sem prefixo
- * sairia do namespace da planilha.
+ * Injeta preenchimentos sólidos (fills) e deriva novos cellXfs em styles.xml,
+ * preservando fontes, bordas e formatos de número originais de cada célula.
  */
-function reescreverCelula(xml, endereco, texto) {
+function criarPintorDeEstilos(stylesXml) {
+    let xml = stylesXml;
+    const doc = analisarXml(xml);
+    const fillsNode = primeiroFilho(doc, 'fills');
+    const cellXfsNode = primeiroFilho(doc, 'cellXfs');
+    if (!fillsNode || !cellXfsNode) return null;
+
+    const prefixo = fillsNode.prefix ? `${fillsNode.prefix}:` : '';
+    const fills = elementosPorNome(fillsNode, 'fill');
+    const xfs = elementosPorNome(cellXfsNode, 'xf');
+
+    const fillMap = new Map();
+    let proximoFillId = fills.length;
+    function obterOuCriarFill(cor) {
+        if (fillMap.has(cor)) return fillMap.get(cor);
+        const novoFill = `<${prefixo}fill><${prefixo}patternFill patternType="solid"><${prefixo}fgColor rgb="${cor}"/><${prefixo}bgColor indexed="64"/></${prefixo}patternFill></${prefixo}fill>`;
+        xml = xml.replace(new RegExp(`</(?:\\w+:)?fills>`), `${novoFill}</${prefixo}fills>`);
+        const id = proximoFillId;
+        proximoFillId += 1;
+        xml = xml.replace(new RegExp(`(<(?:\\w+:)?fills\\b[^>]*\\bcount=")\\d+(")`), `$1${proximoFillId}$2`);
+        fillMap.set(cor, id);
+        return id;
+    }
+
+    let proximoXfId = xfs.length;
+    const xfMap = new Map();
+    function obterOuCriarXf(sBase, cor) {
+        const s = Number(sBase) || 0;
+        const chave = `${s}|${cor}`;
+        if (xfMap.has(chave)) return xfMap.get(chave);
+
+        const fillId = obterOuCriarFill(cor);
+        const xfOriginal = xfs[s];
+        let atributos = '';
+        Array.from(xfOriginal.attributes).forEach((attr) => {
+            if (attr.name !== 'fillId' && attr.name !== 'applyFill') {
+                atributos += ` ${attr.name}="${attr.value}"`;
+            }
+        });
+        atributos += ` fillId="${fillId}" applyFill="1"`;
+
+        const novoXf = `<${prefixo}xf${atributos}/>`;
+        xml = xml.replace(new RegExp(`</(?:\\w+:)?cellXfs>`), `${novoXf}</${prefixo}cellXfs>`);
+        const id = proximoXfId;
+        proximoXfId += 1;
+        xml = xml.replace(new RegExp(`(<(?:\\w+:)?cellXfs\\b[^>]*\\bcount=")\\d+(")`), `$1${proximoXfId}$2`);
+        xfMap.set(chave, id);
+        return id;
+    }
+
+    return {
+        obterXf: (sBase, cor) => obterOuCriarXf(sBase, cor),
+        obterXml: () => xml,
+        teveMudanca: () => proximoXfId > xfs.length
+    };
+}
+
+/**
+ * Ajusta o texto e/ou o estilo da célula.
+ * Quando novoTexto é null/undefined, apenas o estilo é alterado mantendo o corpo.
+ * Quando novoTexto é informado, o conteúdo vira inlineStr mantendo o mesmo prefixo.
+ */
+function ajustarCelula(xml, endereco, novoTexto, novoEstilo) {
     const elemento = new RegExp(`<((?:\\w+:)?c)\\b[^>]*\\br="${endereco}"[^>]*(?:/>|>[\\s\\S]*?</\\1>)`);
     return xml.replace(elemento, (encontrado, nome) => {
         const prefixo = nome.slice(0, nome.length - 1);
-        const abertura = encontrado.slice(0, encontrado.indexOf('>')).replace(/\/$/, '');
-        const atributos = abertura.replace(/^<[^>\s/]+/, '').replace(/\s+t="[^"]*"/, '');
-        return `<${nome}${atributos} t="inlineStr"><${prefixo}is><${prefixo}t>${escaparXml(texto)}</${prefixo}t></${prefixo}is></${nome}>`;
+        const idxFecho = encontrado.indexOf('>');
+        const autoFechado = encontrado[idxFecho - 1] === '/';
+        const abertura = encontrado.slice(0, idxFecho).replace(/\/$/, '');
+        let atributos = abertura.replace(/^<[^>\s/]+/, '');
+
+        if (novoEstilo !== undefined && novoEstilo !== null) {
+            if (/\bs="[^"]*"/.test(atributos)) {
+                atributos = atributos.replace(/\bs="[^"]*"/, `s="${novoEstilo}"`);
+            } else {
+                atributos += ` s="${novoEstilo}"`;
+            }
+        }
+
+        if (novoTexto === undefined || novoTexto === null) {
+            return autoFechado ? `<${nome}${atributos}/>` : `<${nome}${atributos}>${encontrado.slice(idxFecho + 1)}`;
+        }
+
+        atributos = atributos.replace(/\s+t="[^"]*"/, '');
+        return `<${nome}${atributos} t="inlineStr"><${prefixo}is><${prefixo}t>${escaparXml(novoTexto)}</${prefixo}t></${prefixo}is></${nome}>`;
     });
 }
 
-const VAZIO = { alteradas: 0, mantidas: 0, ignoradas: 0, naoConvertidas: 0 };
 
-/** Calcula as substituições condicionais de valores para as colunas da linha. */
-function calcularNovosValores(mapaLinha) {
+const VAZIO = { alteradas: 0, mantidas: 0, pintadas: 0, ignoradas: 0, naoConvertidas: 0 };
+
+/** Calcula as substituições condicionais de valores e cores das células. */
+function calcularNovosValoresECores(mapaLinha) {
     const novos = new Map();
+    const cores = new Map();
     const texto = (chave) => (mapaLinha.get(chave) ? mapaLinha.get(chave).atual : '');
 
-    // Regra Carteira e Parte Ré:
+    // 1. Regra Carteira e Parte Ré
     const cart = texto('carteira');
     const pRe = texto('parteRe');
     if (cart) {
@@ -239,19 +316,20 @@ function calcularNovosValores(mapaLinha) {
         if (cartNorm.includes('BRADESCO') && cartNorm.includes('INDENIZATORIA')) {
             if (mapaLinha.has('parteRe')) novos.set('parteRe', 'BANCO BRADESCO SA');
         } else if (!cartNorm.includes('BRADESCO')) {
-            if (pRe) {
-                const resolvido = runTool('resolve-carteira-reu', pRe, {});
-                const nCart = resolvido.rows[0]?.[1] || '';
-                const nReu = resolvido.rows[0]?.[2] || '';
-                if (nCart && nReu) {
-                    novos.set('carteira', nCart);
-                    novos.set('parteRe', nReu);
-                }
+            const resolvido = pRe ? runTool('resolve-carteira-reu', pRe, {}) : null;
+            const nCart = resolvido?.rows[0]?.[1] || '';
+            const nReu = resolvido?.rows[0]?.[2] || '';
+            if (nCart && nReu) {
+                novos.set('carteira', nCart);
+                novos.set('parteRe', nReu);
+            } else {
+                cores.set('carteira', COR_LARANJA);
+                cores.set('parteRe', COR_LARANJA);
             }
         }
     }
 
-    // Regra Comarca:
+    // 2. Regra Comarca
     if (mapaLinha.has('comarca')) {
         let com = normalizeNameValue(texto('comarca'));
         const comNorm = normalizarCabecalho(com);
@@ -260,12 +338,7 @@ function calcularNovosValores(mapaLinha) {
             if (CAPITAIS_POR_UF[uf]) com = CAPITAIS_POR_UF[uf];
         } else if (comNorm.includes('CAPITAL')) {
             const resto = com.replace(/\bCAPITAL\b/gi, '').replace(/^[\s\-_/:]+|[\s\-_/:]+$/g, '').trim();
-            if (!resto) {
-                const uf = texto('uf').toUpperCase().trim();
-                if (CAPITAIS_POR_UF[uf]) com = CAPITAIS_POR_UF[uf];
-            } else {
-                com = normalizeNameValue(resto);
-            }
+            com = normalizeNameValue(resto);
         } else if (comNorm === 'LEOPOLDINA') {
             const orgao = normalizarCabecalho(texto('orgao'));
             const num = texto('num').trim();
@@ -281,24 +354,69 @@ function calcularNovosValores(mapaLinha) {
         novos.set('comarca', com);
     }
 
-    // Regra Tipo Audiencia:
+    // 3. Regra Tipo Audiencia
     if (mapaLinha.has('tipoAudiencia')) {
         const tAud = texto('tipoAudiencia').trim();
-        const dAud = mapaLinha.has('dataAudiencia') ? mapaLinha.get('dataAudiencia').atual.trim() : '';
+        const dAud = texto('dataAudiencia').trim();
         if (!tAud && dAud) {
             novos.set('tipoAudiencia', 'AC');
         }
     }
 
-    return novos;
+    // 4. Valor da Causa 0 -> laranja
+    if (mapaLinha.has('valor')) {
+        const val = texto('valor');
+        const digits = val.replace(/\D/g, '');
+        if (val.trim() === '0' || val.trim() === '0,00' || (digits.length > 0 && Number(digits) === 0)) {
+            cores.set('valor', COR_LARANJA);
+        }
+    }
+
+    // 5. Advogado Adverso "SEM ADVOGADO" e Órgão fora de JEC, JEA, JECRIM -> laranja
+    if (mapaLinha.has('advogado') && mapaLinha.has('orgao')) {
+        const adv = normalizeNameValue(texto('advogado'));
+        if (adv === 'SEM ADVOGADO') {
+            const org = normalizarCabecalho(texto('orgao'));
+            if (!['JEC', 'JEA', 'JECRIM'].includes(org)) {
+                cores.set('advogado', COR_LARANJA);
+            }
+        }
+    }
+
+    // 6. Num 0 e Órgão VC ou VU -> laranja
+    if (mapaLinha.has('num') && mapaLinha.has('orgao')) {
+        const num = texto('num').trim();
+        const org = normalizarCabecalho(texto('orgao'));
+        if ((num === '0' || num === '00') && ['VC', 'VU'].includes(org)) {
+            cores.set('num', COR_LARANJA);
+        }
+    }
+
+    // 7. Rito fora de Comum e Juizados -> laranja
+    if (mapaLinha.has('rito')) {
+        const rito = normalizarCabecalho(texto('rito'));
+        if (rito && rito !== 'COMUM' && !rito.startsWith('JUIZAD')) {
+            cores.set('rito', COR_LARANJA);
+        }
+    }
+
+    // 8. Causa Raiz: se a Carteira não contiver Bradesco nem Santander -> vermelho
+    if (mapaLinha.has('causaRaiz') && mapaLinha.has('carteira')) {
+        const cartFinal = novos.get('carteira') || cart;
+        const cartFinalNorm = normalizarCabecalho(cartFinal);
+        if (!cartFinalNorm.includes('BRADESCO') && !cartFinalNorm.includes('SANTANDER')) {
+            cores.set('causaRaiz', COR_VERMELHA);
+        }
+    }
+
+    return { novos, cores };
 }
 
 /**
- * Aplica as transformações de uma aba. Só reescreve a célula cujo valor
- * transformado difere do atual; célula vazia e célula com fórmula ficam como
- * estão.
+ * Aplica as transformações e preenchimentos de uma aba. Só reescreve a célula cujo
+ * valor ou estilo muda; células vazias ou com fórmula ficam intactas.
  */
-function processarAba(aba, strings) {
+function processarAba(aba, strings, pintor) {
     const contagem = { ...VAZIO };
     const dados = aba.cabecalho ? aba.linhas.slice(1) : [];
     let xml = aba.xml;
@@ -317,7 +435,7 @@ function processarAba(aba, strings) {
             }
         });
 
-        const novosValores = calcularNovosValores(mapaLinha);
+        const { novos, cores } = calcularNovosValoresECores(mapaLinha);
 
         mapaLinha.forEach(({ coluna, celula, atual, temFormula }, chave) => {
             if (temFormula) {
@@ -325,30 +443,46 @@ function processarAba(aba, strings) {
                 return;
             }
 
-            let novo;
-            if (novosValores.has(chave)) {
-                novo = novosValores.get(chave);
+            let novoTexto = null;
+            if (novos.has(chave)) {
+                novoTexto = novos.get(chave);
             } else if (coluna.transformar) {
                 if (!atual) {
                     contagem.ignoradas += 1;
                     return;
                 }
-                novo = coluna.transformar(atual);
-            } else {
-                return;
+                novoTexto = coluna.transformar(atual);
             }
 
-            if (novo === null) {
+            if (novoTexto === null && !coluna.transformar) {
+                // Coluna informativa sem transformação
+            } else if (novoTexto === null) {
                 contagem.naoConvertidas += 1;
                 return;
             }
-            if (novo === atual) {
-                contagem.mantidas += 1;
+
+            const textoMudou = novoTexto !== null && novoTexto !== atual;
+            const cor = cores.get(chave);
+
+            let novoEstilo = null;
+            if (cor && pintor) {
+                const sBase = celula.elemento.getAttribute('s');
+                novoEstilo = pintor.obterXf(sBase, cor);
+                contagem.pintadas += 1;
+            }
+
+            if (!textoMudou && novoEstilo === null) {
+                if (novoTexto !== null) contagem.mantidas += 1;
                 return;
             }
 
-            xml = reescreverCelula(xml, celula.endereco, novo);
-            contagem.alteradas += 1;
+            if (textoMudou) {
+                contagem.alteradas += 1;
+            } else {
+                contagem.mantidas += 1;
+            }
+
+            xml = ajustarCelula(xml, celula.endereco, textoMudou ? novoTexto : null, novoEstilo);
         });
     });
     return { xml, contagem };
@@ -357,6 +491,7 @@ function processarAba(aba, strings) {
 function somar(alvos, contagem) {
     alvos.alteradas += contagem.alteradas;
     alvos.mantidas += contagem.mantidas;
+    alvos.pintadas += contagem.pintadas;
     alvos.ignoradas += contagem.ignoradas;
     alvos.naoConvertidas += contagem.naoConvertidas;
 }
@@ -476,12 +611,18 @@ function renderizarDiagnostico(abas) {
 function renderizarResultado(nome, abas, contagem) {
     elementos.resultadoResumo.textContent = `${nome} gravado em ${estado.destino.name}.`;
     elementos.resultadoNumeros.replaceChildren();
-    [
-        [contagem.alteradas, 'alteradas'],
+    const itens = [
+        [contagem.alteradas, 'alteradas']
+    ];
+    if (contagem.pintadas > 0) {
+        itens.push([contagem.pintadas, 'pintadas']);
+    }
+    itens.push(
         [contagem.mantidas, 'sem mudança'],
         [contagem.ignoradas, 'ignoradas'],
         [contagem.naoConvertidas, 'não convertidas']
-    ].forEach(([valor, rotulo]) => {
+    );
+    itens.forEach(([valor, rotulo]) => {
         const bloco = document.createElement('div');
         bloco.className = 'stat';
         const numero = document.createElement('strong');
@@ -544,13 +685,21 @@ async function selecionarPlanilha(arquivo) {
 async function processarPlanilha() {
     const { zip, strings, abas } = estado.pacote;
     const contagem = { ...VAZIO };
+    const stylesXml = await textoDaParte(zip, 'xl/styles.xml');
+    const pintor = criarPintorDeEstilos(stylesXml);
+
     abas.forEach((aba) => {
-        const resultado = processarAba(aba, strings);
+        const resultado = processarAba(aba, strings, pintor);
         aba.contagem = resultado.contagem;
         somar(contagem, resultado.contagem);
-        if (resultado.contagem.alteradas) zip.file(aba.caminho, resultado.xml);
+        if (resultado.contagem.alteradas || resultado.contagem.pintadas) {
+            zip.file(aba.caminho, resultado.xml);
+        }
     });
 
+    if (pintor && pintor.teveMudanca()) {
+        zip.file('xl/styles.xml', pintor.obterXml());
+    }
     const nome = nomeDeSaida(new Date());
     const bytes = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
     await pedirPelaPonte('gantoys-file-result', {

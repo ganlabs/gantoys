@@ -1,0 +1,32 @@
+TASK: 2.3
+CHECK: VERIFY
+COMMAND: node --test test/toys/gancadastro.test.js
+EXIT: 0
+OUTPUT:
+✔ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (980.825656ms)
+✔ gancadastro — o botão de processar só libera com planilha e pasta (422.684643ms)
+✔ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (377.795607ms)
+✔ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (380.24937ms)
+✔ gancadastro — parte com BOM no prólogo é lida normalmente (361.950668ms)
+✔ gancadastro — pacote com prefixo de namespace é reescrito no mesmo namespace (528.717151ms)
+✔ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (690.568296ms)
+✔ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (409.025709ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (344.138939ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (356.952607ms)
+✔ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (253.866453ms)
+✔ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (244.953646ms)
+✔ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (332.734238ms)
+✔ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (495.924182ms)
+✔ gancadastro — aplica regras de carteira, comarca e audiência (450.793982ms)
+✔ gancadastro — aplica pintura condicional laranja e vermelha em styles.xml (552.017673ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8093.535532
+
+VERDICT: PASS
+CHAIN_HASH: abe572b036ec557c077156d2c458c0bf2d4254f0d2d663fa26add70eaf5f566e

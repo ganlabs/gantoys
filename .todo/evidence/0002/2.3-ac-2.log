@@ -1,0 +1,9 @@
+TASK: 2.3
+CHECK: AC-2
+COMMAND: node build/manual.mjs
+EXIT: 0
+OUTPUT:
+[manual] 18 manuais embutidos em toys/help/index.html (91 KB de Markdown)
+
+VERDICT: PASS
+CHAIN_HASH: a355a2d07aec4eee13e55e5e5295f888cbe165199a3d56b47b72dce922d375f2
