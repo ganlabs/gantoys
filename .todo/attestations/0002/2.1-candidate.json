@@ -1,0 +1,89 @@
+{
+  "version": 2,
+  "kind": "task-acceptance-candidate",
+  "harness_version": "0.1.0",
+  "gate_version": "1",
+  "work_id": "0002",
+  "task_id": "2.1",
+  "result": "pass",
+  "plan": {
+    "path": ".todo/0002-tasks.md",
+    "sha256": "b7939fb2889c1dee27a7c2e8174351291f4cbe94803ff5c62e0ecfecfb7b9a35"
+  },
+  "implementation": {
+    "toys/gancadastro/index.html": {
+      "exists": true,
+      "sha256": "01c0c81e0f047d3765efaf0f62964846fc3c10c0956ae1fbad44a0566af21585"
+    },
+    "toys/gancadastro/styles.css": {
+      "exists": true,
+      "sha256": "12e224584d355316511333142441065e4b368f860530f8c0416d29fe42dcb875"
+    },
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "8e36ea3273a87f9445cd972d7781947a5508bacc9acf33b7718a7e8bc5d1b47b"
+    }
+  },
+  "tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "42e5ba61441a297aad5a55658fb1a5505aa45b0e3755e0bcda06c67cc7e28f06"
+    }
+  },
+  "evidence_sha256": "a3681dfa33f5a03d397dd6469309e8484a28b44ad2b523d3df884b4decc52a5d",
+  "evidence_chain_head": "c06177560f9e8474ecc7c59d22547850d2f4c823b89effc9aa9ca02329a6de89",
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/toys/gancadastro.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-ac-1.log",
+      "log_sha256": "09397fcaa12d628ebe9358218d962580909a0badb29f19cd3ce13c50462964d8",
+      "recorded_at": "2026-09-25T18:06:03.400Z"
+    },
+    "AC-2": {
+      "command": [
+        "node",
+        "--test",
+        "test/preambulo.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-ac-2.log",
+      "log_sha256": "a503d790ef4e200592aedebb1c56e71d46953eb40b3df085ea2b9ca3880dede1",
+      "recorded_at": "2026-09-25T18:06:06.394Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-ac-3.log",
+      "log_sha256": "f497dc02b530ca513fc165632609b6443129275e07617af679c7b8c6533578cb",
+      "recorded_at": "2026-09-25T18:06:07.612Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-regression.log",
+      "log_sha256": "87a963b49f6b2a4d5577634236dc626d5dcd8b40679e18557d45a0cd969fdb29",
+      "recorded_at": "2026-09-25T18:06:51.407Z"
+    }
+  },
+  "generated_at": "2026-09-25T18:06:55.524Z"
+}

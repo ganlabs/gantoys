@@ -1,0 +1,118 @@
+{
+  "audit_checks": {
+    "AC-1": {
+      "command": [
+        "node",
+        "--test",
+        "test/toys/gancadastro.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-ac-1.log",
+      "log_sha256": "09397fcaa12d628ebe9358218d962580909a0badb29f19cd3ce13c50462964d8",
+      "recorded_at": "2026-09-25T18:06:03.400Z"
+    },
+    "AC-2": {
+      "command": [
+        "node",
+        "--test",
+        "test/preambulo.test.js"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-ac-2.log",
+      "log_sha256": "a503d790ef4e200592aedebb1c56e71d46953eb40b3df085ea2b9ca3880dede1",
+      "recorded_at": "2026-09-25T18:06:06.394Z"
+    },
+    "AC-3": {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-ac-3.log",
+      "log_sha256": "f497dc02b530ca513fc165632609b6443129275e07617af679c7b8c6533578cb",
+      "recorded_at": "2026-09-25T18:06:07.612Z"
+    },
+    "REGRESSION": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "expect": null,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": ".todo/evidence/0002/2.1-regression.log",
+      "log_sha256": "87a963b49f6b2a4d5577634236dc626d5dcd8b40679e18557d45a0cd969fdb29",
+      "recorded_at": "2026-09-25T18:06:51.407Z"
+    }
+  },
+  "baseline_implementation": {
+    "toys/gancadastro/index.html": {
+      "exists": true,
+      "sha256": "9966f75589d713e99135dad07837a7c72d3abc3c42e24abe7096f3f704e1010e"
+    },
+    "toys/gancadastro/styles.css": {
+      "exists": true,
+      "sha256": "12e224584d355316511333142441065e4b368f860530f8c0416d29fe42dcb875"
+    },
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "9b73e1708df3347507727eb177e48b8aa1f08b985ceea71978e1efa7297a8f59"
+    }
+  },
+  "baseline_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "73016d278c6b66e789ebd6f227d4a6c5081252b76f9e2ac90568631d932cb932"
+    }
+  },
+  "created_at": "2026-09-25T18:02:15.351Z",
+  "green_expect": null,
+  "green_implementation": {
+    "toys/gancadastro/index.html": {
+      "exists": true,
+      "sha256": "01c0c81e0f047d3765efaf0f62964846fc3c10c0956ae1fbad44a0566af21585"
+    },
+    "toys/gancadastro/styles.css": {
+      "exists": true,
+      "sha256": "12e224584d355316511333142441065e4b368f860530f8c0416d29fe42dcb875"
+    },
+    "toys/gancadastro/script.js": {
+      "exists": true,
+      "sha256": "8e36ea3273a87f9445cd972d7781947a5508bacc9acf33b7718a7e8bc5d1b47b"
+    }
+  },
+  "green_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "42e5ba61441a297aad5a55658fb1a5505aa45b0e3755e0bcda06c67cc7e28f06"
+    }
+  },
+  "implementation_files": [
+    "toys/gancadastro/index.html",
+    "toys/gancadastro/styles.css",
+    "toys/gancadastro/script.js"
+  ],
+  "red_command": [
+    "node",
+    "--test",
+    "test/toys/gancadastro.test.js"
+  ],
+  "red_expect": "a tela precisa ter os seletores organizados em .folder-grid e sem area de logs",
+  "red_tests": {
+    "test/toys/gancadastro.test.js": {
+      "exists": true,
+      "sha256": "42e5ba61441a297aad5a55658fb1a5505aa45b0e3755e0bcda06c67cc7e28f06"
+    }
+  },
+  "task": "2.1",
+  "test_files": [
+    "test/toys/gancadastro.test.js"
+  ]
+}

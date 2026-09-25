@@ -1,0 +1,49 @@
+TASK: 2.1
+CHECK: RED
+COMMAND: node --test test/toys/gancadastro.test.js
+EXIT: 1
+OUTPUT:
+✖ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (458.72885ms)
+✔ gancadastro — o botão de processar só libera com planilha e pasta (243.936844ms)
+✔ gancadastro — diagnóstico lista as abas e as colunas reconhecidas (227.976315ms)
+✔ gancadastro — aba sem relacionamento e parte ausente ficam de fora sem quebrar a leitura (205.704757ms)
+✔ gancadastro — parte com BOM no prólogo é lida normalmente (216.266872ms)
+✔ gancadastro — pacote com prefixo de namespace é reescrito no mesmo namespace (371.284342ms)
+✔ gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário (374.78668ms)
+✔ gancadastro — planilha sem nenhuma coluna de cadastro é recusada (217.080193ms)
+✔ gancadastro — o botão de escolher planilha abre o seletor de arquivo (125.988319ms)
+✔ gancadastro — change sem arquivo escolhido não mexe na tela (127.510065ms)
+✔ gancadastro — extensão fora de .xlsx/.xlsm é recusada antes de ler (125.504195ms)
+✔ gancadastro — arquivo .xlsx ilegível mostra a mensagem de pacote inválido (124.822676ms)
+✔ gancadastro — cancelar a escolha da pasta mantém a tela sem erro (200.91516ms)
+✔ gancadastro — pasta de destino sem permissão de escrita mostra o erro do app (244.376382ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3706.610784
+
+✖ failing tests:
+
+test at test/toys/gancadastro.test.js:298:1
+✖ gancadastro — processa a planilha e grava o cadastro datado na pasta destino (458.72885ms)
+  AssertionError [ERR_ASSERTION]: a tela precisa ter os seletores organizados em .folder-grid e sem area de logs
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/passoz/dev/gan/gantoys/test/toys/gancadastro.test.js:332:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+VERDICT: PASS
+CHAIN_HASH: 261d88a4a66b5e09ea93a2e550f0bc96151c88c0e53a8f0f65b5913c74fe43c3

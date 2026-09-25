@@ -1,0 +1,12 @@
+TASK: 2.1
+CHECK: AC-3
+COMMAND: npm run lint
+EXIT: 0
+OUTPUT:
+
+> gantoys@1.0.0 lint
+> eslint .
+
+
+VERDICT: PASS
+CHAIN_HASH: 2bdb481406c1a5ddddcf4d110dbc3607656a1c0e8cc45d40e51627acadb411ee

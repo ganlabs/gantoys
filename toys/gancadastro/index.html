@@ -56,16 +56,25 @@
 
         <section class="glass-card" aria-label="Cadastro (planilha)">
             <div class="panel">
-                <div class="card-heading">
-                    <h2>1. Planilha de origem</h2>
-                    <p>Escolha o arquivo .xlsx ou .xlsm do cadastro.</p>
+                <div class="folder-grid">
+                    <div class="folder-card">
+                        <label class="input-label" for="escolher-planilha">1. Planilha de origem</label>
+                        <button class="btn btn-outline" id="escolher-planilha" type="button">
+                            <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+                            <span>Escolher planilha</span>
+                        </button>
+                        <input type="file" id="arquivo" hidden accept=".xlsx,.xlsm">
+                        <p class="folder-selected" id="planilha-nome">Nenhuma planilha selecionada</p>
+                    </div>
+                    <div class="folder-card">
+                        <label class="input-label" for="escolher-destino">2. Pasta de destino</label>
+                        <button class="btn btn-outline" id="escolher-destino" type="button">
+                            <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                            <span>Escolher pasta</span>
+                        </button>
+                        <p class="folder-selected" id="destino-nome">Nenhuma pasta selecionada</p>
+                    </div>
                 </div>
-                <button class="btn btn-primary btn-block" id="escolher-planilha" type="button">
-                    <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
-                    <span>Escolher planilha</span>
-                </button>
-                <input type="file" id="arquivo" hidden accept=".xlsx,.xlsm">
-                <p class="folder-selected" id="planilha-nome">Nenhuma planilha selecionada</p>
 
                 <div class="stack hidden" id="diagnostico">
                     <hr class="divider">
@@ -75,19 +84,6 @@
                     </div>
                     <div class="result-list" id="diagnostico-lista"></div>
                 </div>
-
-                <hr class="divider">
-                <div class="card-heading">
-                    <h2>2. Pasta de destino</h2>
-                    <p>O arquivo processado é gravado como Cadastro-DD-MM-AAAA_HH-MM.xlsx.</p>
-                </div>
-                <button class="btn btn-primary btn-block" id="escolher-destino" type="button">
-                    <i class="bi bi-folder2-open" aria-hidden="true"></i>
-                    <span>Escolher pasta de destino</span>
-                </button>
-                <p class="folder-selected" id="destino-nome">Nenhuma pasta selecionada</p>
-
-                <hr class="divider">
                 <div class="actions">
                     <button class="btn btn-primary" id="processar" type="button" disabled>
                         <i class="bi bi-play-fill" aria-hidden="true"></i>
@@ -107,7 +103,6 @@
                     <p class="progress-detail" id="progresso-detalhe">-</p>
                 </div>
 
-                <div class="stack" id="log-area"></div>
             </div>
         </section>
 

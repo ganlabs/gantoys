@@ -1,0 +1,50 @@
+{
+  "work_id": "0002",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "title": "Layout compacto e botões lado a lado",
+      "user_story": "Como operador, quero menos rolagem na tela e os seletores lado a lado, sem logs verbosos, vendo direto o resultado.",
+      "acceptance_criteria": [
+        "A tela usa .folder-grid com seletores de planilha e pasta destino lado a lado.",
+        "A área de logs é removida, mantendo barra de progresso e cartão de resultados.",
+        "O diagnóstico e o resultado são compactos e diretos."
+      ]
+    },
+    {
+      "id": "FR-002",
+      "title": "Regras de Carteira e Parte Ré",
+      "user_story": "Como operador, quero que a carteira Bradesco normalize o réu e que outras carteiras resolvam réu e carteira automaticamente, marcando exceções.",
+      "acceptance_criteria": [
+        "Carteira contendo 'Bradesco - Indenizatória' (case-insensitive) define Parte Ré como 'BANCO BRADESCO SA'.",
+        "Demais carteiras passam Parte Ré pelo resolveCarteiraReu e substituem Carteira e Parte Ré com os valores resolvidos.",
+        "Em caso de exceção/não resolução, Carteira e Parte Ré mantêm valores originais e são pintadas de laranja."
+      ]
+    },
+    {
+      "id": "FR-003",
+      "title": "Regras de Comarca e Audiência",
+      "user_story": "Como operador, quero ajustes automáticos de comarcas especiais e preenchimento de audiência faltante.",
+      "acceptance_criteria": [
+        "Comarca igual a 'capital' (case-insensitive) é substituída pela capital correspondente à coluna UF.",
+        "Comarca contendo 'capital' seguido de texto remove a palavra 'capital' e preserva o restante limpo.",
+        "LEOPOLDINA com JEC e Num 10 vira OLARIA; com Num 11 vira PENHA; com VC não altera.",
+        "JACAREPAGUA com JEC vira FREGUESIA; com VC vira TAQUARA.",
+        "Tipo Audiencia vazio com Data Audiencia preenchida recebe 'AC'."
+      ]
+    },
+    {
+      "id": "FR-004",
+      "title": "Pintura condicional de células (laranja e vermelha)",
+      "user_story": "Como operador, quero células problemáticas ou fora do padrão destacadas em cores na planilha gerada.",
+      "acceptance_criteria": [
+        "Valor da Causa 0 é pintado de laranja.",
+        "Advogado Adverso 'SEM ADVOGADO' com Órgão fora de JEC, JEA e JECrim é pintado de laranja.",
+        "Num 0 com Órgão VC ou VU é pintado de laranja.",
+        "Rito fora de Comum e Juizados é pintado de laranja.",
+        "Causa Raiz é pintada de vermelho se a Carteira não contiver Bradesco ou Santander.",
+        "styles.xml recebe os fills e cellXfs preservando formatação e estilos originais."
+      ]
+    }
+  ]
+}

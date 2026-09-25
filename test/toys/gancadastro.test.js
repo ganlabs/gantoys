@@ -329,13 +329,9 @@ test('gancadastro — processa a planilha e grava o cadastro datado na pasta des
     assert.deepEqual(pagina.textos('#resultado-numeros .stat span'), ['alteradas', 'sem mudança', 'ignoradas', 'não convertidas']);
     assert.deepEqual(pagina.textos('#resultado-lista .result-name'), ['Plan1', 'Planilha1', 'Vazia']);
     assert.deepEqual(pagina.textos('#resultado-lista .result-status'), ['12 células alteradas', '0 células alteradas', '0 células alteradas']);
-    assert.deepEqual(pagina.textos('#log-area .log-line'), [
-        'Planilha lida: 3 abas.',
-        'Plan1: 6 de 6 colunas reconhecidas.',
-        'Planilha1: nenhuma coluna reconhecida.',
-        'Vazia: nenhuma coluna reconhecida.',
-        `Arquivo gravado: ${NOME_SAIDA}`,
-    ]);
+    assert.equal(pagina.existe('.folder-grid'), true, 'a tela precisa ter os seletores organizados em .folder-grid e sem area de logs');
+    assert.equal(pagina.todos('.folder-card').length, 2, 'dois cards de seletores lado a lado');
+    assert.equal(pagina.existe('#log-area'), false, 'a area de logs foi removida');
     assert.equal(pagina.seletor('#progresso').classList.contains('visible'), true, 'a barra de progresso aparece');
     assert.equal(pagina.texto('#progresso-porcento'), '100%');
     assert.equal(pagina.atributo('#progresso-barra', 'style'), 'width: 100%;');

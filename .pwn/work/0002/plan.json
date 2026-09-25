@@ -1,0 +1,183 @@
+{
+  "$schema": "../../../schemas/plan.schema.json",
+  "work_id": "0002",
+  "title": "gancadastro: layout compacto e regras avançadas de cadastro",
+  "status": "in_progress",
+  "components": [
+    {
+      "name": "toy-gancadastro",
+      "purpose": "Toy gancadastro com layout compacto e novas regras de negócio",
+      "root": "toys/gancadastro/index.html",
+      "regression": "test/toys/gancadastro.test.js",
+      "lint": "npm run lint",
+      "security": "npm run security",
+      "build": "node build/bundle.mjs && node build/check-bundle.mjs",
+      "health": "cobertura >= 90%"
+    }
+  ],
+  "global_gates": [
+    "`npm test` — suíte completa verde.",
+    "`npm run lint` — ESLint sem erros.",
+    "`node build/check-bundle.mjs` — integridade do bundle."
+  ],
+  "tasks": [
+    {
+      "id": "2.1",
+      "title": "Layout compacto e seletores lado a lado em .folder-grid",
+      "requirement_id": "FR-001",
+      "spec_reference": "CAP-001",
+      "contract_id": "CTR-201",
+      "complexity": "standard",
+      "depends_on": [],
+      "behavior": "Atualiza toys/gancadastro/index.html e styles.css para usar .folder-grid e .folder-card nos seletores de arquivo e pasta, removendo a área de logs e ajustando o script para não emitir logs.",
+      "components": [
+        "toy-gancadastro"
+      ],
+      "files": [
+        "toys/gancadastro/index.html",
+        "toys/gancadastro/styles.css",
+        "toys/gancadastro/script.js",
+        "test/toys/gancadastro.test.js"
+      ],
+      "implementation_files": [
+        "toys/gancadastro/index.html",
+        "toys/gancadastro/styles.css",
+        "toys/gancadastro/script.js"
+      ],
+      "test_files": [
+        "test/toys/gancadastro.test.js"
+      ],
+      "red": {
+        "command": "node --test test/toys/gancadastro.test.js",
+        "description": "a asserção que verifica a presença de .folder-grid e ausência de #log-area falha antes da alteração"
+      },
+      "implementation_steps": [
+        "Atualizar index.html com a estrutura .folder-grid nos seletores e remover a div #log-area",
+        "Remover as chamadas de registrarLog do script.js e ajustar testes correspondentes"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/toys/gancadastro.test.js",
+          "description": "os testes de tela e fluxo passam"
+        },
+        {
+          "command": "node --test test/preambulo.test.js",
+          "description": "o preâmbulo de tema continua válido"
+        },
+        {
+          "command": "npm run lint",
+          "description": "o código passa no lint"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    },
+    {
+      "id": "2.2",
+      "title": "Novas colunas e regras avançadas de cadastro",
+      "requirement_id": "FR-002",
+      "spec_reference": "CAP-002",
+      "contract_id": "CTR-202",
+      "complexity": "high",
+      "depends_on": [
+        "2.1"
+      ],
+      "behavior": "Implementa as novas colunas e as regras de negócio de Carteira/Parte Ré (Bradesco e resolveCarteiraReu), Comarca (capital da UF, Leopoldina, Jacarepaguá) e Tipo Audiencia ('AC').",
+      "components": [
+        "toy-gancadastro"
+      ],
+      "files": [
+        "toys/gancadastro/script.js",
+        "test/toys/gancadastro.test.js"
+      ],
+      "implementation_files": [
+        "toys/gancadastro/script.js"
+      ],
+      "test_files": [
+        "test/toys/gancadastro.test.js"
+      ],
+      "red": {
+        "command": "node --test test/toys/gancadastro.test.js",
+        "description": "os testes das novas regras de negócio falham antes da implementação"
+      },
+      "implementation_steps": [
+        "Escrever testes cobrindo todas as novas regras de substituição de valores",
+        "Implementar mapeamento ampliado de colunas e as regras condicionais em script.js"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/toys/gancadastro.test.js",
+          "description": "todas as regras de substituição passam nos testes"
+        },
+        {
+          "command": "node --test test/preambulo.test.js",
+          "description": "preâmbulo continua íntegro"
+        },
+        {
+          "command": "npm run lint",
+          "description": "lint sem erros"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    },
+    {
+      "id": "2.3",
+      "title": "Pintura condicional em styles.xml e documentação no manual",
+      "requirement_id": "FR-004",
+      "spec_reference": "CAP-003",
+      "contract_id": "CTR-203",
+      "complexity": "high",
+      "depends_on": [
+        "2.2"
+      ],
+      "behavior": "Adiciona suporte à injeção cirúrgica de preenchimentos sólidos (laranja e vermelho) em styles.xml, aplicando o estilo condicionalmente conforme as regras e atualizando o manual.",
+      "components": [
+        "toy-gancadastro"
+      ],
+      "files": [
+        "toys/gancadastro/script.js",
+        "toys/help/manual/gancadastro.md",
+        "toys/help/index.html",
+        "test/toys/gancadastro.test.js",
+        "test/help.test.js"
+      ],
+      "implementation_files": [
+        "toys/gancadastro/script.js",
+        "toys/help/manual/gancadastro.md",
+        "toys/help/index.html"
+      ],
+      "test_files": [
+        "test/toys/gancadastro.test.js",
+        "test/help.test.js"
+      ],
+      "red": {
+        "command": "node --test test/toys/gancadastro.test.js",
+        "description": "as asserções de pintura em styles.xml e células coloridas falham antes da implementação"
+      },
+      "implementation_steps": [
+        "Implementar injeção de fills e cellXfs em styles.xml e a aplicação das cores laranja e vermelha",
+        "Atualizar toys/help/manual/gancadastro.md, rodar build/manual.mjs e verificar conformidade dos testes"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/toys/gancadastro.test.js",
+          "description": "os testes de pintura passam"
+        },
+        {
+          "command": "node build/manual.mjs",
+          "description": "manual embutido com sucesso"
+        },
+        {
+          "command": "npm run lint",
+          "description": "lint sem erros"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
+    }
+  ]
+}

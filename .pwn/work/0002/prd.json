@@ -1,0 +1,102 @@
+{
+  "$schema": "../../../schemas/prd.schema.json",
+  "id": "PRD-0002",
+  "meta": {
+    "version": "1.0",
+    "created_at": "2026-09-25T17:00:00.000Z",
+    "author": "omp",
+    "grilling_depth": "deep"
+  },
+  "title": "PRD — gancadastro: layout compacto e regras avançadas de cadastro",
+  "status": "approved",
+  "scenario": "brownfield",
+  "problem": {
+    "statement": "O toy gancadastro precisa de layout mais ergonômico com menos rolagem e sem logs, além de regras de negócio avançadas para carteira/réu, comarcas especiais, audiências e destaque visual em cores (laranja e vermelho)."
+  },
+  "solution": {
+    "statement": "Refatorar o layout para usar .folder-grid lado a lado e remover #log-area. Estender a leitura para mapear Carteira, Parte Ré, Órgão, Num, UF, Rito, Tipo Audiencia, Data Audiencia e Causa Raiz. Implementar regras de substituição de valores e mecanismo de estilos com cores em styles.xml."
+  },
+  "decisions": [
+    {
+      "id": "DEC-001",
+      "statement": "Remover área de log (#log-area) e colocar seletores de arquivo e pasta em .folder-grid com .folder-card, igual ao gancopy.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-002",
+      "statement": "Adicionar preenchimento de cores em styles.xml clonando xf base com solid patternFill laranja (FFFFA500) e vermelho (FFFF0000).",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-003",
+      "statement": "Regra da Causa Raiz avalia a Carteira final; se não contiver 'bradesco' nem 'santander', pinta Causa Raiz de vermelho.",
+      "status": "accepted",
+      "made_by": "omp"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "FR-001",
+      "type": "functional",
+      "statement": "Layout compacto com seletores em .folder-grid e sem log.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "Seletores lado a lado e sem #log-area."
+      ]
+    },
+    {
+      "id": "FR-002",
+      "type": "functional",
+      "statement": "Regras de Carteira e Parte Ré com fallback para resolveCarteiraReu e pintura laranja.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "Bradesco normaliza réu; outros passam por resolveCarteiraReu ou pintam laranja se exceção."
+      ]
+    },
+    {
+      "id": "FR-003",
+      "type": "functional",
+      "statement": "Regras de Comarca e preenchimento de audiência AC.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "Capital substituída pela da UF; Leopoldina e Jacarepaguá ajustadas conforme Órgão/Num; Tipo Audiência AC quando aplicável."
+      ]
+    },
+    {
+      "id": "FR-004",
+      "type": "functional",
+      "statement": "Pintura condicional laranja e vermelha com injeção de estilos em styles.xml.",
+      "priority": "must",
+      "acceptance_criteria": [
+        "Destaques em laranja e vermelho aplicados nas células indicadas mantendo formatação."
+      ]
+    }
+  ],
+  "stakeholders": [
+    {
+      "name": "Operador",
+      "role": "Usuário do gancadastro"
+    }
+  ],
+  "scope": {
+    "in_scope": [
+      "toys/gancadastro/index.html",
+      "toys/gancadastro/styles.css",
+      "toys/gancadastro/script.js",
+      "test/toys/gancadastro.test.js",
+      "toys/help/manual/gancadastro.md"
+    ],
+    "out_of_scope": [
+      "Modificar .data/cadastro-exemplo.xlsx",
+      "Alterar outros toys"
+    ]
+  },
+  "accepted_requirements": [
+    "FR-001",
+    "FR-002",
+    "FR-003",
+    "FR-004"
+  ]
+}

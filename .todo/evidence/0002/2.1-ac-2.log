@@ -1,0 +1,34 @@
+TASK: 2.1
+CHECK: AC-2
+COMMAND: node --test test/preambulo.test.js
+EXIT: 0
+OUTPUT:
+✔ preâmbulo de tema — gancadastro (367.726933ms)
+✔ preâmbulo de tema — ganclassificadorvara (159.665884ms)
+✔ preâmbulo de tema — gancompressor (75.886561ms)
+✔ preâmbulo de tema — ganconverterrito (156.728973ms)
+✔ preâmbulo de tema — gancopy (80.906823ms)
+✔ preâmbulo de tema — gandivisorsantander (159.478798ms)
+✔ preâmbulo de tema — ganextratorvalores (122.767808ms)
+✔ preâmbulo de tema — ganjuntar (79.118005ms)
+✔ preâmbulo de tema — gannormalizadordocumentos (147.337452ms)
+✔ preâmbulo de tema — gannormalizadoriris (109.679337ms)
+✔ preâmbulo de tema — gannormalizadornomes (135.191383ms)
+✔ preâmbulo de tema — gannovodiv (275.625631ms)
+✔ preâmbulo de tema — ganpadronizadorcnj (36.396713ms)
+✔ preâmbulo de tema — ganpdf (63.569121ms)
+✔ preâmbulo de tema — ganremovedorsufixouf (140.35766ms)
+✔ preâmbulo de tema — ganrenomeador (84.443276ms)
+✔ preâmbulo de tema — ganresolvercarteirareu (128.046168ms)
+✔ preâmbulo de tema — help (122.244551ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2897.358536
+
+VERDICT: PASS
+CHAIN_HASH: e24cb8614e7d149e3d396c0bf5f446761e266e4501b2bf4fc7e8824c771840e5

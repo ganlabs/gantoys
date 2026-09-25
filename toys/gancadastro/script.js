@@ -24,8 +24,6 @@ const COLUNAS_DE_CADASTRO = [
     { nome: 'Valor da Causa', apelidos: ['VALOR DA CAUSA'], transformar: (valor) => extractMoney(valor).rows[0][0] }
 ];
 
-/** Mesma ordem das colunas processadas; usada no resumo e no log. */
-const TOTAL_DE_COLUNAS = COLUNAS_DE_CADASTRO.length;
 
 const elementos = {
     arquivo: document.getElementById('arquivo'),
@@ -43,7 +41,6 @@ const elementos = {
     progressoPorcento: document.getElementById('progresso-porcento'),
     progressoBarra: document.getElementById('progresso-barra'),
     progressoDetalhe: document.getElementById('progresso-detalhe'),
-    logArea: document.getElementById('log-area'),
     resultado: document.getElementById('resultado'),
     resultadoResumo: document.getElementById('resultado-resumo'),
     resultadoNumeros: document.getElementById('resultado-numeros'),
@@ -302,18 +299,11 @@ function limparMensagem() {
     elementos.mensagem.classList.add('hidden');
 }
 
-function registrarLog(texto) {
-    const linha = document.createElement('p');
-    linha.className = 'log-line';
-    linha.textContent = texto;
-    elementos.logArea.appendChild(linha);
-}
 
 function limparSaidas() {
     elementos.diagnostico.classList.add('hidden');
     elementos.diagnosticoLista.replaceChildren();
     elementos.diagnosticoResumo.textContent = '';
-    elementos.logArea.replaceChildren();
     elementos.resultado.classList.add('hidden');
     elementos.resultadoLista.replaceChildren();
     elementos.resultadoNumeros.replaceChildren();
@@ -434,12 +424,6 @@ async function selecionarPlanilha(arquivo) {
     elementos.planilhaNome.textContent = arquivo.name;
     elementos.planilhaNome.classList.add('ready');
     renderizarDiagnostico(estado.pacote.abas);
-    registrarLog(`Planilha lida: ${estado.pacote.abas.length} abas.`);
-    estado.pacote.abas.forEach((aba) => {
-        registrarLog(aba.colunas.length
-            ? `${aba.nome}: ${aba.colunas.length} de ${TOTAL_DE_COLUNAS} colunas reconhecidas.`
-            : `${aba.nome}: nenhuma coluna reconhecida.`);
-    });
     if (!temColunasDeCadastro(estado.pacote)) mostrarMensagem(MENSAGEM_SEM_COLUNA);
     atualizarProcessar();
 }
@@ -469,7 +453,6 @@ async function processarPlanilha() {
     elementos.progressoBarra.style.width = '100%';
     elementos.progressoDetalhe.textContent = `${abas.length} abas processadas, ${contagem.alteradas} células alteradas.`;
     renderizarResultado(nome, abas, contagem);
-    registrarLog(`Arquivo gravado: ${nome}`);
 }
 
 /* ---------------------------------------------------------------- eventos -- */

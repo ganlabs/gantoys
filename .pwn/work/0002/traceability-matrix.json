@@ -1,0 +1,45 @@
+{
+  "work_id": "0002",
+  "matrix": [
+    {
+      "origin": "DISC-201",
+      "requirement_id": "FR-001",
+      "decision_id": "DEC-001",
+      "spec_section": "CAP-001",
+      "task_id": "2.1",
+      "contract_id": "CTR-201",
+      "evidence_id": "EVD-201",
+      "status": "planned"
+    },
+    {
+      "origin": "DISC-202",
+      "requirement_id": "FR-002",
+      "decision_id": "DEC-003",
+      "spec_section": "CAP-002",
+      "task_id": "2.2",
+      "contract_id": "CTR-202",
+      "evidence_id": "EVD-202",
+      "status": "planned"
+    },
+    {
+      "origin": "DISC-203",
+      "requirement_id": "FR-003",
+      "decision_id": "DEC-003",
+      "spec_section": "CAP-002",
+      "task_id": "2.2",
+      "contract_id": "CTR-202",
+      "evidence_id": "EVD-203",
+      "status": "planned"
+    },
+    {
+      "origin": "DISC-204",
+      "requirement_id": "FR-004",
+      "decision_id": "DEC-002",
+      "spec_section": "CAP-003",
+      "task_id": "2.3",
+      "contract_id": "CTR-203",
+      "evidence_id": "EVD-204",
+      "status": "planned"
+    }
+  ]
+}

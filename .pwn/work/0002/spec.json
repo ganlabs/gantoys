@@ -1,0 +1,65 @@
+{
+  "work_id": "0002",
+  "title": "gancadastro: layout compacto e regras avançadas de cadastro",
+  "capabilities": [
+    {
+      "id": "CAP-001",
+      "name": "Layout ergonômico e compacto",
+      "description": "Grid de pastas lado a lado sem logs e com visual enxuto.",
+      "rules": [
+        "BR-001"
+      ]
+    },
+    {
+      "id": "CAP-002",
+      "name": "Processamento avançado de colunas e regras de negócio",
+      "description": "Regras de carteira, parte ré, comarcas e audiências.",
+      "rules": [
+        "BR-002",
+        "BR-003"
+      ]
+    },
+    {
+      "id": "CAP-003",
+      "name": "Pintura condicional e injeção de estilos OOXML",
+      "description": "Destaque em cores laranja e vermelha sem perder propriedades de estilos.",
+      "rules": [
+        "BR-004"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "BR-001",
+      "statement": "A UI do toy usa .folder-grid e .folder-card lado a lado e elimina logs textuais.",
+      "coverage": [
+        "CAP-001"
+      ],
+      "evidence": "toys/gancadastro/index.html"
+    },
+    {
+      "id": "BR-002",
+      "statement": "Carteiras Bradesco fixam o réu; demais usam resolveCarteiraReu do kit ou preservam valores originais marcando laranja.",
+      "coverage": [
+        "CAP-002"
+      ],
+      "evidence": "toys/gancadastro/script.js"
+    },
+    {
+      "id": "BR-003",
+      "statement": "Comarca trata 'capital', Leopoldina e Jacarepaguá com base em UF/Órgão/Num; Tipo Audiencia vazio com Data Audiencia recebe 'AC'.",
+      "coverage": [
+        "CAP-002"
+      ],
+      "evidence": "toys/gancadastro/script.js"
+    },
+    {
+      "id": "BR-004",
+      "statement": "Injeção de preenchimentos em styles.xml sem alterar numFmt ou fontes existentes das células.",
+      "coverage": [
+        "CAP-003"
+      ],
+      "evidence": "toys/gancadastro/script.js"
+    }
+  ]
+}

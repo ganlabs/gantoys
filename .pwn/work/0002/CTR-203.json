@@ -1,0 +1,82 @@
+{
+  "contract_version": "4.0",
+  "task_id": "2.3",
+  "work_id": "0002",
+  "title": "Pintura condicional em styles.xml e documentação no manual",
+  "risk": {
+    "level": "L3",
+    "reasons": ["Injeção cirúrgica de preenchimentos e cellXfs em styles.xml"]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-2.3-01",
+        "given": "Células que acionam condições de destaque laranja (Valor da Causa 0, SEM ADVOGADO fora de JEC/JEA/JECrim, Num 0 com VC/VU, Rito fora de Comum/Juizados, exceção carteira/réu)",
+        "when": "A planilha é gerada",
+        "then": "As células recebem estilo com preenchimento sólido laranja em styles.xml"
+      },
+      {
+        "id": "SCENARIO-2.3-02",
+        "given": "Linha com Carteira final que não contém bradesco nem santander",
+        "when": "A planilha é gerada",
+        "then": "A célula da Causa Raiz recebe estilo com preenchimento sólido vermelho em styles.xml"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": [
+      "toys/gancadastro/script.js",
+      "toys/help/manual/gancadastro.md",
+      "toys/help/index.html",
+      "test/toys/gancadastro.test.js",
+      "test/help.test.js"
+    ],
+    "affected_components": ["toy-gancadastro"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "styles.xml preserva todos os numFmts, fonts e borders existentes, apenas adicionando fills e xfs derivados com applyFill",
+      "Manter bundle e manual sincronizados"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/toys/gancadastro.test.js",
+      "node build/manual.mjs",
+      "npm run lint",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0002/2.3-red.log",
+      ".todo/evidence/0002/2.3-green.log",
+      ".todo/attestations/0002/2.3-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": [
+      "toys/gancadastro/**",
+      "toys/help/**",
+      "test/**",
+      "dist/**",
+      ".todo/**",
+      ".pwn/**"
+    ],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": ["Sobrescrever .data/cadastro-exemplo.xlsx"]
+  },
+  "budget_contract": {
+    "max_tokens": 50000,
+    "max_cost_usd": 1.5,
+    "max_duration_minutes": 30,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 25,
+    "max_tool_calls": 60,
+    "max_shell_executions": 20
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "work_id": "0002",
+  "title": "gancadastro: layout compacto e regras avançadas de cadastro",
+  "grilling_depth": "deep",
+  "problem": "O toy gancadastro tem rolagem excessiva e área de log desnecessária, e faltam regras jurídicas específicas do escritório: resolução de carteira/réu, regras de comarca (capital, Leopoldina, Jacarepaguá), preenchimento de tipo de audiência e destaque visual (células laranja/vermelhas) para inconsistências e carteiras fora do padrão.",
+  "actors": [
+    "ACT-001"
+  ],
+  "objectives": [
+    "Interface compacta sem área de log, com botões lado a lado em .folder-grid e apenas resumo e cartão final de resultados.",
+    "Regras de Carteira e Parte Ré (Bradesco, resolveCarteiraReu e exceções com pintura laranja).",
+    "Regras de Comarca (substituição por capital da UF, remoção do prefixo capital, regras Leopoldina e Jacarepaguá).",
+    "Preenchimento automático de Tipo Audiencia com 'AC' se vazio e Data Audiencia preenchida.",
+    "Pintura condicional laranja em Valor da Causa 0, SEM ADVOGADO fora de JEC/JEA/JECrim, Num 0 em VC/VU, Rito fora de Comum/Juizados e exceções de carteira.",
+    "Pintura condicional vermelha em Causa Raiz quando a carteira não contiver Bradesco ou Santander.",
+    "Modificação cirúrgica em styles.xml adicionando apenas os fills e xfs necessários sem corromper a formatação original."
+  ],
+  "constraints": [
+    "Preservar compatibilidade total file:// e bundle HTML único sem dependências novas.",
+    "Não sobrescrever .data/cadastro-exemplo.xlsx.",
+    "Cobertura mínima de 90% mantida e suíte de testes íntegra."
+  ]
+}

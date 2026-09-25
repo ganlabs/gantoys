@@ -10,3 +10,7 @@ coverage/
 
 # Resultado dos benchmarks da última execução (número de máquina, não de código).
 bench/resultados.json
+
+# Pasta de trabalho do usuário (planilhas de cadastro reais). Dado pessoal: não
+# versionar. O toy grava as saídas onde o operador escolher.
+.data/

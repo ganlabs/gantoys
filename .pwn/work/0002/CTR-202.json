@@ -1,0 +1,95 @@
+{
+  "contract_version": "4.0",
+  "task_id": "2.2",
+  "work_id": "0002",
+  "title": "Novas colunas e regras avançadas de cadastro",
+  "risk": {
+    "level": "L3",
+    "reasons": ["Regras de substituição de valores de negócio em lote na planilha"]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-2.2-01",
+        "given": "Uma linha de cadastro com carteira contendo Bradesco - Indenizatória",
+        "when": "A planilha é processada",
+        "then": "A Parte Ré é definida como BANCO BRADESCO SA"
+      },
+      {
+        "id": "SCENARIO-2.2-02",
+        "given": "Uma linha de cadastro com outra carteira",
+        "when": "A planilha é processada",
+        "then": "Parte Ré passa por resolveCarteiraReu e atualiza Carteira e Parte Ré; se exceção, mantém valores originais"
+      },
+      {
+        "id": "SCENARIO-2.2-03",
+        "given": "Comarca igual a capital ou capital seguido de texto",
+        "when": "A planilha é processada",
+        "then": "Capital vira a capital da UF ou remove o termo capital mantendo o restante"
+      },
+      {
+        "id": "SCENARIO-2.2-04",
+        "given": "Comarca LEOPOLDINA ou JACAREPAGUA com Órgão e Num específicos",
+        "when": "A planilha é processada",
+        "then": "Substitui comarca conforme a regra (OLARIA, PENHA, FREGUESIA, TAQUARA)"
+      },
+      {
+        "id": "SCENARIO-2.2-05",
+        "given": "Tipo Audiência vazio mas Data Audiência preenchida",
+        "when": "A planilha é processada",
+        "then": "Tipo Audiência recebe AC"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": [
+      "toys/gancadastro/script.js",
+      "test/toys/gancadastro.test.js"
+    ],
+    "affected_components": ["toy-gancadastro"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "Processamento por linha orquestrado mantendo preservação de abas e nomes",
+      "Idempotência nas substituições"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/toys/gancadastro.test.js",
+      "node --test test/preambulo.test.js",
+      "npm run lint",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0002/2.2-red.log",
+      ".todo/evidence/0002/2.2-green.log",
+      ".todo/attestations/0002/2.2-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": [
+      "toys/gancadastro/**",
+      "test/**",
+      ".todo/**",
+      ".pwn/**"
+    ],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": ["Pintura de cores (task 2.3)"]
+  },
+  "budget_contract": {
+    "max_tokens": 50000,
+    "max_cost_usd": 1.5,
+    "max_duration_minutes": 30,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 25,
+    "max_tool_calls": 60,
+    "max_shell_executions": 20
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

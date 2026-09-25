@@ -1,0 +1,73 @@
+{
+  "contract_version": "4.0",
+  "task_id": "2.1",
+  "work_id": "0002",
+  "title": "Layout compacto e seletores lado a lado em .folder-grid",
+  "risk": {
+    "level": "L2",
+    "reasons": ["Ajuste de layout e remoção de área de log na interface do toy"]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-2.1-01",
+        "given": "O toy gancadastro aberto",
+        "when": "A interface é renderizada",
+        "then": "Os seletores de planilha e pasta aparecem lado a lado em .folder-grid e a div #log-area não existe"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": [
+      "toys/gancadastro/index.html",
+      "toys/gancadastro/styles.css",
+      "toys/gancadastro/script.js",
+      "test/toys/gancadastro.test.js"
+    ],
+    "affected_components": ["toy-gancadastro"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "Uso exclusivo das classes e componentes canônicos de toys/shared/toy.css (.folder-grid, .folder-card)",
+      "Zero dependências novas e integridade em file://"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/toys/gancadastro.test.js",
+      "node --test test/preambulo.test.js",
+      "npm run lint",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0002/2.1-red.log",
+      ".todo/evidence/0002/2.1-green.log",
+      ".todo/attestations/0002/2.1-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": [
+      "toys/gancadastro/**",
+      "test/**",
+      ".todo/**",
+      ".pwn/**"
+    ],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": ["Alterar a lógica de negócios da planilha na task 2.1"]
+  },
+  "budget_contract": {
+    "max_tokens": 40000,
+    "max_cost_usd": 1.0,
+    "max_duration_minutes": 20,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 20,
+    "max_tool_calls": 40,
+    "max_shell_executions": 15
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

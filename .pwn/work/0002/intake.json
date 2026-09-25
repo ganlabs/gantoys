@@ -1,0 +1,7 @@
+{
+  "work_id": "0002",
+  "created_at": "2026-09-25T17:00:00.000Z",
+  "objective": "Ajustar layout do gancadastro (compacto, sem logs, seletores lado a lado) e adicionar regras avançadas de cadastro (carteira/réu, comarca/capital, Leopoldina/Jacarepaguá, tipo de audiência e pintura condicional laranja/vermelha).",
+  "requester": "operator",
+  "status": "approved"
+}
