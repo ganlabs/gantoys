@@ -192,13 +192,19 @@ function escaparXml(texto) {
  * Troca só o conteúdo da célula endereçada, mantendo os atributos (o `s` é o
  * índice de estilo). O valor sai como texto inline: o sharedStrings.xml não é
  * tocado, porque a mesma string pode estar em outras células.
+ *
+ * O elemento é localizado pelo endereço do atributo `r` qualquer que seja o
+ * prefixo de namespace, e o texto inline é gravado com o MESMO prefixo: o Excel
+ * escreve `x:c`/`x:is`/`x:t` sem namespace default, e um elemento sem prefixo
+ * sairia do namespace da planilha.
  */
 function reescreverCelula(xml, endereco, texto) {
-    const elemento = new RegExp(`<c\\b[^>]*\\br="${endereco}"[^>]*(?:/>|>[\\s\\S]*?</c>)`);
-    return xml.replace(elemento, (encontrado) => {
+    const elemento = new RegExp(`<((?:\\w+:)?c)\\b[^>]*\\br="${endereco}"[^>]*(?:/>|>[\\s\\S]*?</\\1>)`);
+    return xml.replace(elemento, (encontrado, nome) => {
+        const prefixo = nome.slice(0, nome.length - 1);
         const abertura = encontrado.slice(0, encontrado.indexOf('>')).replace(/\/$/, '');
-        const atributos = abertura.replace(/^<c\b/, '').replace(/\s+t="[^"]*"/, '');
-        return `<c${atributos} t="inlineStr"><is><t>${escaparXml(texto)}</t></is></c>`;
+        const atributos = abertura.replace(/^<[^>\s/]+/, '').replace(/\s+t="[^"]*"/, '');
+        return `<${nome}${atributos} t="inlineStr"><${prefixo}is><${prefixo}t>${escaparXml(texto)}</${prefixo}t></${prefixo}is></${nome}>`;
     });
 }
 

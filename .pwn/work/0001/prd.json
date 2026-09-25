@@ -62,6 +62,11 @@
         "description": "Parte do pacote gravada com BOM no prólogo: o parser dedica-se a um documento de erro e o toy enxerga zero abas.",
         "level": "high",
         "mitigation": "Remoção do U+FEFF inicial antes do parse, com caso de teste da planilha com BOM e verificação em navegador real sobre o arquivo do repositório."
+      },
+      {
+        "description": "Pacote com prefixo de namespace (formato do Excel): a célula não é encontrada na busca textual e a reescrita vira no-op silencioso, com o relatório contando alterações que não aconteceram.",
+        "level": "high",
+        "mitigation": "Regex tolerante a prefixo com retroreferência do nome do elemento, saída usando o mesmo prefixo do documento, caso de teste com pacote prefixado e verificação em navegador real sobre o arquivo do repositório."
       }
     ]
   },
@@ -126,6 +131,13 @@
       "id": "DEC-009",
       "statement": "Descartar o BOM (U+FEFF) do prólogo de cada parte XML antes de entregá-la ao DOMParser.",
       "rationale": "Achado na verificação em navegador real: o .rels do cadastro exportado pelo Excel começa com BOM e o DOMParser do Chromium devolve parsererror, o que zerava as abas lidas. O jsdom tolera o BOM, então a suíte jsdom sozinha não pegaria o defeito.",
+      "status": "accepted",
+      "made_by": "omp"
+    },
+    {
+      "id": "DEC-010",
+      "statement": "Localizar a célula e regravá-la mantendo o prefixo de namespace do documento.",
+      "rationale": "O Excel escreve as planilhas com prefixo (x:c, x:is, x:t) e sem namespace default. A busca textual pelo elemento sem prefixo não casava, e a reescrita virava no-op silencioso: o relatório contava alterações e a saída saía idêntica à entrada. Sem o prefixo, o elemento novo também cairia fora do namespace do arquivo.",
       "status": "accepted",
       "made_by": "omp"
     }
@@ -277,6 +289,7 @@
     "FR-006",
     "FR-007",
     "FR-008",
-    "EC-001"
+    "EC-001",
+    "EC-002"
   ]
 }

@@ -90,6 +90,16 @@
         "o leitor descarta o BOM antes de entregar o texto ao parser XML de cada parte do pacote",
         "planilha com BOM no .rels continua com as abas e as colunas de cadastro reconhecidas e gera a saída"
       ]
+    },
+    {
+      "id": "EC-002",
+      "title": "Reescrever a célula em pacote com prefixo de namespace",
+      "user_story": "Como operador, quero que planilhas exportadas pelo Excel (tags com prefixo x:) sejam realmente reescritas, para a saída não sair idêntica à entrada com o relatório dizendo que alterou",
+      "acceptance_criteria": [
+        "a célula alvo é localizada pelo endereço do atributo r qualquer que seja o prefixo do elemento",
+        "o elemento reescrito mantém o prefixo do documento e não sai do namespace do arquivo",
+        "planilha com prefixo, processada pela tela, gera a saída com os valores padronizados"
+      ]
     }
   ]
 }

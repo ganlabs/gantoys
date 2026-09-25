@@ -38,7 +38,8 @@
       "rules": [
         "BR-008",
         "BR-009",
-        "BR-010"
+        "BR-010",
+        "BR-017"
       ]
     },
     {
@@ -187,6 +188,14 @@
       "statement": "Toda parte XML do pacote é parseada sem BOM: um U+FEFF inicial é descartado antes do parse, porque o parser do navegador devolve documento de erro quando o BOM permanece no texto.",
       "coverage": [
         "CAP-001"
+      ],
+      "evidence": "test/toys/gancadastro.test.js"
+    },
+    {
+      "id": "BR-017",
+      "statement": "A reescrita localiza o elemento da célula pelo endereço do atributo r independentemente do prefixo de namespace e grava o valor usando o mesmo prefixo do documento (Excel escreve x:c, x:is e x:t sem namespace default).",
+      "coverage": [
+        "CAP-004"
       ],
       "evidence": "test/toys/gancadastro.test.js"
     }

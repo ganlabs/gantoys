@@ -215,24 +215,44 @@ function selecionarArquivo(pagina, bytes, nome) {
     })()`);
 }
 
+const NS_PLANILHA = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+const NS_RELS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+
+/** Replica o que o Excel escreve: tags com prefixo e sem namespace default. */
+function comNamespacePrefixo(xml, ns) {
+    return xml
+        .replace(/<(?!\?|!)(\/?)([A-Za-z][\w.]*)/g, (_, barra, nome) => `<${barra}x:${nome}`)
+        .replace(`xmlns="${ns}"`, `xmlns:x="${ns}"`);
+}
+
 /** Monta a fixture dentro da página e devolve os bytes do pacote. */
-async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false, comBom = false } = {}) {
-    pagina.janela.__ganSheet1 = comCadastro ? SHEET1 : SHEET1_SEM_CADASTRO;
+async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false, comBom = false, comPrefixo = false } = {}) {
     const abas = abasQuebradas ? ABAS_QUEBRADAS : ABAS_BASE;
-    const valor = (conteudo) => JSON.stringify(conteudo);
+    const relsExtras = abasQuebradas
+        ? [['rId5', 'worksheets/sheet3.xml'], ['rId6', 'worksheets/sheet9.xml']]
+        : [['rId5', 'worksheets/sheet3.xml']];
+    const prefixo = (xml, ns) => (comPrefixo ? comNamespacePrefixo(xml, ns) : xml);
     // O cadastro exportado pelo Excel grava BOM no prólogo do .rels e do workbook.
     const bom = comBom ? '\uFEFF' : '';
+
+    const partes = {
+        '[Content_Types].xml': CONTENT_TYPES,
+        '_rels/.rels': RELS_RAIZ,
+        'xl/workbook.xml': bom + prefixo(workbook(abas), NS_PLANILHA),
+        'xl/_rels/workbook.xml.rels': bom + prefixo(relsDoWorkbook(relsExtras), NS_RELS),
+        'xl/styles.xml': ESTILOS,
+        'xl/sharedStrings.xml': prefixo(SHARED_STRINGS, NS_PLANILHA),
+        'xl/worksheets/sheet1.xml': prefixo(comCadastro ? SHEET1 : SHEET1_SEM_CADASTRO, NS_PLANILHA),
+        'xl/worksheets/sheet2.xml': prefixo(SHEET2, NS_PLANILHA),
+        'xl/worksheets/sheet3.xml': prefixo(SHEET3, NS_PLANILHA)
+    };
+    if (semSharedStrings) delete partes['xl/sharedStrings.xml'];
+
+    pagina.janela.__ganPartes = JSON.stringify(partes);
     const bytes = await pagina.script(`(async () => {
         const zip = new JSZip();
-        zip.file('[Content_Types].xml', ${valor(CONTENT_TYPES)});
-        zip.file('_rels/.rels', ${valor(RELS_RAIZ)});
-        zip.file('xl/workbook.xml', ${JSON.stringify(bom)} + ${valor(workbook(abas))});
-        zip.file('xl/_rels/workbook.xml.rels', ${JSON.stringify(bom)} + ${valor(relsDoWorkbook(abasQuebradas ? [['rId5', 'worksheets/sheet3.xml'], ['rId6', 'worksheets/sheet9.xml']] : [['rId5', 'worksheets/sheet3.xml']]))});
-        zip.file('xl/styles.xml', ${valor(ESTILOS)});
-        if (!${semSharedStrings}) zip.file('xl/sharedStrings.xml', ${valor(SHARED_STRINGS)});
-        zip.file('xl/worksheets/sheet1.xml', window.__ganSheet1);
-        zip.file('xl/worksheets/sheet2.xml', ${valor(SHEET2)});
-        zip.file('xl/worksheets/sheet3.xml', ${valor(SHEET3)});
+        const partes = JSON.parse(window.__ganPartes);
+        for (const nome of Object.keys(partes)) zip.file(nome, partes[nome]);
         const buffer = await zip.generateAsync({ type: 'arraybuffer' });
         return Array.from(new Uint8Array(buffer));
     })()`);
@@ -393,6 +413,37 @@ test('gancadastro — parte com BOM no prólogo é lida normalmente', async (t) 
         'Nenhuma coluna reconhecida.',
         'Nenhuma coluna reconhecida.',
     ]);
+});
+
+test('gancadastro — pacote com prefixo de namespace é reescrito no mesmo namespace', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+    const entrada = await montarPlanilha(pagina, { comPrefixo: true });
+
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
+    const original = await abrirPacote(pagina, entrada);
+    const sheet1 = saida.partes['xl/worksheets/sheet1.xml'];
+
+    // O Excel escreve as tags com prefixo e sem namespace default: o elemento
+    // gravado precisa manter o prefixo, senão sai do namespace da planilha.
+    assert.ok(
+        sheet1.includes('<x:c r="A2" s="1" t="inlineStr"><x:is><x:t>0004469-51.2026.8.05.0103</x:t></x:is></x:c>'),
+        'a célula com prefixo precisa sair reescrita, no mesmo namespace do documento'
+    );
+    assert.ok(sheet1.includes('<x:c r="F2" t="inlineStr"><x:is><x:t>20000</x:t></x:is></x:c>'), 'valor da causa reescrito com prefixo');
+    assert.ok(sheet1.includes('<x:c r="B3" s="2" t="inlineStr"><x:is><x:t>SEM ADVOGADO</x:t></x:is></x:c>'), 'estilo preservado na célula com prefixo');
+    assert.ok(sheet1.includes('<x:c r="A3"><x:v>12345</x:v></x:c>'), 'valor fora de 20 dígitos fica intacto');
+    assert.ok(sheet1.includes('<x:c r="G2" t="s"><x:v>13</x:v></x:c>'), 'coluna fora do mapa fica intacta');
+    assert.equal(saida.partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'styles.xml sai idêntico');
+    assert.equal(saida.partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
+    assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['12', '1', '3', '1']);
 });
 
 test('gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário', async (t) => {

@@ -90,6 +90,16 @@
       "contract_id": "CTR-004",
       "evidence_id": "EVD-009",
       "status": "planned"
+    },
+    {
+      "origin": "DISC-010",
+      "requirement_id": "EC-002",
+      "decision_id": "DEC-010",
+      "spec_section": "CAP-004",
+      "task_id": "1.5",
+      "contract_id": "CTR-005",
+      "evidence_id": "EVD-010",
+      "status": "planned"
     }
   ]
 }

@@ -1,0 +1,84 @@
+{
+  "contract_version": "4.0",
+  "task_id": "1.5",
+  "work_id": "0001",
+  "title": "Reescrever a célula em pacote com prefixo de namespace",
+  "risk": {
+    "level": "L3",
+    "reasons": [
+      "Corrige defeito que gerava saída idêntica à entrada com o relatório contando alterações",
+      "Defeito encontrado fora da suíte jsdom, na verificação em navegador real sobre o arquivo do repositório",
+      "Mexe na reescrita do XML que produz o entregável do operador"
+    ]
+  },
+  "validation_strategy": "tdd-strict",
+  "behavioral_contract": {
+    "scenarios": [
+      {
+        "id": "SCENARIO-1.5-01",
+        "given": "Um pacote cujas tags usam prefixo (x:c, x:is, x:t), como o Excel escreve",
+        "when": "O toy processa as colunas de cadastro",
+        "then": "A célula endereçada é reescrita no XML e o valor padronizado aparece na saída"
+      },
+      {
+        "id": "SCENARIO-1.5-02",
+        "given": "Um documento cujo prefixo é x:",
+        "when": "A célula é reescrita",
+        "then": "O elemento gravado mantém o prefixo do documento e continua no namespace da planilha"
+      },
+      {
+        "id": "SCENARIO-1.5-03",
+        "given": "Um pacote sem prefixo, como o das fixtures anteriores",
+        "when": "A célula é reescrita",
+        "then": "O comportamento é o mesmo de antes (elementos sem prefixo)"
+      }
+    ]
+  },
+  "change_contract": {
+    "target_files": ["toys/gancadastro/script.js", "test/toys/gancadastro.test.js"],
+    "affected_components": ["toy-gancadastro"]
+  },
+  "architecture_contract": {
+    "invariants": [
+      "A reescrita continua tocando só a célula alvo, sem reescrever a aba inteira",
+      "O estilo (atributo s) e os demais atributos da célula permanecem",
+      "Nenhuma dependência nova e nenhum parser de XML de terceiros"
+    ]
+  },
+  "acceptance_contract": {
+    "commands": [
+      "node --test test/toys/gancadastro.test.js",
+      "node --test test/preambulo.test.js",
+      "npm run lint",
+      "npm test"
+    ],
+    "required_evidence": [
+      ".todo/evidence/0001/1.5-red.log",
+      ".todo/evidence/0001/1.5-green.log",
+      ".todo/attestations/0001/1.5-candidate.json"
+    ]
+  },
+  "scope_contract": {
+    "write_allow": ["toys/gancadastro/**", "test/**", ".todo/**", ".pwn/**"],
+    "write_deny": [".git/**", "package.json", "package-lock.json", ".env*"],
+    "out_of_scope": [
+      "Trocar a estratégia de patch por reescrita da aba inteira",
+      "Alterar o relatório de contagens além do que a correção exige",
+      "Alterar a ponte do app"
+    ]
+  },
+  "budget_contract": {
+    "max_tokens": 50000,
+    "max_cost_usd": 1.5,
+    "max_duration_minutes": 30,
+    "max_agent_attempts": 5,
+    "max_llm_calls": 25,
+    "max_tool_calls": 70,
+    "max_shell_executions": 20
+  },
+  "escalation_contract": {
+    "on_write_violation": "block_and_escalate",
+    "on_budget_exceeded": "escalate_to_strong_agent",
+    "on_attempt_failed": "retry_with_strong"
+  }
+}

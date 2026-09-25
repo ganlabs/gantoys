@@ -117,3 +117,28 @@
 
 **Visual:** N/A
 **Documentation:** N/A
+
+### [ ] [1.5] Reescrever a célula em pacote com prefixo de namespace
+
+**Requirement:** EC-002
+**Depends on:** 1.2
+**Behavior:** a célula endereçada é reescrita mesmo quando a planilha usa prefixo de namespace (formato exportado pelo Excel) e o elemento gravado mantém o prefixo do documento, de modo que a saída tenha os valores padronizados em vez de sair idêntica à entrada
+**Components:** toy-gancadastro
+**Files:** `toys/gancadastro/script.js`, `test/toys/gancadastro.test.js`
+**Implementation files:** `toys/gancadastro/script.js`
+**Test files:** `test/toys/gancadastro.test.js`
+
+**RED:**
+- `node --test test/toys/gancadastro.test.js` — a asserção que exige a célula com prefixo reescrita falha porque a busca atual só casa o elemento sem prefixo
+
+**Implementation:**
+1. Acrescentar ao teste do toy o caso do pacote prefixado, comparando a célula reescrita e a contagem de alterações
+2. Tornar a reescrita tolerante ao prefixo e gravar o elemento com o mesmo prefixo do documento
+
+**ACs:**
+- [ ] `node --test test/toys/gancadastro.test.js` — o caso do pacote prefixado e os demais casos do toy passam
+- [ ] `node --test test/preambulo.test.js` — o preâmbulo de tema do toy continua válido
+- [ ] `npm run lint` — o script do toy passa no lint
+
+**Visual:** N/A
+**Documentation:** N/A

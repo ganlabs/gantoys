@@ -253,6 +253,56 @@
       "visual": "N/A",
       "documentation": "N/A",
       "status": "pending"
+    },
+    {
+      "id": "1.5",
+      "title": "Reescrever a célula em pacote com prefixo de namespace",
+      "requirement_id": "EC-002",
+      "spec_reference": "CAP-004",
+      "contract_id": "CTR-005",
+      "complexity": "medium",
+      "depends_on": [
+        "1.2"
+      ],
+      "behavior": "a célula endereçada é reescrita mesmo quando a planilha usa prefixo de namespace (formato exportado pelo Excel) e o elemento gravado mantém o prefixo do documento, de modo que a saída tenha os valores padronizados em vez de sair idêntica à entrada",
+      "components": [
+        "toy-gancadastro"
+      ],
+      "files": [
+        "toys/gancadastro/script.js",
+        "test/toys/gancadastro.test.js"
+      ],
+      "implementation_files": [
+        "toys/gancadastro/script.js"
+      ],
+      "test_files": [
+        "test/toys/gancadastro.test.js"
+      ],
+      "red": {
+        "command": "node --test test/toys/gancadastro.test.js",
+        "description": "a asserção que exige a célula com prefixo reescrita falha porque a busca atual só casa o elemento sem prefixo"
+      },
+      "implementation_steps": [
+        "Acrescentar ao teste do toy o caso do pacote prefixado, comparando a célula reescrita e a contagem de alterações",
+        "Tornar a reescrita tolerante ao prefixo e gravar o elemento com o mesmo prefixo do documento"
+      ],
+      "acceptance_criteria": [
+        {
+          "command": "node --test test/toys/gancadastro.test.js",
+          "description": "o caso do pacote prefixado e os demais casos do toy passam"
+        },
+        {
+          "command": "node --test test/preambulo.test.js",
+          "description": "o preâmbulo de tema do toy continua válido"
+        },
+        {
+          "command": "npm run lint",
+          "description": "o script do toy passa no lint"
+        }
+      ],
+      "visual": "N/A",
+      "documentation": "N/A",
+      "status": "pending"
     }
   ]
 }
