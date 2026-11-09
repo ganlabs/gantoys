@@ -764,3 +764,191 @@ test('gancopy — barra com total zero e estado desconhecido no relatório', asy
     assert.deepEqual(linhas(pagina, '#santander-notcopied-list'), [['ERRO', 'sem estado conhecido']]);
     assert.equal(pagina.seletor('#santander-notcopied').classList.contains('visible'), true);
 });
+
+test('gancopy — a opção Mover troca o botão, os rótulos e o texto da barra', async (t) => {
+    const { pagina } = await abrir(t);
+
+    assert.equal(pagina.seletor('#santander-move').checked, false);
+    assert.equal(pagina.texto('#santander-copy'), 'Copiar arquivos');
+    assert.equal(pagina.texto('#santander-success-label'), 'Copiados');
+    assert.equal(pagina.texto('#santander-failure-label'), 'Não copiados');
+    assert.equal(pagina.texto('#santander-report-title'), 'Copiados');
+    assert.equal(pagina.texto('#santander-notcopied-title'), 'Não copiados');
+
+    pagina.marcar('#santander-move');
+    assert.equal(pagina.seletor('#santander-move').checked, true);
+    assert.equal(pagina.texto('#santander-copy'), 'Mover arquivos');
+    assert.equal(pagina.texto('#santander-success-label'), 'Movidos');
+    assert.equal(pagina.texto('#santander-failure-label'), 'Não movidos');
+    assert.equal(pagina.texto('#santander-report-title'), 'Movidos');
+    assert.equal(pagina.texto('#santander-notcopied-title'), 'Não movidos');
+
+    pagina.marcar('#santander-move');
+    assert.equal(pagina.texto('#santander-copy'), 'Copiar arquivos');
+    assert.equal(pagina.texto('#santander-success-label'), 'Copiados');
+    assert.equal(pagina.texto('#santander-notcopied-title'), 'Não copiados');
+});
+
+test('gancopy — marcar Mover descarta a origem escolhida para reabri-la em escrita', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const origem = montarArvore('Origem', { [`${PROCESSO}.pdf`]: 'A' });
+
+    await escolherPasta(ctx, '#santander-source', origem);
+    assert.equal(origem.modoUsado, 'read', 'sem mover, a origem é lida em modo somente leitura');
+    pagina.digitar('#santander-processes', PROCESSO);
+    assert.equal(pagina.seletor('#santander-copy').disabled, true, 'sem destino, o botão segue desabilitado');
+
+    pagina.marcar('#santander-move');
+    assert.equal(pagina.texto('#santander-source-name'), 'Nenhuma pasta selecionada');
+    assert.equal(pagina.seletor('#santander-source-name').classList.contains('ready'), false);
+    assert.equal(pagina.seletor('#santander-copy').disabled, true);
+
+    const comMove = montarArvore('Origem', { [`${PROCESSO}.pdf`]: 'A' });
+    await escolherPasta(ctx, '#santander-source', comMove);
+    assert.equal(comMove.modoUsado, 'readwrite', 'para mover, a origem é aberta em leitura e escrita');
+    assert.equal(pagina.seletor('#santander-copy').disabled, true, 'ainda falta a pasta de destino');
+
+    await escolherPasta(ctx, '#santander-destination', montarArvore('Destino', {}));
+    assert.equal(pagina.seletor('#santander-copy').disabled, false);
+});
+
+test('gancopy — Mover grava no destino e remove o arquivo da origem', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const origem = montarArvore('Origem', {
+        [`sub/${PROCESSO}.pdf`]: 'conteúdo',
+        'sub/outro documento.txt': 'fica',
+    });
+    const destino = montarArvore('Destino', {});
+
+    pagina.marcar('#santander-move');
+    await escolherPasta(ctx, '#santander-source', origem);
+    await escolherPasta(ctx, '#santander-destination', destino);
+    pagina.digitar('#santander-processes', PROCESSO);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.deepEqual(destino.caminhos(), [`${PROCESSO}.pdf`]);
+    assert.equal(destino.conteudo(`${PROCESSO}.pdf`), 'conteúdo');
+    assert.deepEqual(origem.caminhos(), ['sub/outro documento.txt']);
+    assert.equal(pagina.texto('#santander-progress-text'), 'Movimentação concluída.');
+    assert.equal(pagina.texto('#santander-total'), '1');
+    assert.equal(pagina.texto('#santander-success'), '1');
+    assert.equal(pagina.texto('#santander-failure'), '0');
+    assert.deepEqual(linhas(pagina, '#santander-report-list'), [['MOVIDO', `sub/${PROCESSO}.pdf (movido)`]]);
+    assert.equal(pagina.seletor('#santander-report').classList.contains('visible'), true);
+});
+
+test('gancopy — Mover com arquivo idêntico no destino só remove da origem', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const origem = montarArvore('Origem', { [`${PROCESSO}.pdf`]: 'mesmo conteúdo' });
+    const destino = montarArvore('Destino', { [`${PROCESSO}.pdf`]: 'mesmo conteúdo' });
+
+    pagina.marcar('#santander-move');
+    await escolherPasta(ctx, '#santander-source', origem);
+    await escolherPasta(ctx, '#santander-destination', destino);
+    pagina.digitar('#santander-processes', PROCESSO);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.deepEqual(destino.escritas, [], 'o destino já tinha o conteúdo e não é regravado');
+    assert.deepEqual(origem.caminhos(), []);
+    assert.equal(pagina.texto('#santander-success'), '1');
+    assert.deepEqual(linhas(pagina, '#santander-report-list'), [
+        ['MOVIDO', `${PROCESSO}.pdf (movido; já havia o mesmo conteúdo no destino)`],
+    ]);
+});
+
+test('gancopy — Mover sobrescreve o destino diferente e marca ATUALIZADO', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const origem = montarArvore('Origem', { [`sub/${PROCESSO}.pdf`]: 'versão nova' });
+    const destino = montarArvore('Destino', { [`${PROCESSO}.pdf`]: 'versão antiga' });
+
+    pagina.marcar('#santander-move');
+    await escolherPasta(ctx, '#santander-source', origem);
+    await escolherPasta(ctx, '#santander-destination', destino);
+    pagina.digitar('#santander-processes', PROCESSO);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.equal(destino.conteudo(`${PROCESSO}.pdf`), 'versão nova');
+    assert.deepEqual(destino.escritas, [`${PROCESSO}.pdf`]);
+    assert.deepEqual(origem.caminhos(), []);
+    assert.equal(pagina.texto('#santander-success'), '1');
+    assert.deepEqual(linhas(pagina, '#santander-report-list'), [
+        ['ATUALIZADO', `sub/${PROCESSO}.pdf (sobrescrito e movido)`],
+    ]);
+});
+
+test('gancopy — Mover com origem e destino na mesma pasta não apaga nada', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const pasta = montarArvore('Pasta', { [`${PROCESSO}.pdf`]: 'A' });
+
+    pagina.marcar('#santander-move');
+    await escolherPasta(ctx, '#santander-source', pasta);
+    await escolherPasta(ctx, '#santander-destination', pasta);
+    pagina.digitar('#santander-processes', PROCESSO);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.deepEqual(pasta.caminhos(), [`${PROCESSO}.pdf`]);
+    assert.equal(pagina.texto('#santander-success'), '0');
+    assert.equal(pagina.texto('#santander-failure'), '1');
+    assert.deepEqual(linhas(pagina, '#santander-notcopied-list'), [
+        ['IGUAL', `${PROCESSO}.pdf: origem e destino são o mesmo arquivo`],
+    ]);
+});
+
+test('gancopy — Mover avisa quando o arquivo não pode ser removido da origem', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const base = montarArvore('Origem', { [`${PROCESSO}.pdf`]: 'A' });
+    const origem = {
+        nome: 'Origem',
+        handle: {
+            ...base.handle,
+            async removeEntry() {
+                const erro = new Error('O arquivo está em uso.');
+                erro.name = 'NoModificationAllowedError';
+                throw erro;
+            },
+        },
+        caminhos: base.caminhos,
+    };
+    const destino = montarArvore('Destino', {});
+
+    pagina.marcar('#santander-move');
+    await escolherPasta(ctx, '#santander-source', origem);
+    await escolherPasta(ctx, '#santander-destination', destino);
+    pagina.digitar('#santander-processes', PROCESSO);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.deepEqual(destino.caminhos(), [`${PROCESSO}.pdf`], 'o destino já recebeu o arquivo');
+    assert.deepEqual(origem.caminhos(), [`${PROCESSO}.pdf`], 'a origem continua com o arquivo');
+    assert.equal(pagina.texto('#santander-success'), '0');
+    assert.equal(pagina.texto('#santander-failure'), '1');
+    assert.deepEqual(linhas(pagina, '#santander-notcopied-list'), [
+        ['ERRO', `${PROCESSO}.pdf: não foi possível remover da origem: O arquivo está em uso.`],
+    ]);
+});
+
+test('gancopy — Mover sem permissão de escrita na origem falha sem tocar no destino', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const origem = montarArvore('Origem', { [`${PROCESSO}.pdf`]: 'A' });
+    origem.negarPermissao = true;
+    const destino = montarArvore('Destino', {});
+
+    pagina.marcar('#santander-move');
+    await escolherPasta(ctx, '#santander-source', origem);
+    await escolherPasta(ctx, '#santander-destination', destino);
+    pagina.digitar('#santander-processes', PROCESSO);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.deepEqual(destino.caminhos(), []);
+    assert.deepEqual(origem.caminhos(), [`${PROCESSO}.pdf`]);
+    assert.equal(pagina.texto('#santander-progress-text'), 'Não foi possível concluir a movimentação.');
+    assert.deepEqual(linhas(pagina, '#santander-notcopied-list'), [
+        ['ERRO', 'É necessário conceder permissão de leitura na origem e escrita no destino (e na origem para mover).'],
+    ]);
+});

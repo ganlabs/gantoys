@@ -95,7 +95,7 @@ test('Ajuda — cada card da grade casa com um bloco de manual embutido', async 
     const pagina = await abrirAjuda(t);
 
     const naGrade = slugsDaGrade(pagina);
-    assert.equal(SLUGS.length, 18, 'a Ajuda publica um manual por arquivo de toys/help/manual');
+    assert.equal(SLUGS.length, 19, 'a Ajuda publica um manual por arquivo de toys/help/manual');
     assert.equal(naGrade.length, SLUGS.length);
     assert.deepEqual([...naGrade].sort(), SLUGS, 'um card por arquivo de toys/help/manual');
     assert.deepEqual(slugsEmbutidos(pagina).sort(), SLUGS, 'um <script type="text/markdown"> por manual');

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { carregarApp, carregarToy, montarArvore, VENDOR } from '../../testkit/index.js';
 
 /**
@@ -180,10 +181,10 @@ const PEDE_A_PASTA = 'o toy precisa pedir a pasta de destino pela ponte do app';
 /** Segunda: liberar o processamento com planilha lida e pasta escolhida. */
 const AINDA_NAO_LIBERA = 'o processamento precisa liberar depois de ler a planilha e escolher a pasta';
 
-async function abrir(t) {
+async function abrir(t, opcoes = {}) {
     const app = await carregarApp();
     // O toy lê o pacote com o JSZip real do vendor.
-    const pagina = await carregarToy('gancadastro', { vendor: [VENDOR.jszip] });
+    const pagina = await carregarToy('gancadastro', { vendor: [VENDOR.jszip, ...(opcoes.vendor || [])] });
     t.after(() => {
         pagina.fechar();
         app.fechar();
@@ -226,7 +227,7 @@ function comNamespacePrefixo(xml, ns) {
 }
 
 /** Monta a fixture dentro da página e devolve os bytes do pacote. */
-async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false, comBom = false, comPrefixo = false, customSheet1 = null, customSharedStrings = null } = {}) {
+async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = false, semSharedStrings = false, comBom = false, comPrefixo = false, customSheet1 = null, customSharedStrings = null, customEstilos = null } = {}) {
     const abas = abasQuebradas ? ABAS_QUEBRADAS : ABAS_BASE;
     const relsExtras = abasQuebradas
         ? [['rId5', 'worksheets/sheet3.xml'], ['rId6', 'worksheets/sheet9.xml']]
@@ -240,7 +241,7 @@ async function montarPlanilha(pagina, { comCadastro = true, abasQuebradas = fals
         '_rels/.rels': RELS_RAIZ,
         'xl/workbook.xml': bom + prefixo(workbook(abas), NS_PLANILHA),
         'xl/_rels/workbook.xml.rels': bom + prefixo(relsDoWorkbook(relsExtras), NS_RELS),
-        'xl/styles.xml': ESTILOS,
+        'xl/styles.xml': customEstilos || ESTILOS,
         'xl/sharedStrings.xml': prefixo(customSharedStrings || SHARED_STRINGS, NS_PLANILHA),
         'xl/worksheets/sheet1.xml': prefixo(customSheet1 || (comCadastro ? SHEET1 : SHEET1_SEM_CADASTRO), NS_PLANILHA),
         'xl/worksheets/sheet2.xml': prefixo(SHEET2, NS_PLANILHA),
@@ -432,11 +433,12 @@ test('gancadastro — pacote com prefixo de namespace é reescrito no mesmo name
         sheet1.includes('<x:c r="A2" s="1" t="inlineStr"><x:is><x:t>0004469-51.2026.8.05.0103</x:t></x:is></x:c>'),
         'a célula com prefixo precisa sair reescrita, no mesmo namespace do documento'
     );
-    assert.ok(sheet1.includes('<x:c r="F2" t="inlineStr"><x:is><x:t>20000</x:t></x:is></x:c>'), 'valor da causa reescrito com prefixo');
+    assert.ok(sheet1.includes('<x:c r="F2" s="3" t="inlineStr"><x:is><x:t>20000</x:t></x:is></x:c>'), 'valor da causa reescrito com prefixo e formato Texto');
     assert.ok(sheet1.includes('<x:c r="B3" s="2" t="inlineStr"><x:is><x:t>SEM ADVOGADO</x:t></x:is></x:c>'), 'estilo preservado na célula com prefixo');
     assert.ok(sheet1.includes('<x:c r="A3"><x:v>12345</x:v></x:c>'), 'valor fora de 20 dígitos fica intacto');
     assert.ok(sheet1.includes('<x:c r="G2" t="s"><x:v>13</x:v></x:c>'), 'coluna fora do mapa fica intacta');
-    assert.equal(saida.partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'styles.xml sai idêntico');
+    assert.match(saida.partes['xl/styles.xml'], /<cellXfs count="4">/, 'o valor da causa ganha um xf de Texto');
+    assert.match(saida.partes['xl/styles.xml'], /<xf [^>]*fontId="0"[^>]*numFmtId="49"[^>]*applyNumberFormat="1"/, 'xf de Texto preserva os demais atributos');
     assert.equal(saida.partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
     assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['12', '1', '3', '1']);
 });
@@ -460,7 +462,8 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
     // Mesmas partes do pacote, mesmas abas, mesmos nomes.
     assert.deepEqual(saida.nomes, original.nomes, 'as partes do pacote continuam as mesmas');
     assert.equal(partes['xl/workbook.xml'], original.partes['xl/workbook.xml'], 'workbook.xml sai idêntico');
-    assert.equal(partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'styles.xml sai idêntico');
+    assert.match(partes['xl/styles.xml'], /<cellXfs count="4">/, 'o valor da causa ganha um xf de Texto');
+    assert.match(partes['xl/styles.xml'], /<xf [^>]*fontId="0"[^>]*numFmtId="49"[^>]*applyNumberFormat="1"/, 'xf de Texto preserva os demais atributos');
     assert.equal(partes['xl/sharedStrings.xml'], original.partes['xl/sharedStrings.xml'], 'sharedStrings.xml sai idêntico');
     assert.equal(partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
     assert.equal(partes['xl/worksheets/sheet3.xml'], original.partes['xl/worksheets/sheet3.xml'], 'aba vazia sai idêntica');
@@ -473,12 +476,12 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
     assert.ok(sheet1.includes(reescrita('C2', '0')), 'SEM OAB vira 0');
     assert.ok(sheet1.includes(reescrita('D2', 'TJ')), 'SEM UF vira TJ');
     assert.ok(sheet1.includes(reescrita('E2', 'ILHEUS')), 'comarca sem acento');
-    assert.ok(sheet1.includes(reescrita('F2', '20000')), 'valor da causa sem o sufixo de centavos');
+    assert.ok(sheet1.includes(reescrita('F2', '20000', ' s="3"')), 'valor da causa sem o sufixo de centavos, em formato Texto');
     assert.ok(sheet1.includes(reescrita('B3', 'SEM ADVOGADO', ' s="2"')), 'SEM ADV vira SEM ADVOGADO com o estilo da célula');
     assert.ok(sheet1.includes(reescrita('E3', 'NAO ENCONTRADO')), 'comarca normalizada');
-    assert.ok(sheet1.includes(reescrita('F3', '1234,56')), 'valor no padrão brasileiro');
+    assert.ok(sheet1.includes(reescrita('F3', '1234,56', ' s="3"')), 'valor no padrão brasileiro, em formato Texto');
     assert.ok(sheet1.includes(reescrita('D4', 'TJ')), 'célula de texto inline também é processada');
-    assert.ok(sheet1.includes(reescrita('F4', '1500,5')), 'valor numérico vira o padrão brasileiro');
+    assert.ok(sheet1.includes(reescrita('F4', '1500,5', ' s="3"')), 'valor numérico vira o padrão brasileiro, em formato Texto');
     assert.ok(sheet1.includes(reescrita('B5', 'JOSE  DA SILVA')), 'a normalização vale para todas as linhas');
 
     // Células que não mudam ficam como estavam — a numérica inválida, a vazia,
@@ -490,6 +493,94 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
     assert.ok(sheet1.includes('<c r="D3" t="inlineStr"><is></is></c>'), 'inline sem texto fica intacta');
     assert.ok(sheet1.includes('<c t="s"><v>13</v></c>'), 'célula sem endereço fica intacta');
     assert.ok(sheet1.includes('<c r="G2" t="s"><v>13</v></c>'), 'coluna fora do mapa fica intacta');
+});
+
+
+/** Estilo de valor com formato numérico (4) e alinhamento próprio. */
+const ESTILOS_VALOR_NUMERICO = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>',
+    '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>',
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>',
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>',
+    '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    '<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1">',
+    '<alignment horizontal="right" vertical="center"/></xf></cellXfs>',
+    '</styleSheet>',
+].join('');
+
+/** Cabeçalho só com Valor da Causa; duas linhas numéricas no formato 4. */
+const SHEET_VALOR_NUMERICO = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    '<sheetData>',
+    '<row r="1"><c r="F1" t="s"><v>5</v></c></row>',
+    '<row r="2"><c r="F2" s="1"><v>1234.56</v></c></row>',
+    '<row r="3"><c r="F3" s="1"><v>0</v></c></row>',
+    '<row r="4"><c r="F4" s="1" t="inlineStr"><is><t>20000</t></is></c></row>',
+    '</sheetData></worksheet>',
+].join('');
+
+test('gancadastro — valor da causa ganha formato Texto sem perder o alinhamento', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+    const entrada = await montarPlanilha(pagina, {
+        customSheet1: SHEET_VALOR_NUMERICO,
+        customEstilos: ESTILOS_VALOR_NUMERICO,
+    });
+
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
+    const styles = saida.partes['xl/styles.xml'];
+    const sheet1 = saida.partes['xl/worksheets/sheet1.xml'];
+
+    const blocoXfs = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(styles)[1];
+    const xfs = [...blocoXfs.matchAll(/<xf\b[^>]*?\/>|<xf\b[^>]*?>[\s\S]*?<\/xf>/g)].map((encontrado) => encontrado[0]);
+    const celula = /<c r="F2" s="(\d+)" t="inlineStr"><is><t>1234,56<\/t><\/is><\/c>/.exec(sheet1);
+    assert.ok(celula, 'o valor numérico vira texto inline "1234,56"');
+    const xf = xfs[Number(celula[1])];
+    assert.ok(xf, 'a célula aponta para um xf existente');
+    assert.match(xf, /numFmtId="49"/, 'o valor da causa usa o formato Texto do Excel');
+    assert.match(xf, /applyNumberFormat="1"/, 'o formato de número é aplicado');
+    assert.doesNotMatch(xf, /numFmtId="4"/, 'o formato numérico original sai do xf novo');
+    assert.match(xf, /<alignment\b[^>]*horizontal="right"[^>]*vertical="center"\/>/, 'o alinhamento da célula é preservado');
+
+    // Valor 0 pintado de laranja: cor, formato Texto e alinhamento no mesmo xf.
+    const celulaPintada = /<c r="F3" s="(\d+)" t="inlineStr"><is><t>0<\/t><\/is><\/c>/.exec(sheet1);
+    assert.ok(celulaPintada, 'o valor 0 continua escrito como texto');
+    const xfPintado = xfs[Number(celulaPintada[1])];
+    assert.match(xfPintado, /numFmtId="49"/, 'valor 0 pintado também fica no formato Texto');
+    assert.match(xfPintado, /fillId="1" applyFill="1"/, 'valor 0 pintado mantém a cor laranja no xf novo');
+    assert.match(xfPintado, /<alignment\b[^>]*horizontal="right"/, 'valor 0 pintado mantém o alinhamento');
+
+    // Célula já em texto e sem mudança de conteúdo recebe só o formato Texto.
+    const celulaEstilo = /<c r="F4" s="(\d+)" t="inlineStr"><is><t>20000<\/t><\/is><\/c>/.exec(sheet1);
+    assert.ok(celulaEstilo, 'o valor em texto continua com o mesmo conteúdo');
+    assert.match(xfs[Number(celulaEstilo[1])], /numFmtId="49"/, 'a célula de valor em texto também fica no formato Texto');
+
+    // O que um leitor de planilha vê: texto, valor com vírgula e formato "@".
+    // Lê o arquivo real com a mesma biblioteca que o projeto vendoriza.
+    pagina.script(readFileSync('vendor/xlsx/xlsx.full.min.js', 'utf8'));
+    pagina.janela.__saidaXlsx = Array.from(destino.paraObjeto()[NOME_SAIDA]);
+    const lido = await pagina.script(`(() => {
+        const livro = XLSX.read(new Uint8Array(window.__saidaXlsx), { type: 'array', cellNF: true });
+        const aba = livro.Sheets[livro.SheetNames[0]];
+        return { tipo: aba.F2.t, valor: aba.F2.v, formato: aba.F2.z, tipoZero: aba.F3.t, valorZero: aba.F3.v };
+    })()`);
+    assert.deepEqual(JSON.parse(JSON.stringify(lido)), {
+        tipo: 's',
+        valor: '1234,56',
+        formato: '@',
+        tipoZero: 's',
+        valorZero: '0',
+    });
 });
 
 test('gancadastro — planilha sem nenhuma coluna de cadastro é recusada', async (t) => {

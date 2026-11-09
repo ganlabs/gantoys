@@ -89,7 +89,7 @@ test('Build — todo manual de toys/help/manual está embutido no toy de Ajuda, 
     }
 });
 
-test('Build — o bundle valida e embute o toy de Ajuda com os 17 manuais', async () => {
+test('Build — o bundle valida e embute o toy de Ajuda com os 18 manuais', async () => {
     const saida = executar('build/bundle.mjs');
     const tamanho = readFileSync(BUNDLE, 'utf8').length;
     const ultimaLinha = saida.trimEnd().split('\n').at(-1);
@@ -115,7 +115,7 @@ test('Build — o bundle valida e embute o toy de Ajuda com os 17 manuais', asyn
 
     const doBundle = extrairBlocos(ajuda);
     const doToy = extrairBlocos(readFileSync(AJUDA, 'utf8'));
-    assert.deepEqual([...doBundle.keys()].sort(), SLUGS, 'os 17 manuais precisam chegar ao bundle');
+    assert.deepEqual([...doBundle.keys()].sort(), SLUGS, 'os 18 manuais precisam chegar ao bundle');
     for (const slug of SLUGS) {
         assert.equal(doBundle.get(slug).bloco, doToy.get(slug).bloco, `manual ${slug} no bundle`);
     }

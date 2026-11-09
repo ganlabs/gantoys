@@ -2,8 +2,9 @@
 
    Lê o pacote OOXML escolhido, padroniza as colunas de cadastro reconhecidas e
    grava uma cópia na pasta de destino escolhida pela ponte do app. A saída é o
-   MESMO pacote, com apenas as células alteradas reescritas como texto inline:
-   formatação, quantidade de abas e nomes das abas saem como estavam.
+   MESMO pacote, com apenas as células alteradas reescritas como texto inline.
+   Quantidade de abas, nomes e alinhamento saem como estavam. A única mudança de
+   formato de número é a coluna Valor da Causa, que passa para Texto (numFmt 49).
 
    As transformações por coluna vêm do kit compartilhado: formatCnj para o
    número do processo, normalizeNameValue para os nomes e extractMoney para o
@@ -221,6 +222,18 @@ function criarPintorDeEstilos(stylesXml) {
     const prefixo = fillsNode.prefix ? `${fillsNode.prefix}:` : '';
     const fills = elementosPorNome(fillsNode, 'fill');
     const xfs = elementosPorNome(cellXfsNode, 'xf');
+    const serializador = new XMLSerializer();
+
+    // Formatos de número que representam TEXTO no Excel: o embutido 49 ("@")
+    // e qualquer numFmt customizado com formatCode "@". O valor da causa é
+    // reescrito como texto; sem este formato, um leitor pode tratar a célula
+    // como número e descartar a vírgula decimal.
+    const formatosTexto = new Set([49]);
+    elementosPorNome(doc, 'numFmt').forEach((formato) => {
+        if (String(formato.getAttribute('formatCode') || '').trim() === '@') {
+            formatosTexto.add(Number(formato.getAttribute('numFmtId')));
+        }
+    });
 
     const fillMap = new Map();
     let proximoFillId = fills.length;
@@ -237,22 +250,27 @@ function criarPintorDeEstilos(stylesXml) {
 
     let proximoXfId = xfs.length;
     const xfMap = new Map();
-    function obterOuCriarXf(sBase, cor) {
+    function obterOuCriarXf(sBase, cor, texto = false) {
         const s = Number(sBase) || 0;
-        const chave = `${s}|${cor}`;
+        const chave = `${s}|${cor}|${texto ? 't' : ''}`;
         if (xfMap.has(chave)) return xfMap.get(chave);
 
-        const fillId = obterOuCriarFill(cor);
         const xfOriginal = xfs[s];
         let atributos = '';
         Array.from(xfOriginal.attributes).forEach((attr) => {
-            if (attr.name !== 'fillId' && attr.name !== 'applyFill') {
-                atributos += ` ${attr.name}="${attr.value}"`;
-            }
+            if (cor && (attr.name === 'fillId' || attr.name === 'applyFill')) return;
+            if (texto && (attr.name === 'numFmtId' || attr.name === 'applyNumberFormat')) return;
+            atributos += ` ${attr.name}="${attr.value}"`;
         });
-        atributos += ` fillId="${fillId}" applyFill="1"`;
+        if (cor) atributos += ` fillId="${obterOuCriarFill(cor)}" applyFill="1"`;
+        if (texto) atributos += ' numFmtId="49" applyNumberFormat="1"';
 
-        const novoXf = `<${prefixo}xf${atributos}/>`;
+        // Filhos do xf (alignment/protection) entram no novo xf: alinhamento
+        // da célula não pode mudar por causa de uma cor ou do formato de texto.
+        const filhos = Array.from(xfOriginal.childNodes)
+            .map((no) => serializador.serializeToString(no))
+            .join('');
+        const novoXf = `<${prefixo}xf${atributos}>${filhos}</${prefixo}xf>`;
         xml = xml.replace(new RegExp(`</(?:\\w+:)?cellXfs>`), `${novoXf}</${prefixo}cellXfs>`);
         const id = proximoXfId;
         proximoXfId += 1;
@@ -261,8 +279,16 @@ function criarPintorDeEstilos(stylesXml) {
         return id;
     }
 
+    function ehTexto(sBase) {
+        const xf = xfs[Number(sBase) || 0];
+        if (!xf) return false;
+        return formatosTexto.has(Number(xf.getAttribute('numFmtId') || 0));
+    }
+
     return {
         obterXf: (sBase, cor) => obterOuCriarXf(sBase, cor),
+        obterXfTexto: (sBase, cor) => obterOuCriarXf(sBase, cor, true),
+        ehTexto,
         obterXml: () => xml,
         teveMudanca: () => proximoXfId > xfs.length
     };
@@ -463,14 +489,26 @@ function processarAba(aba, strings, pintor) {
                 return;
             }
 
-            const textoMudou = novoTexto !== null && novoTexto !== atual;
+            const tipoCelula = celula.elemento.getAttribute('t');
+            const celulaJaETexto = tipoCelula === 's' || tipoCelula === 'inlineStr' || tipoCelula === 'str';
+            // No valor da causa, uma célula numérica vira texto mesmo quando o
+            // texto extraído é igual ao número cru (por exemplo, "0").
+            const textoMudou = novoTexto !== null
+                && (novoTexto !== atual || (chave === 'valor' && !celulaJaETexto));
             const cor = cores.get(chave);
+            const sBase = celula.elemento.getAttribute('s');
 
             let novoEstilo = null;
             if (cor && pintor) {
-                const sBase = celula.elemento.getAttribute('s');
-                novoEstilo = pintor.obterXf(sBase, cor);
+                // O valor da causa também recebe o formato Texto; a cor entra
+                // no mesmo xf para não perder o preenchimento nem o alinhamento.
+                novoEstilo = chave === 'valor' ? pintor.obterXfTexto(sBase, cor) : pintor.obterXf(sBase, cor);
                 contagem.pintadas += 1;
+            } else if (chave === 'valor' && pintor && !pintor.ehTexto(sBase)) {
+                // Célula de valor em formato numérico: força Texto do Excel,
+                // senão um leitor pode tratar "1234,56" como número e cortar
+                // a parte decimal.
+                novoEstilo = pintor.obterXfTexto(sBase, null);
             }
 
             if (!textoMudou && novoEstilo === null) {

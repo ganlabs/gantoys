@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script>
+    (function () {
+        function syncThemeCss(cssText) {
+            try {
+                const css = cssText || localStorage.getItem('gantoys_theme_css');
+                if (!css || !document.head) return;
+                const existingStyle = document.getElementById('gantoys-theme-inject');
+                if (existingStyle) existingStyle.remove();
+                const style = document.createElement('style');
+                style.id = 'gantoys-theme-inject';
+                style.textContent = css;
+                document.head.appendChild(style);
+            } catch (e) {}
+        }
+        function applyTheme(theme, visual, cssText) {
+            if (theme) document.documentElement.setAttribute('data-theme', theme);
+            if (visual) document.documentElement.setAttribute('data-visual', visual);
+            if (cssText) { try { localStorage.setItem('gantoys_theme_css', cssText); } catch (e) {} }
+            syncThemeCss(cssText);
+        }
+        try { applyTheme(localStorage.getItem('theme') || 'dark', localStorage.getItem('visual') || 'glassmorphism', localStorage.getItem('gantoys_theme_css')); } catch (e) {}
+        document.addEventListener('DOMContentLoaded', function () { syncThemeCss(); });
+        window.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'theme') applyTheme(e.data.theme, e.data.visual, e.data.css);
+        });
+    })();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apagador por CNJ</title>
+    <link rel="icon" type="image/png" href="../../favicon.png">
+    <link rel="stylesheet" href="../shared/toy.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="brand">
+            <img class="brand-logo" src="../../favicon.png" alt="GAN">
+            <h1>Apagador por CNJ</h1>
+            <p>Apague arquivos por número de processo, diretamente na pasta escolhida.</p>
+        </header>
+
+        <section class="glass-card" aria-label="Utilitário de exclusão por CNJ">
+            <section class="panel">
+                <div class="card-heading">
+                    <h2>Exclusão por número de processo</h2>
+                    <p>Localiza todos os arquivos cujo caminho contenha um dos CNJs informados e os apaga permanentemente, em qualquer subpasta da pasta escolhida.</p>
+                </div>
+
+                <div class="folder-grid">
+                    <div class="folder-card">
+                        <label class="input-label" for="cnj-source">Pasta</label>
+                        <button class="btn btn-outline" id="cnj-source" type="button">Selecionar pasta</button>
+                        <p class="folder-selected" id="cnj-source-name">Nenhuma pasta selecionada</p>
+                    </div>
+                </div>
+
+                <label class="input-label" for="cnj-processes">
+                    <span>Números dos processos</span>
+                    <span class="counter" id="cnj-count">0 CNJs</span>
+                </label>
+                <textarea id="cnj-processes" spellcheck="false" placeholder="Um CNJ por linha&#10;Ex.: 12345&#10;ou 0001234-56.2026.8.00.0000"></textarea>
+                <p class="hint">Linhas vazias são ignoradas. O CNJ pontuado localiza o arquivo com ou sem pontuação. A busca percorre também as subpastas.</p>
+
+                <div class="actions">
+                    <button class="btn btn-primary" id="cnj-delete" type="button" disabled>Apagar arquivos</button>
+                </div>
+                <div class="progress-area" id="cnj-progress" aria-live="polite">
+                    <div class="progress-top"><span id="cnj-progress-text">Preparando exclusão...</span><span id="cnj-progress-value">0%</span></div>
+                    <div class="progress-wrap"><div class="progress-bar" id="cnj-progress-bar"></div></div>
+                </div>
+                <div class="summary" id="cnj-summary">
+                    <div class="stat"><strong id="cnj-total">0</strong><span>Encontrados</span></div>
+                    <div class="stat ok"><strong id="cnj-success">0</strong><span>Apagados</span></div>
+                    <div class="stat fail"><strong id="cnj-failure">0</strong><span>Não apagados</span></div>
+                </div>
+                <div class="report" id="cnj-report"><div class="report-title">Apagados</div><div class="report-list" id="cnj-report-list"></div></div>
+                <div class="report" id="cnj-notdeleted">
+                    <div class="report-title">
+                        <span>Não apagados</span>
+                        <button class="btn btn-outline btn-small" id="cnj-notdeleted-copy" type="button" disabled>Copiar lista</button>
+                    </div>
+                    <div class="report-list" id="cnj-notdeleted-list"></div>
+                </div>
+            </section>
+        </section>
+
+        <aside class="notice">
+            <span aria-hidden="true">i</span>
+            <span><strong>Uso local e privado.</strong> Abra este arquivo no Google Chrome ou Microsoft Edge. A exclusão é definitiva e usa a File System Access API; nenhum arquivo é enviado para a internet.</span>
+        </aside>
+    </main>
+
+    <script>
+        const state = { source: null };
+
+        let notDeletedText = '';
+
+        const $ = (id) => document.getElementById(id);
+
+        function linesFrom(text) {
+            return text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        }
+
+        function pickDirectoryFromGanToys(mode) {
+            return new Promise((resolve, reject) => {
+                const requestId = crypto.randomUUID();
+                const timeout = window.setTimeout(() => {
+                    window.removeEventListener('message', receiveResult);
+                    reject(new Error('A seleção de pasta não respondeu.'));
+                }, 60000);
+
+                function receiveResult(event) {
+                    if (!event.data || event.data.type !== 'gantoys-directory-picker-result' || event.data.requestId !== requestId) return;
+                    window.clearTimeout(timeout);
+                    window.removeEventListener('message', receiveResult);
+                    if (event.data.error) {
+                        const error = new Error(event.data.error.message);
+                        error.name = event.data.error.name;
+                        reject(error);
+                        return;
+                    }
+                    resolve(event.data.directory);
+                }
+
+                window.addEventListener('message', receiveResult);
+                window.parent.postMessage({ type: 'gantoys-directory-picker-request', requestId, mode }, '*');
+            });
+        }
+
+        async function pickDirectory() {
+            try {
+                const directory = await pickDirectoryFromGanToys('readwrite');
+                state.source = directory;
+                const nameElement = $('cnj-source-name');
+                nameElement.textContent = directory.name;
+                nameElement.classList.add('ready');
+                updateAvailability();
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                    window.alert(error.message || 'Não foi possível selecionar a pasta.');
+                }
+            }
+        }
+
+        function setProgress(current, total, text) {
+            const percent = total === 0 ? 0 : Math.round((current / total) * 100);
+            $('cnj-progress').classList.add('visible');
+            $('cnj-progress-text').textContent = text;
+            $('cnj-progress-value').textContent = `${percent}%`;
+            $('cnj-progress-bar').style.width = `${percent}%`;
+        }
+
+        function setScanningProgress(scanned, deleted, text) {
+            $('cnj-progress').classList.add('visible');
+            $('cnj-progress-text').textContent = text;
+            $('cnj-progress-value').textContent = `${scanned} analisado(s) | ${deleted} apagado(s)`;
+            $('cnj-progress-bar').style.width = '100%';
+        }
+
+        // 'ok' apagou o arquivo; 'missing' é o CNJ sem nenhum arquivo; 'fail' é erro na exclusão.
+        const STATUS_LABEL = { ok: 'APAGADO', missing: 'NÃO LOCALIZADO', fail: 'ERRO' };
+        const DELETED_STATUSES = ['ok'];
+
+        function renderReport(kind, results) {
+            $(`cnj-${kind}-list`).replaceChildren(...results.map((result) => {
+                const row = document.createElement('div');
+                row.className = 'report-row';
+                const status = document.createElement('span');
+                status.className = `report-status ${result.status}`;
+                status.textContent = STATUS_LABEL[result.status] || 'ERRO';
+                const message = document.createElement('span');
+                message.textContent = result.message;
+                row.append(status, message);
+                return row;
+            }));
+            $(`cnj-${kind}`).classList.toggle('visible', results.length > 0);
+        }
+
+        function showResults(results, total) {
+            const deleted = results.filter((result) => DELETED_STATUSES.includes(result.status));
+            const notDeleted = results.filter((result) => !DELETED_STATUSES.includes(result.status));
+
+            $('cnj-total').textContent = total;
+            $('cnj-success').textContent = deleted.length;
+            $('cnj-failure').textContent = notDeleted.length;
+            $('cnj-summary').classList.add('visible');
+
+            renderReport('report', deleted);
+            renderReport('notdeleted', notDeleted);
+
+            // Só os CNJs vão para o clipboard (sem caminhos nem mensagens), um por linha e sem repetir.
+            const references = [...new Set(notDeleted.map((result) => result.reference).filter(Boolean))];
+            notDeletedText = references.join('\n');
+            $('cnj-notdeleted-copy').disabled = references.length === 0;
+        }
+
+        function resetResults() {
+            $('cnj-progress').classList.remove('visible');
+            $('cnj-summary').classList.remove('visible');
+            $('cnj-report').classList.remove('visible');
+            $('cnj-notdeleted').classList.remove('visible');
+            $('cnj-report-list').replaceChildren();
+            $('cnj-notdeleted-list').replaceChildren();
+            $('cnj-progress-bar').style.width = '0';
+            notDeletedText = '';
+            $('cnj-notdeleted-copy').disabled = true;
+        }
+
+        async function copyTextToClipboard(text, button) {
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (error) {
+                const fallback = document.createElement('textarea');
+                fallback.value = text;
+                fallback.setAttribute('readonly', '');
+                fallback.style.position = 'fixed';
+                fallback.style.opacity = '0';
+                document.body.appendChild(fallback);
+                fallback.select();
+                document.execCommand('copy');
+                fallback.remove();
+            }
+            const label = button.textContent;
+            button.textContent = 'Copiado';
+            window.setTimeout(() => { button.textContent = label; }, 1800);
+        }
+
+        function updateAvailability() {
+            const processes = linesFrom($('cnj-processes').value);
+            $('cnj-count').textContent = `${processes.length} ${processes.length === 1 ? 'CNJ' : 'CNJs'}`;
+            $('cnj-delete').disabled = !(state.source && processes.length > 0);
+        }
+
+        function requestShellDelete(payload, onProgress) {
+            return new Promise((resolve, reject) => {
+                const requestId = crypto.randomUUID();
+                // watchdog: cada progresso recebido reinicia a contagem, então o
+                // limite vale para inatividade e não para a duração total.
+                let timeout = window.setTimeout(onTimeout, 120000);
+
+                function onTimeout() {
+                    window.removeEventListener('message', receiveResult);
+                    reject(new Error('A operação de exclusão não respondeu.'));
+                }
+
+                function receiveResult(event) {
+                    const data = event.data;
+                    if (!data || data.requestId !== requestId) return;
+
+                    if (data.type === 'gantoys-delete-progress') {
+                        window.clearTimeout(timeout);
+                        timeout = window.setTimeout(onTimeout, 120000);
+                        if (onProgress && data.progress) onProgress(data.progress);
+                        return;
+                    }
+
+                    if (data.type !== 'gantoys-delete-result') return;
+                    window.clearTimeout(timeout);
+                    window.removeEventListener('message', receiveResult);
+                    if (data.error) {
+                        const error = new Error(data.error.message);
+                        error.name = data.error.name;
+                        reject(error);
+                        return;
+                    }
+                    resolve(data.result);
+                }
+
+                window.addEventListener('message', receiveResult);
+                window.parent.postMessage({ type: 'gantoys-delete-request', requestId, ...payload }, '*');
+            });
+        }
+
+        async function runDelete() {
+            const button = $('cnj-delete');
+            const processes = linesFrom($('cnj-processes').value);
+            resetResults();
+            button.disabled = true;
+            setScanningProgress(0, 0, 'Procurando e apagando arquivos...');
+
+            try {
+                const response = await requestShellDelete({
+                    directoryId: state.source.id,
+                    processes
+                }, (progress) => {
+                    setScanningProgress(progress.scanned, progress.deleted, 'Procurando e apagando arquivos...');
+                });
+                setProgress(1, 1, response.total === 0 ? 'Nenhum arquivo correspondente foi encontrado.' : 'Exclusão concluída.');
+                showResults(response.results, response.total);
+            } catch (error) {
+                setProgress(1, 1, 'Não foi possível concluir a exclusão.');
+                showResults([{ status: 'fail', message: error.message }], 0);
+            } finally {
+                updateAvailability();
+            }
+        }
+
+        $('cnj-source').addEventListener('click', pickDirectory);
+        $('cnj-processes').addEventListener('input', updateAvailability);
+        $('cnj-delete').addEventListener('click', runDelete);
+        $('cnj-notdeleted-copy').addEventListener('click', () => copyTextToClipboard(notDeletedText, $('cnj-notdeleted-copy')));
+        updateAvailability();
+    </script>
+</body>
+</html>

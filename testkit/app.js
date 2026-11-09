@@ -19,14 +19,15 @@ export async function carregarApp(opcoes = {}) {
     const pagina = await carregarPagina('index.html', {
         ...opcoes,
         preparar(janela, registro) {
-            janela.showDirectoryPicker = async ({ mode } = {}) => {
+            janela.showDirectoryPicker = async (opcoes = {}) => {
                 if (fila.length === 0) {
                     const erro = new Error('Nenhuma pasta preparada no teste.');
                     erro.name = 'NotFoundError';
                     throw erro;
                 }
                 const proxima = fila.shift();
-                proxima.modoUsado = mode;
+                proxima.opcoesUsadas = opcoes;
+                proxima.modoUsado = opcoes.mode;
                 return proxima.handle ?? proxima;
             };
             if (typeof opcoes.preparar === 'function') opcoes.preparar(janela, registro);

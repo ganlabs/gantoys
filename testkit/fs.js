@@ -122,15 +122,31 @@ export function montarArvore(nomeRaiz, descricao = {}) {
                 async getFile() {
                     return new globalThis.File([no.bytes], no.name, { type: tipoDoNome(no.name) });
                 },
-                async createWritable() {
+                async createWritable(opcoes = {}) {
+                    // Mesma semântica do navegador: sem `keepExistingData` o
+                    // arquivo começa vazio; `seek` + `write` posicionam os bytes.
+                    let buffer = opcoes.keepExistingData ? new Uint8Array(no.bytes) : new Uint8Array(0);
+                    let posicao = buffer.length;
                     return {
                         async write(dados) {
-                            no.bytes = await bytesDe(dados);
+                            const entrada = new Uint8Array(await bytesDe(dados));
+                            const novo = new Uint8Array(Math.max(buffer.length, posicao + entrada.length));
+                            novo.set(buffer);
+                            novo.set(entrada, posicao);
+                            buffer = novo;
+                            posicao += entrada.length;
                             escritas.push(no.name);
                         },
-                        async seek() {},
-                        async truncate() {},
-                        async close() {},
+                        async seek(deslocamento) {
+                            posicao = deslocamento;
+                        },
+                        async truncate(tamanho = buffer.length) {
+                            buffer = buffer.slice(0, tamanho);
+                            posicao = Math.min(posicao, buffer.length);
+                        },
+                        async close() {
+                            no.bytes = buffer;
+                        },
                         async abort() {},
                     };
                 },

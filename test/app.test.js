@@ -567,6 +567,110 @@ test('App — Bradesco: igual, sobrescrito, falha de gravação e processo sem P
     assert.equal(destino.conteudo('INICIAL B.pdf'), 'dois');
 });
 
+test('App — cópia com move: grava no destino, remove da origem e reporta o movimento', async (t) => {
+    const app = await abrirApp(t);
+    const carta = correio();
+    const origem = montarArvore('Origem', {
+        '12345/peca.pdf': 'conteudo-1',
+        'ruido/leiame.txt': 'texto',
+    });
+    const destino = montarArvore('Destino', {});
+
+    const sourceId = await registrarPasta(app, carta, origem, 'origem-mv', 'readwrite');
+    const destinationId = await registrarPasta(app, carta, destino, 'destino-mv');
+
+    const resposta = await pedir(app, carta, {
+        type: 'gantoys-copy-request', requestId: 'move-1', mode: 'santander', move: true,
+        sourceId, destinationId, processes: ['12345'],
+    }, 'gantoys-copy-result');
+
+    assert.equal(resposta.error, undefined);
+    assert.equal(resposta.result.total, 1);
+    assert.deepEqual(plano(resposta.result.results), [
+        { status: 'ok', message: '12345/peca.pdf (movido)' },
+    ]);
+    assert.deepEqual(destino.caminhos(), ['peca.pdf']);
+    assert.equal(destino.conteudo('peca.pdf'), 'conteudo-1');
+    assert.deepEqual(origem.caminhos(), ['ruido/leiame.txt']);
+});
+
+test('App — cópia com move: sem permissão de escrita na origem falha sem gravar no destino', async (t) => {
+    const app = await abrirApp(t);
+    const carta = correio();
+    const origem = montarArvore('Origem', { '12345/peca.pdf': 'conteudo-1' });
+    origem.negarPermissao = true;
+    const destino = montarArvore('Destino', {});
+
+    const sourceId = await registrarPasta(app, carta, origem, 'origem-mv2', 'readwrite');
+    const destinationId = await registrarPasta(app, carta, destino, 'destino-mv2');
+
+    const resposta = await pedir(app, carta, {
+        type: 'gantoys-copy-request', requestId: 'move-erro', mode: 'santander', move: true,
+        sourceId, destinationId, processes: ['12345'],
+    }, 'gantoys-copy-result');
+
+    assert.equal(resposta.result, undefined);
+    assert.deepEqual(plano(resposta.error), {
+        name: 'Error',
+        message: 'É necessário conceder permissão de leitura na origem e escrita no destino (e na origem para mover).',
+    });
+    assert.deepEqual(destino.caminhos(), []);
+    assert.deepEqual(origem.caminhos(), ['12345/peca.pdf']);
+});
+
+/* ---------------------------------------------------------------------------
+ * Exclusão por CNJ
+ * ------------------------------------------------------------------------- */
+
+test('App — exclusão por CNJ: apaga os arquivos que casam e reporta os não localizados', async (t) => {
+    const app = await abrirApp(t);
+    const carta = correio();
+    const pasta = montarArvore('Pasta', {
+        'sub/0001234-56.2026.8.00.0000.pdf': 'a',
+        '00012345620268000000 - recurso.pdf': 'b',
+        'ruido/leiame.txt': 'c',
+    });
+
+    const directoryId = await registrarPasta(app, carta, pasta, 'pasta-del');
+
+    const resposta = await pedir(app, carta, {
+        type: 'gantoys-delete-request', requestId: 'del-1',
+        directoryId,
+        processes: ['0001234-56.2026.8.00.0000', '0009999-11.2026.8.00.0000'],
+    }, 'gantoys-delete-result');
+
+    const progressos = carta.mensagens.filter((m) => m.type === 'gantoys-delete-progress');
+    assert.equal(progressos.at(-1).requestId, 'del-1');
+    assert.deepEqual(plano(progressos.at(-1).progress), { scanned: 3, deleted: 2 });
+
+    assert.equal(resposta.error, undefined);
+    assert.equal(resposta.result.total, 2);
+    assert.deepEqual(plano(resposta.result.results), [
+        { status: 'ok', reference: '0001234-56.2026.8.00.0000', message: 'sub/0001234-56.2026.8.00.0000.pdf' },
+        { status: 'ok', reference: '0001234-56.2026.8.00.0000', message: '00012345620268000000 - recurso.pdf' },
+        { status: 'missing', reference: '0009999-11.2026.8.00.0000', message: '0009999-11.2026.8.00.0000: nenhum arquivo localizado.' },
+    ]);
+    assert.deepEqual(pasta.caminhos(), ['ruido/leiame.txt']);
+});
+
+test('App — exclusão por CNJ: pasta desconhecida devolve erro sem progresso', async (t) => {
+    const app = await abrirApp(t);
+    const carta = correio();
+
+    const resposta = await pedir(app, carta, {
+        type: 'gantoys-delete-request', requestId: 'del-erro',
+        directoryId: 'id-fantasma',
+        processes: ['12345'],
+    }, 'gantoys-delete-result');
+
+    assert.equal(resposta.result, undefined);
+    assert.deepEqual(plano(resposta.error), {
+        name: 'Error',
+        message: 'A pasta selecionada não está mais disponível. Selecione-a novamente.',
+    });
+    assert.deepEqual(carta.tipos(), ['gantoys-delete-result']);
+});
+
 /* ---------------------------------------------------------------------------
  * Motor de renomeação
  * ------------------------------------------------------------------------- */

@@ -209,7 +209,12 @@
                     <button class="tile manual-card" type="button" data-manual="gancopy">
                         <i class="bi bi-folder-symlink" aria-hidden="true"></i>
                         <span class="manual-card-title">Cópia Integral e Bradesco</span>
-                        <span class="manual-card-desc">Copia documentos por número de processo entre duas pastas locais, sem mover nem apagar nada na origem. A entrada é um par de pastas (origem e…</span>
+                        <span class="manual-card-desc">Copia documentos por número de processo entre duas pastas locais. A entrada é um par de pastas (origem e destino) mais as listas de números de…</span>
+                    </button>
+                    <button class="tile manual-card" type="button" data-manual="ganapagadorcnj">
+                        <i class="bi bi-trash3" aria-hidden="true"></i>
+                        <span class="manual-card-title">Apagador por CNJ</span>
+                        <span class="manual-card-desc">Apaga, em uma pasta local, os arquivos cujo nome contenha um dos números de processo informados. A entrada é uma pasta mais a lista de CNJs; a saída…</span>
                     </button>
                     <button class="tile manual-card" type="button" data-manual="gannovodiv">
                         <i class="bi bi-scissors" aria-hidden="true"></i>
@@ -357,7 +362,7 @@ Processa uma planilha de cadastro em `.xlsx` e grava uma cópia padronizada na p
 
 - **Núm. Processo** — o número vira CNJ pontuado (`NNNNNNN-DD.AAAA.J.T.R.OOOO`). Vale para o valor cru (só dígitos) e para o já pontuado.
 - **Advogado Adverso**, **OAB Advogado Adverso**, **UF OAB Advogado Adverso** e **Comarca** — passam pela normalização de nomes: maiúsculas, sem acento, corte no primeiro `|` e as traduções `SEM ADV` → `SEM ADVOGADO`, `SEM OAB` → `0`, `SEM UF` → `TJ`.
-- **Valor da Causa** — passa pelo extrator de valores: separadores no padrão brasileiro e sufixo de centavos zerado removido (`R$ 20.000,00` → `20000`, `1.234,56` → `1234,56`).
+- **Valor da Causa** — passa pelo extrator de valores: separadores no padrão brasileiro e sufixo de centavos zerado removido (`R$ 20.000,00` → `20000`, `1.234,56` → `1234,56`). A célula fica com o formato **Texto** do Excel (`numFmtId` 49) e guarda o valor como texto inline; um leitor de planilha vê `1234,56` como texto, não como número.
 
 ## Como usar
 
@@ -369,13 +374,14 @@ Processa uma planilha de cadastro em `.xlsx` e grava uma cópia padronizada na p
 ## O que a saída preserva
 
 - Todas as abas do arquivo original, com os mesmos nomes e na mesma ordem.
-- A formatação: estilos, números, larguras, mesclagens e o restante do pacote saem como estavam.
-- A célula reescrita mantém o índice de estilo dela; ela passa a guardar texto.
+- A formatação: estilos, números, larguras, mesclagens e o restante do pacote saem como estavam. A exceção é o formato de número do Valor da Causa, que vira Texto.
+- A célula reescrita ganha um novo índice de estilo derivado do original. O novo estilo copia os atributos e os filhos do estilo original (`alignment` e `protection`), então fontes, bordas, alinhamento e proteção ficam iguais.
+- Alinhamento não é alterado em nenhuma célula, nem nas células pintadas de laranja ou vermelho.
 
 ## Regras e limites
 
 - A linha 1 de cada aba é o cabeçalho. Aba sem nenhuma coluna reconhecida sai intacta.
-- Apenas a célula cujo valor muda é reescrita. Célula já normalizada, célula vazia e célula com fórmula ficam como estavam.
+- A célula é reescrita quando o valor muda ou quando o Valor da Causa precisa passar para Texto. Célula já normalizada, vazia e com fórmula ficam como estavam.
 - Célula com fórmula é contada como ignorada: reescrevê-la apagaria a fórmula.
 - Célula sem o atributo `r` (endereço) não é processada, porque não há como localizá-la no arquivo.
 - Nomes de coluna aceitos para o processo: `Núm. Processo`, `Num Processo`, `Número do Processo` e `Núm Proc`. A comparação ignora acento, caixa e pontuação.
@@ -392,7 +398,7 @@ Processa uma planilha de cadastro em `.xlsx` e grava uma cópia padronizada na p
 
 - **Laranja** — aplicado em: Valor da Causa igual a `0`, Advogado Adverso `SEM ADVOGADO` com Órgão fora de JEC/JEA/JECrim, Num `0` com Órgão VC ou VU, Rito fora de Comum e Juizados, e exceções de Carteira e Parte Ré.
 - **Vermelho** — aplicado na célula de Causa Raiz quando a carteira final não contiver Bradesco nem Santander.
-- Os estilos de cor são injetados em `styles.xml` preservando fontes, bordas e formatos de número de cada célula.
+- Os estilos de cor são injetados em `styles.xml` preservando fontes, bordas, formatos de número e o alinhamento de cada célula.
 
 ## Relatório na tela
 
@@ -557,12 +563,12 @@ Converte as siglas de rito `VC` e `JEC` na descrição correspondente (`Comum` e
     <script type="text/markdown" data-manual="gancopy" data-title="Cópia Integral e Bradesco">
 # Cópia Integral e Bradesco
 
-Copia documentos por número de processo entre duas pastas locais, sem mover nem apagar nada na origem. A entrada é um par de pastas (origem e destino) mais as listas de números de processo e, na aba `Bradesco`, de pastas cliente; a saída são os arquivos copiados na pasta de destino e um relatório na tela com o que foi e o que não foi copiado.
+Copia documentos por número de processo entre duas pastas locais. A entrada é um par de pastas (origem e destino) mais as listas de números de processo e, na aba `Bradesco`, de pastas cliente; a saída são os arquivos na pasta de destino e um relatório na tela com o que foi e o que não foi processado. Por padrão a origem é preservada; na aba `Arquivo`, a opção `Mover em vez de copiar` remove o arquivo da origem depois de gravá-lo no destino.
 
 ## Requisitos
 
 - Abra o arquivo no Google Chrome ou no Microsoft Edge: a seleção e a cópia das pastas usam a File System Access API.
-- Permissão de leitura na pasta de origem e de permissão de escrita na pasta de destino, confirmada na hora da cópia.
+- Permissão de leitura na pasta de origem e de permissão de escrita na pasta de destino, confirmada na hora da operação. Com `Mover em vez de copiar`, a origem também precisa de escrita, porque o arquivo é removido de lá.
 - A busca percorre a pasta de origem inteira, incluindo as subpastas.
 - Nenhum arquivo é enviado para a internet: a cópia é local.
 
@@ -574,9 +580,10 @@ Copia documentos por número de processo entre duas pastas locais, sem mover nem
 2. Em `Pasta de origem`, clique em `Selecionar origem` e confirme no diálogo `Selecionar pasta`. O nome da pasta escolhida substitui o texto `Nenhuma pasta selecionada`.
 3. Em `Pasta de destino`, clique em `Selecionar destino` e confirme do mesmo modo.
 4. Cole os números dos processos no campo `Números dos processos`, um por linha.
-5. Clique em `Copiar arquivos` (o botão só habilita com origem, destino e pelo menos um processo).
-6. Acompanhe a barra de progresso enquanto a origem é varrida.
-7. Confira os contadores e os quadros `Copiados` e `Não copiados`.
+5. Para mover em vez de copiar, marque `Mover em vez de copiar`; o botão passa a se chamar `Mover arquivos` e os quadros passam a falar em `Movidos`.
+6. Clique em `Copiar arquivos` (ou `Mover arquivos`; o botão só habilita com origem, destino e pelo menos um processo).
+7. Acompanhe a barra de progresso enquanto a origem é varrida.
+8. Confira os contadores e os quadros `Copiados`/`Movidos` e `Não copiados`/`Não movidos`.
 
 ### Modo `Bradesco`
 
@@ -590,29 +597,30 @@ Copia documentos por número de processo entre duas pastas locais, sem mover nem
 
 ### Depois da cópia
 
-1. O texto da barra termina em `Cópia concluída.`; quando nenhum arquivo corresponde, a aba `Arquivo` mostra `Nenhum arquivo correspondente foi encontrado.`
-2. Cada linha do quadro `Não copiados` vem precedida de um estado: `NÃO LOCALIZADO`, `IGUAL` ou `ERRO`.
-3. Use `Copiar lista` no quadro `Não copiados` para copiar apenas os números dos processos dessas linhas, um por linha e sem repetir. O rótulo do botão vira `Copiado` por instantes e volta a `Copiar lista`.
+1. O texto da barra termina em `Cópia concluída.` (ou `Movimentação concluída.`, com `Mover` marcado); quando nenhum arquivo corresponde, a aba `Arquivo` mostra `Nenhum arquivo correspondente foi encontrado.`
+2. Cada linha do quadro `Não copiados` (ou `Não movidos`) vem precedida de um estado: `NÃO LOCALIZADO`, `IGUAL` ou `ERRO`.
+3. Use `Copiar lista` no quadro `Não copiados`/`Não movidos` para copiar apenas os números dos processos dessas linhas, um por linha e sem repetir. O rótulo do botão vira `Copiado` por instantes e volta a `Copiar lista`.
 4. Rodar a cópia de novo limpa os quadros e os contadores antes de recomeçar.
 
 ## Campos e controles
 
 - **Abas `Arquivo` e `Bradesco`** — trocam o painel exibido. A aba `Arquivo` abre a seção `Cópia por número de processo`, com a descrição de que localiza todos os arquivos cujo nome contenha um dos processos informados e os copia mantendo o nome original; a aba `Bradesco` abre `Cópia e renomeação de iniciais`. Cada aba mantém as suas próprias pastas, listas e resultados; trocar de aba não apaga o que já foi feito na outra.
-- **Selecionar origem** — abre o diálogo de pasta em modo somente leitura. O nome escolhido substitui `Nenhuma pasta selecionada`. Cancelar a seleção não altera o que já estava escolhido.
+- **Selecionar origem** — abre o diálogo de pasta em modo somente leitura; com `Mover em vez de copiar` marcado na aba `Arquivo`, abre em leitura e escrita, porque o arquivo é removido de lá. O nome escolhido substitui `Nenhuma pasta selecionada`. Cancelar a seleção não altera o que já estava escolhido.
 - **Selecionar destino** — o mesmo diálogo, em modo de leitura e escrita.
+- **Mover em vez de copiar** (aba `Arquivo`) — caixa de seleção desmarcada por padrão. Marcada, o arquivo é gravado no destino e removido da origem; o botão passa a `Mover arquivos`, os contadores viram `Movidos`/`Não movidos` e os quadros passam a falar em movimentação. Marcar a opção com uma origem já escolhida descarta essa origem, para que ela seja escolhida de novo em leitura e escrita.
 - **Números dos processos** — uma linha por processo; o contador ao lado mostra `N processos` (ou `1 processo`). Os exemplos do marcador são `12345` e `0001234-56.2026.8.00.0000`. Linhas vazias são ignoradas e a busca percorre também as subpastas da origem.
 - **Pastas cliente** — só na aba `Bradesco`; uma linha por pasta, com o contador `N pastas` (ou `1 pasta`). A linha de validação abaixo das listas mostra `Informe os processos e as pastas cliente.` quando as duas estão vazias, `As listas precisam ter a mesma quantidade: N processo(s) e M pasta(s).` quando os tamanhos divergem, ou `N correspondência(s) pronta(s) para cópia.` quando estão pareadas. A dica fixa é `A ordem das linhas define a correspondência: o primeiro processo recebe a primeira pasta cliente, e assim por diante.`
-- **Copiar arquivos** (aba `Arquivo`) — habilita só com origem, destino e ao menos um processo.
+- **Copiar arquivos** / **Mover arquivos** (aba `Arquivo`) — habilita só com origem, destino e ao menos um processo. Só o rótulo muda com a opção de mover.
 - **Copiar e renomear PDFs** (aba `Bradesco`) — habilita só com origem, destino e as duas listas com a mesma quantidade de linhas.
-- **Copiar lista** — habilita quando existe pelo menos um processo no quadro `Não copiados`; copia somente os números desses processos, sem caminhos e sem mensagens.
+- **Copiar lista** — habilita quando existe pelo menos um processo no quadro `Não copiados`/`Não movidos`; copia somente os números desses processos, sem caminhos e sem mensagens.
 
 ## Resultado
 
 Na aba `Arquivo`:
 
-- É copiado todo arquivo de qualquer subpasta da origem cujo nome ou caminho contenha um dos processos informados, mantendo o nome original. Vários arquivos podem atender ao mesmo processo. Para processos no formato CNJ, a busca localiza o arquivo tanto no formato pontuado quanto no formato sem pontuação (e vice-versa).
-- O contador `Encontrados` conta os arquivos que casaram com algum processo; `Copiados` e `Não copiados` dividem esse total.
-- Cada linha do quadro `Copiados` traz o caminho relativo do arquivo na origem e o estado `COPIADO` ou `ATUALIZADO`.
+- É copiado (ou movido) todo arquivo de qualquer subpasta da origem cujo nome ou caminho contenha um dos processos informados, mantendo o nome original. Vários arquivos podem atender ao mesmo processo. Para processos no formato CNJ, a busca localiza o arquivo tanto no formato pontuado quanto no formato sem pontuação (e vice-versa).
+- O contador `Encontrados` conta os arquivos que casaram com algum processo; `Copiados`/`Movidos` e `Não copiados`/`Não movidos` dividem esse total.
+- Cada linha do quadro `Copiados` traz o caminho relativo do arquivo na origem e o estado `COPIADO` ou `ATUALIZADO`. Com `Mover` marcado, o estado de sucesso é `MOVIDO` e a mensagem recebe o sufixo ` (movido)`; um destino sobrescrito fica `ATUALIZADO` com ` (sobrescrito e movido)`; quando o destino já tinha o mesmo conteúdo, nada é regravado e a mensagem é ` (movido; já havia o mesmo conteúdo no destino)`.
 - Processos sem nenhum arquivo recebem a linha `NÃO LOCALIZADO` com a mensagem `<processo>: nenhum arquivo localizado na origem.`
 - Quando nada é encontrado, o total fica em zero e aparece a linha `Nenhum arquivo encontrado para os processos informados.`
 
@@ -629,20 +637,78 @@ Nas duas abas, os quadros `Copiados` e `Não copiados` só aparecem quando têm 
 
 - Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem; se a seleção não responder em 60 segundos, o erro é `A seleção de pasta não respondeu.`
 - Se a cópia ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de cópia não respondeu.` e a barra mostra `Não foi possível concluir a cópia.`
-- Se as pastas escolhidas não estiverem mais disponíveis, a cópia falha com `Selecione novamente as pastas de origem e destino.`; sem permissão, falha com `É necessário conceder permissão de leitura na origem e escrita no destino.`
-- Um arquivo já existente no destino com o mesmo conteúdo não é recopiado: entra no quadro `Não copiados` com o estado `IGUAL` e o motivo `já existe no destino com o mesmo conteúdo`. Se o arquivo do destino for o mesmo arquivo da origem, o motivo é `origem e destino são o mesmo arquivo`.
+- Se as pastas escolhidas não estiverem mais disponíveis, a cópia falha com `Selecione novamente as pastas de origem e destino.`; sem permissão, falha com `É necessário conceder permissão de leitura na origem e escrita no destino.` Com `Mover` marcado, a mensagem de permissão é `É necessário conceder permissão de leitura na origem e escrita no destino (e na origem para mover).`
+- Um arquivo já existente no destino com o mesmo conteúdo não é recopiado: entra no quadro `Não copiados` com o estado `IGUAL` e o motivo `já existe no destino com o mesmo conteúdo`. Se o arquivo do destino for o mesmo arquivo da origem, o motivo é `origem e destino são o mesmo arquivo` (e, com `Mover`, nada é apagado).
 - Um arquivo já existente com conteúdo diferente é sobrescrito, recebe o estado `ATUALIZADO` e o sufixo ` (sobrescrito)` no relatório. O toy não pergunta antes de sobrescrever.
+- Com `Mover em vez de copiar`, o arquivo é gravado no destino e só então removido da origem. Se a remoção falhar (por exemplo, arquivo em uso), o destino fica com o arquivo e a linha entra em `Não movidos` com o estado `ERRO` e a mensagem `<caminho>: não foi possível remover da origem: <motivo>`. A ação é definitiva: o toy não usa a lixeira nem pergunta antes de remover.
 - No modo `Bradesco` só entram arquivos com nome terminando em `.pdf` e cada processo consome apenas o primeiro PDF que casar.
 - O destino é plano: arquivos vindos de subpastas diferentes com o mesmo nome caem na mesma pasta, e o último processado sobrescreve o anterior.
-- Nada é movido, renomeado ou apagado na origem; ao final, o texto da barra de progresso continua mostrando a contagem de `analisado(s)` e `copiado(s)`.
+- Sem `Mover`, nada é movido, renomeado ou apagado na origem; com `Mover`, o arquivo correspondente sai da origem e as subpastas vazias permanecem. Ao final, o texto da barra de progresso continua mostrando a contagem de `analisado(s)` e `copiado(s)`/`movido(s)`.
 
 ## Detalhes técnicos
 
 - Correspondência de processo: cada número informado é normalizado uma vez (texto em minúsculas e apenas os dígitos). Um arquivo casa quando o caminho em minúsculas contém o processo informado (para processos com algum caractere não numérico) ou quando os dígitos do caminho contêm todos os dígitos do processo.
-- O relatório marca como copiados os estados `ok` (arquivo novo) e `updated` (sobrescrito); `same`, `missing` e `fail` vão para `Não copiados`.
-- Durante a varredura, o progresso é enviado no máximo a cada 120 milissegundos e a barra fica cheia, com o texto `N analisado(s) | M copiado(s)`; o texto inicial é `Procurando e copiando arquivos...` (aba `Arquivo`) ou `Procurando e copiando PDFs...` (aba `Bradesco`).
+- O relatório marca como processados os estados `ok` (arquivo novo ou removido da origem) e `updated` (sobrescrito); `same`, `missing` e `fail` vão para `Não copiados`/`Não movidos`. Com `Mover`, o estado `ok` aparece como `MOVIDO`.
+- Durante a varredura, o progresso é enviado no máximo a cada 120 milissegundos e a barra fica cheia, com o texto `N analisado(s) | M copiado(s)` (ou `M movido(s)`); o texto inicial é `Procurando e copiando arquivos...` (aba `Arquivo`, ou `Procurando e movendo arquivos...` com `Mover`) ou `Procurando e copiando PDFs...` (aba `Bradesco`).
 - A comparação de conteúdo entre origem e destino é feita em blocos de 1 MiB, com comparação prévia de tamanho.
 - A gravação usa um fluxo de escrita que trunca o arquivo de destino, por isso um arquivo existente é sempre sobrescrito e nunca renomeado com sufixo.
+- A remoção usa `removeEntry` do diretório pai do arquivo na origem; a permissão de escrita na origem é pedida já na seleção da pasta quando `Mover` está marcado.
+    </script>
+
+    <script type="text/markdown" data-manual="ganapagadorcnj" data-title="Apagador por CNJ">
+# Apagador por CNJ
+
+Apaga, em uma pasta local, os arquivos cujo nome contenha um dos números de processo informados. A entrada é uma pasta mais a lista de CNJs; a saída é a pasta com esses arquivos removidos e um relatório na tela com o que foi e o que não foi apagado.
+
+## Requisitos
+
+- Abra o arquivo no Google Chrome ou no Microsoft Edge: a seleção da pasta e a exclusão usam a File System Access API.
+- Permissão de leitura e escrita na pasta escolhida, confirmada na hora de apagar.
+- A busca percorre a pasta inteira, incluindo as subpastas.
+- Nenhum arquivo é enviado para a internet: a exclusão é local.
+- A exclusão é definitiva: o toy não move os arquivos para a lixeira.
+
+## Passo a passo
+
+1. Em `Pasta`, clique em `Selecionar pasta` e confirme no diálogo `Selecionar pasta`. O nome da pasta escolhida substitui o texto `Nenhuma pasta selecionada`.
+2. Cole os números dos processos no campo `Números dos processos`, um por linha.
+3. Clique em `Apagar arquivos` (o botão só habilita com a pasta escolhida e pelo menos um CNJ).
+4. Acompanhe a barra de progresso enquanto a pasta é varrida.
+5. Confira os contadores e os quadros `Apagados` e `Não apagados`.
+
+## Campos e controles
+
+- **Selecionar pasta** — abre o diálogo de pasta em modo de leitura e escrita. O nome escolhido substitui `Nenhuma pasta selecionada`. Cancelar a seleção não altera a pasta já escolhida.
+- **Números dos processos** — uma linha por CNJ; o contador ao lado mostra `N CNJs` (ou `1 CNJ`). Os exemplos do marcador são `12345` e `0001234-56.2026.8.00.0000`. Linhas vazias são ignoradas e a busca percorre também as subpastas.
+- **Apagar arquivos** — habilita só com a pasta escolhida e ao menos um CNJ.
+- **Copiar lista** — habilita quando existe pelo menos um CNJ no quadro `Não apagados`; copia somente os números desses processos, sem caminhos e sem mensagens.
+
+## Resultado
+
+- É apagado todo arquivo de qualquer subpasta da pasta escolhida cujo nome ou caminho contenha um dos CNJs informados. Vários arquivos podem atender ao mesmo CNJ.
+- Para processos no formato CNJ, a busca localiza o arquivo tanto no formato pontuado quanto no formato sem pontuação (e vice-versa).
+- O contador `Encontrados` conta os arquivos que casaram com algum CNJ; `Apagados` e `Não apagados` dividem esse total.
+- Cada linha do quadro `Apagados` traz o caminho relativo do arquivo apagado e o estado `APAGADO`.
+- CNJs sem nenhum arquivo recebem a linha `NÃO LOCALIZADO` com a mensagem `<processo>: nenhum arquivo localizado.`
+- Quando nada é encontrado, o total fica em zero e aparece a linha `Nenhum arquivo encontrado para os CNJs informados.`
+- Os quadros `Apagados` e `Não apagados` só aparecem quando têm conteúdo.
+- Rodar a exclusão de novo limpa os quadros e os contadores antes de recomeçar.
+
+## Avisos e limitações
+
+- Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem; se a seleção não responder em 60 segundos, o erro é `A seleção de pasta não respondeu.`
+- Se a exclusão ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de exclusão não respondeu.` e a barra mostra `Não foi possível concluir a exclusão.`
+- Se a pasta escolhida não estiver mais disponível, a exclusão falha com `A pasta selecionada não está mais disponível. Selecione-a novamente.`; sem permissão, falha com `É necessário conceder permissão de escrita na pasta.`
+- Pastas (mesmo as vazias) nunca são apagadas; só arquivos são removidos. Se uma subpasta ficar vazia, ela permanece na pasta.
+- O toy não pede confirmação antes de apagar: os arquivos correspondentes são removidos assim que a exclusão começa.
+- Um arquivo que não puder ser apagado (por exemplo, bloqueado pelo sistema) entra no quadro `Não apagados` com o estado `ERRO` e o motivo do sistema.
+
+## Detalhes técnicos
+
+- Correspondência de CNJ: cada número informado é normalizado uma vez (texto em minúsculas e apenas os dígitos). Um arquivo casa quando o caminho em minúsculas contém o número informado (para números com algum caractere não numérico) ou quando os dígitos do caminho contêm todos os dígitos do número.
+- O relatório marca como apagados apenas o estado `ok`; `missing` e `fail` vão para `Não apagados`.
+- Durante a varredura, o progresso é enviado no máximo a cada 120 milissegundos e a barra fica cheia, com o texto `N analisado(s) | M apagado(s)`; o texto inicial é `Procurando e apagando arquivos...`.
+- A exclusão usa `removeEntry` do diretório pai de cada arquivo, sem opção recursiva, o que apaga somente o arquivo correspondente e nunca a pasta que o contém.
     </script>
 
     <script type="text/markdown" data-manual="gannovodiv" data-title="Divisor Automático Santander">
@@ -653,6 +719,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 ## Requisitos
 
 - O toy precisa rodar dentro do aplicativo GAN Toys: a escolha da pasta de destino e a gravação dos arquivos são pedidas ao aplicativo hospedeiro por mensagem. Fora do host, não existe seletor de pasta e o processamento nem começa.
+- O log de correção manual é gravado pelo aplicativo hospedeiro na pasta escolhida pelo usuário. A pasta precisa de permissão de escrita, e o navegador pede a escolha na primeira correção de cada sessão.
 - `pdf-lib` e `pdf.js` são carregados do próprio projeto (`../../vendor/pdf-lib/pdf-lib.min.js` e `../../vendor/pdfjs/pdf.min.js`, com worker em `../../vendor/pdfjs/pdf.worker.min.js`); nenhum download é feito para eles.
 - O OCR de emergência depende da CDN `https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js`. Sem internet o OCR não existe: o arquivo que precisaria dele falha em vez de ser lido como imagem.
 - Cada PDF precisa ter o número CNJ no nome, no padrão `0000000-00.0000.0.00.0000` ou como 20 dígitos seguidos. Arquivos cujo nome começa com `Inicial` ou `Docs` são descartados da fila.
@@ -665,7 +732,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 3. Acompanhe o passo `Processamento`: a linha de status mostra `Analisando 1 de N: <arquivo>`, a barra avança em porcentagem, os contadores `Total`, `Concluídos`, `A Revisar` e `Erros` são atualizados a cada arquivo e o log registra `Lendo bytes de ...`, `Detectando limites...`, `Separando PDF (início a fim)...` e `Salvo com sucesso.`
 4. Ao terminar, o passo `Auditoria` é ativado e aparece a mensagem `Os resultados foram guardados em <pasta>.`
 5. Clique em `Ver Relatório` para abrir `Relatório Detalhado` e conferir a linha de cada processo.
-6. Na coluna `Visualizar`, use `Inicial` ou `Docs` para abrir o PDF gerado, ou `Corrigir` para refazer a divisão à mão.
+6. Na coluna `Visualizar`, use `Inicial` ou `Docs` para abrir o PDF gerado, ou `Corrigir` para refazer a divisão à mão. Na primeira correção, escolha a pasta do log quando o aplicativo pedir. As correções seguintes acrescentam registros no mesmo arquivo, sem novo pedido.
 7. Clique em `Exportar CSV` para baixar o relatório, ou em `Novo Processamento` para voltar ao início.
 
 ## Campos e controles
@@ -681,7 +748,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 - **Corrigir** — abre o arquivo original no visualizador próprio, com os campos `Início` e `Fim` preenchidos com o intervalo detectado.
 - **Marcar Início** e **Marcar Fim** — copiam a página que está sendo exibida para os campos `Início` e `Fim`.
 - **Início** e **Fim** — números inteiros, mínimo 1; definem o intervalo da Inicial na correção manual.
-- **Dividir** — grava a divisão manual por cima dos arquivos do processo e marca a linha do relatório com a origem `Manual`.
+- **Dividir** — grava a divisão manual por cima dos arquivos do processo, marca a linha do relatório com a origem `Manual` e acrescenta um registro de correção no arquivo `gannovodiv-correcoes.log` da pasta do log.
 - **Fit** — reajusta a página ao quadro; sem zoom manual o rótulo é `Fit`, com zoom manual o rótulo passa a mostrar o percentual aplicado.
 - **Pág N de M** — campo numérico de página; valores fora de 1 e do total são ignorados.
 - **Contadores do painel** — `Total`, `Concluídos`, `A Revisar` e `Erros`.
@@ -691,6 +758,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 
 - Na pasta escolhida: `Inicial_<CNJ>.pdf` com as páginas detectadas da petição e `Docs_<CNJ>.pdf` com todas as páginas restantes, na ordem do original. O arquivo de documentos só é criado quando existem páginas fora do intervalo da Inicial.
 - Ao final da tela de processamento, além do caminho da pasta, pode aparecer `Atenção: N processo(s) geraram dúvidas algorítmicas e requerem revisão humana.`
+- Na pasta do log: `gannovodiv-correcoes.log`, em JSON Lines. Cada linha é um objeto JSON com a correção manual: data, arquivo, CNJ, divisão automática original, divisão manual, deltas, método de início e de fim, pontuação, candidatos de fim, flags, parâmetros das regras, sinais de cada página e o texto das páginas vizinhas às fronteiras. O arquivo acumula correções; a primeira gravação cria o arquivo.
 - `Relatório Detalhado` com as colunas `Arquivo`, `Páginas Iniciais` (formato `12 a 34 (23p)`), `Visualizar` e `Status`.
 - CSV baixado como `NovoDiv_Relatorio_<data-hora>.csv`, em UTF-8 com marca de ordem de bytes, separado por ponto e vírgula e com as colunas `Arquivo`, `CNJ`, `Pagina_Inicial`, `Pagina_Final`, `Total_Paginas_Peticao`, `Status`, `Precisa_Revisao`, `Flags` e `Mensagem_Erro`. Em `Status` os valores são `OK`, `REVISAR` e `ERRO`; em `Precisa_Revisao`, `SIM` ou `NÃO`.
 
@@ -703,7 +771,8 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 - `Não foi possível carregar o PDF gerado: <mensagem>` — falha ao ler o arquivo gravado para visualização.
 - `Arquivo original não encontrado na memória.` e `Erro ao abrir PDF para edição visual: <mensagem>` — falhas ao abrir o modo de correção.
 - `Intervalo de páginas inválido.` — `Início`/`Fim` vazios, menores que 1 ou em ordem invertida.
-- `Divisão manual concluída e sobrescrita com sucesso!` — a correção substitui os arquivos do processo e remove a pendência de revisão.
+- `Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em <pasta>/gannovodiv-correcoes.log.` — a correção substitui os arquivos do processo e remove a pendência de revisão.
+- `Divisão manual concluída e sobrescrita com sucesso! O log de correção não foi gravado: <mensagem>` — a divisão valeu, mas a gravação do log falhou ou a pasta do log foi cancelada.
 - Um arquivo com erro não interrompe o lote: os demais são processados e a contagem `Erros` aumenta.
 - O CNJ é lido do nome do arquivo (no formato pontuado ou com 20 dígitos seguidos); sem ele o arquivo nem entra na fila.
 - Repetir o lote na mesma pasta sobrescreve `Inicial_<CNJ>.pdf` e `Docs_<CNJ>.pdf` dos processos já feitos.
@@ -724,6 +793,8 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 - OCR: `Tesseract.createWorker('por')`, com cada página renderizada em canvas na escala 1.5. A varredura cobre as 10 primeiras páginas quando o texto inicial tem menos de 500 caracteres, e depois continua pelas páginas sem texto até encontrar fechamento com OAB; as mensagens são `[!] Imagem sem texto detectada. Iniciando OCR de emergência...` e `> Lendo pág N com OCR...`.
 - Visualizador próprio: a roda do mouse troca uma página por vez, com pausa de gesto de 120 ms, impulso de 400 por página e intervalo mínimo de 160 ms entre trocas. O zoom anda em passos de 0,2, com mínimo de 0,4, e o ajuste `Fit` calcula a escala pela área visível descontando 40 pixels de largura e 80 de altura.
 - A divisão usa `pdf-lib`: copia as páginas do intervalo para o arquivo da Inicial e as páginas antes e depois do intervalo, na ordem original, para o arquivo de documentos. Os bytes são gravados pelo aplicativo hospedeiro.
+- O log de correção é enviado ao aplicativo hospedeiro como `gantoys-file-request` com `action: 'append'`. O host grava com `createWritable({ keepExistingData: true })` e `seek(fim)`, então o arquivo existente é preservado. O log é escrito depois da divisão manual; uma falha no log não desfaz a divisão.
+- Cada página do log traz caracteres, linhas, primeira linha, início e fim do texto, marca de OCR, identificador de documento, classificação de página de sistema, detecção de documento novo, fechamento, sinal de fim, índices dos padrões de início que casaram e marcadores fortes. As páginas vizinhas às fronteiras automáticas e manuais entram com o texto completo, limitado a 20.000 caracteres por página.
 
 ### Adicionar uma regra de divisão sem quebrar as antigas
 

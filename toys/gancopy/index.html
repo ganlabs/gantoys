@@ -51,7 +51,7 @@
             <section class="panel" id="panel-santander" role="tabpanel" aria-labelledby="tab-santander">
                 <div class="card-heading">
                     <h2>Cópia por número de processo</h2>
-                    <p>Localiza todos os arquivos cujo nome contenha um dos processos informados e os copia mantendo o nome original.</p>
+                    <p>Localiza todos os arquivos cujo nome contenha um dos processos informados e os copia mantendo o nome original. Com <strong>Mover em vez de copiar</strong>, o arquivo sai da origem depois de gravado no destino.</p>
                 </div>
 
                 <div class="folder-grid">
@@ -74,6 +74,8 @@
                 <textarea id="santander-processes" spellcheck="false" placeholder="Um processo por linha&#10;Ex.: 12345&#10;ou 0001234-56.2026.8.00.0000"></textarea>
                 <p class="hint">Linhas vazias são ignoradas. A busca percorre também as subpastas da origem.</p>
 
+                <label class="check-row"><input type="checkbox" id="santander-move"> Mover em vez de copiar (remove o arquivo da origem)</label>
+
                 <div class="actions">
                     <button class="btn btn-primary" id="santander-copy" type="button" disabled>Copiar arquivos</button>
                 </div>
@@ -83,13 +85,13 @@
                 </div>
                 <div class="summary" id="santander-summary">
                     <div class="stat"><strong id="santander-total">0</strong><span>Encontrados</span></div>
-                    <div class="stat ok"><strong id="santander-success">0</strong><span>Copiados</span></div>
-                    <div class="stat fail"><strong id="santander-failure">0</strong><span>Não copiados</span></div>
+                    <div class="stat ok"><strong id="santander-success">0</strong><span id="santander-success-label">Copiados</span></div>
+                    <div class="stat fail"><strong id="santander-failure">0</strong><span id="santander-failure-label">Não copiados</span></div>
                 </div>
-                <div class="report" id="santander-report"><div class="report-title">Copiados</div><div class="report-list" id="santander-report-list"></div></div>
+                <div class="report" id="santander-report"><div class="report-title" id="santander-report-title">Copiados</div><div class="report-list" id="santander-report-list"></div></div>
                 <div class="report" id="santander-notcopied">
                     <div class="report-title">
-                        <span>Não copiados</span>
+                        <span id="santander-notcopied-title">Não copiados</span>
                         <button class="btn btn-outline btn-small" id="santander-notcopied-copy" type="button" disabled>Copiar lista</button>
                     </div>
                     <div class="report-list" id="santander-notcopied-list"></div>
@@ -201,7 +203,10 @@
 
         async function pickDirectory(bank, kind) {
             try {
-                const directory = await pickDirectoryFromGanToys(kind === 'destination' ? 'readwrite' : 'read');
+                // Mover escreve na origem também: a pasta precisa ser aberta em
+                // leitura e escrita para o arquivo poder ser removido depois.
+                const wantsWrite = kind === 'destination' || (bank === 'santander' && santanderMove());
+                const directory = await pickDirectoryFromGanToys(wantsWrite ? 'readwrite' : 'read');
                 state[bank][kind] = directory;
                 const nameElement = $(`${bank}-${kind}-name`);
                 nameElement.textContent = directory.name;
@@ -228,20 +233,20 @@
             $(`${bank}-progress-bar`).style.width = `${percent}%`;
         }
 
-        function setScanningProgress(bank, scanned, copied, text) {
+        function setScanningProgress(bank, scanned, copied, text, verb = 'copiado') {
             $(`${bank}-progress`).classList.add('visible');
             $(`${bank}-progress-text`).textContent = text;
-            $(`${bank}-progress-value`).textContent = `${scanned} analisado(s) | ${copied} copiado(s)`;
+            $(`${bank}-progress-value`).textContent = `${scanned} analisado(s) | ${copied} ${verb}(s)`;
             $(`${bank}-progress-bar`).style.width = '100%';
         }
 
-        function renderReport(bank, kind, results) {
+        function renderReport(bank, kind, results, labels = STATUS_LABEL) {
             $(`${bank}-${kind}-list`).replaceChildren(...results.map((result) => {
                 const row = document.createElement('div');
                 row.className = 'report-row';
                 const status = document.createElement('span');
                 status.className = `report-status ${result.status}`;
-                status.textContent = STATUS_LABEL[result.status] || 'ERRO';
+                status.textContent = labels[result.status] || 'ERRO';
                 const message = document.createElement('span');
                 message.textContent = result.message;
                 row.append(status, message);
@@ -252,9 +257,10 @@
 
         // 'ok' e 'updated' gravaram no destino; 'same' não precisou copiar.
         const STATUS_LABEL = { ok: 'COPIADO', updated: 'ATUALIZADO', same: 'IGUAL', missing: 'NÃO LOCALIZADO', fail: 'ERRO' };
+        const MOVE_STATUS_LABEL = { ...STATUS_LABEL, ok: 'MOVIDO' };
         const COPIED_STATUSES = ['ok', 'updated'];
 
-        function showResults(bank, results, totalLabel) {
+        function showResults(bank, results, totalLabel, labels = STATUS_LABEL) {
             const copied = results.filter((result) => COPIED_STATUSES.includes(result.status));
             const notCopied = results.filter((result) => !COPIED_STATUSES.includes(result.status));
 
@@ -263,8 +269,8 @@
             $(`${bank}-failure`).textContent = notCopied.length;
             $(`${bank}-summary`).classList.add('visible');
 
-            renderReport(bank, 'report', copied);
-            renderReport(bank, 'notcopied', notCopied);
+            renderReport(bank, 'report', copied, labels);
+            renderReport(bank, 'notcopied', notCopied, labels);
 
             // Só os números dos processos vão para o clipboard (sem caminhos nem
             // mensagens), um por linha e sem repetir.
@@ -374,27 +380,62 @@
             });
         }
 
+        // Mover precisa de permissão de escrita na origem. Se a pasta já foi
+        // escolhida no modo somente leitura, ela é descartada para ser escolhida
+        // de novo em leitura e escrita (o diálogo abre com o clique do usuário).
+        function onSantanderMoveChange() {
+            if (santanderMove() && state.santander.source) {
+                state.santander.source = null;
+                const nameElement = $('santander-source-name');
+                nameElement.textContent = 'Nenhuma pasta selecionada';
+                nameElement.classList.remove('ready');
+            }
+            applySantanderMode();
+            updateAvailability('santander');
+        }
+
+        function santanderMove() {
+            return $('santander-move').checked;
+        }
+
+        // O mesmo botão, contadores e quadros servem à cópia e à movimentação:
+        // só o rótulo muda, para o relatório não dizer "copiado" sem cópia.
+        function applySantanderMode() {
+            const move = santanderMove();
+            $('santander-copy').textContent = move ? 'Mover arquivos' : 'Copiar arquivos';
+            $('santander-success-label').textContent = move ? 'Movidos' : 'Copiados';
+            $('santander-failure-label').textContent = move ? 'Não movidos' : 'Não copiados';
+            $('santander-report-title').textContent = move ? 'Movidos' : 'Copiados';
+            $('santander-notcopied-title').textContent = move ? 'Não movidos' : 'Não copiados';
+        }
+
         async function runSantander() {
             const button = $('santander-copy');
+            const move = santanderMove();
+            const labels = move ? MOVE_STATUS_LABEL : STATUS_LABEL;
+            const scanningText = move ? 'Procurando e movendo arquivos...' : 'Procurando e copiando arquivos...';
+            const scanningVerb = move ? 'movido' : 'copiado';
             const processes = linesFrom($('santander-processes').value);
             resetResults('santander');
             button.disabled = true;
-            setScanningProgress('santander', 0, 0, 'Procurando e copiando arquivos...');
+            setScanningProgress('santander', 0, 0, scanningText, scanningVerb);
 
             try {
                 const response = await requestShellCopy({
                     mode: 'santander',
                     sourceId: state.santander.source.id,
                     destinationId: state.santander.destination.id,
-                    processes
+                    processes,
+                    move
                 }, (progress) => {
-                    setScanningProgress('santander', progress.scanned, progress.copied, 'Procurando e copiando arquivos...');
+                    setScanningProgress('santander', progress.scanned, progress.copied, scanningText, scanningVerb);
                 });
-                setProgress('santander', 1, 1, response.total === 0 ? 'Nenhum arquivo correspondente foi encontrado.' : 'Cópia concluída.');
-                showResults('santander', response.results, response.total);
+                const doneText = move ? 'Movimentação concluída.' : 'Cópia concluída.';
+                setProgress('santander', 1, 1, response.total === 0 ? 'Nenhum arquivo correspondente foi encontrado.' : doneText);
+                showResults('santander', response.results, response.total, labels);
             } catch (error) {
-                setProgress('santander', 1, 1, 'Não foi possível concluir a cópia.');
-                showResults('santander', [{ status: 'fail', message: error.message }], 0);
+                setProgress('santander', 1, 1, move ? 'Não foi possível concluir a movimentação.' : 'Não foi possível concluir a cópia.');
+                showResults('santander', [{ status: 'fail', message: error.message }], 0, labels);
             } finally {
                 updateAvailability('santander');
             }
@@ -443,12 +484,14 @@
         $('bradesco-source').addEventListener('click', () => pickDirectory('bradesco', 'source'));
         $('bradesco-destination').addEventListener('click', () => pickDirectory('bradesco', 'destination'));
         $('santander-processes').addEventListener('input', () => updateAvailability('santander'));
+        $('santander-move').addEventListener('change', onSantanderMoveChange);
         $('bradesco-processes').addEventListener('input', () => updateAvailability('bradesco'));
         $('bradesco-clients').addEventListener('input', () => updateAvailability('bradesco'));
         $('santander-copy').addEventListener('click', runSantander);
         $('bradesco-copy').addEventListener('click', runBradesco);
         $('santander-notcopied-copy').addEventListener('click', () => copyTextToClipboard(notCopiedText.santander, $('santander-notcopied-copy')));
         $('bradesco-notcopied-copy').addEventListener('click', () => copyTextToClipboard(notCopiedText.bradesco, $('bradesco-notcopied-copy')));
+        applySantanderMode();
         updateAvailability('santander');
         updateAvailability('bradesco');
     </script>

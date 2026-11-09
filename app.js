@@ -577,12 +577,16 @@ const GANTOYS = {
     }
 };
 
-window.showGanToysDirectoryPicker = async (mode = 'readwrite') => {
+window.showGanToysDirectoryPicker = async (mode = 'readwrite', id = null) => {
     if (!('showDirectoryPicker' in window)) {
         throw new Error('Este navegador não expõe o seletor de pastas. Use o Chrome ou o Edge.');
     }
 
-    return window.showDirectoryPicker({ mode });
+    // O `id` faz o navegador lembrar a pasta usada da última vez naquele fluxo
+    // (a do log não deve competir com a da pasta de destino).
+    const options = { mode };
+    if (id) options.id = id;
+    return window.showDirectoryPicker(options);
 };
 
 // Sem a File System Access API não há como escolher uma pasta para leitura/escrita.
@@ -841,13 +845,33 @@ function skipReason(action) {
         : 'já existe no destino com o mesmo conteúdo';
 }
 
-function createProgressReporter(source, requestId) {
+/** Sufixo do relatório para um arquivo movido com sucesso (origem já removida). */
+function moveDetail(action) {
+    if (action === 'overwrite') return ' (sobrescrito e movido)';
+    if (action === 'identical') return ' (movido; já havia o mesmo conteúdo no destino)';
+    return ' (movido)';
+}
+
+/**
+ * Remove da origem o arquivo recém-gravado no destino. O destino já está
+ * garantido, então a falha aqui é reportada como erro do arquivo (o resultado
+ * fica idêntico a uma cópia, mas o relatório diz o que aconteceu).
+ */
+async function removeSourceFile(item) {
+    try {
+        await item.parent.removeEntry(item.handle.name);
+    } catch (error) {
+        throw new Error(`não foi possível remover da origem: ${error.message}`);
+    }
+}
+
+function createProgressReporter(source, requestId, type = 'gantoys-copy-progress') {
     let lastSent = 0;
     return (progress, force = false) => {
         const now = Date.now();
         if (!force && now - lastSent < 120) return;
         lastSent = now;
-        respondToToyRequest(source, 'gantoys-copy-progress', requestId, { progress });
+        respondToToyRequest(source, type, requestId, { progress });
     };
 }
 
@@ -863,6 +887,25 @@ async function handleFileRequest(source, request) {
             await writable.write(request.bytes);
             await writable.close();
             respondToToyRequest(source, 'gantoys-file-result', request.requestId, { result: {} });
+            return;
+        }
+
+        if (request.action === 'append') {
+            if (!await requestDirectoryAccess(directory, true)) throw new Error('É necessário conceder permissão de escrita na pasta de destino.');
+            const fileHandle = await directory.getFileHandle(request.name, { create: true });
+            const file = await fileHandle.getFile();
+            // `keepExistingData` + `seek` preservam o conteúdo e acrescentam no
+            // fim; sem isso, `createWritable` truncaria o log a cada correção.
+            const writable = await fileHandle.createWritable({ keepExistingData: true });
+            try {
+                await writable.seek(file.size);
+                await writable.write(request.bytes);
+            } finally {
+                await writable.close();
+            }
+            respondToToyRequest(source, 'gantoys-file-result', request.requestId, {
+                result: { tamanho: file.size + (request.bytes.byteLength || 0), criado: file.size === 0 }
+            });
             return;
         }
 
@@ -884,13 +927,88 @@ async function handleFileRequest(source, request) {
     }
 }
 
+/**
+ * Apaga, na pasta escolhida, todo arquivo cujo caminho contenha um dos CNJs.
+ * Mesma correspondência da cópia (pontuado localiza despontuado e vice-versa):
+ * cada processo é normalizado uma vez e casado contra o caminho em minúsculas
+ * (para termos com caractere não numérico) ou contra os dígitos do caminho.
+ */
+async function handleDeleteRequest(source, request) {
+    try {
+        const directory = GAN_TOYS_DIRECTORY_HANDLES.get(request.directoryId);
+        if (!directory) throw new Error('A pasta selecionada não está mais disponível. Selecione-a novamente.');
+        if (!await requestDirectoryAccess(directory, true)) {
+            throw new Error('É necessário conceder permissão de escrita na pasta.');
+        }
+
+        const reportProgress = createProgressReporter(source, request.requestId, 'gantoys-delete-progress');
+        const processes = request.processes || [];
+        const search = createProcessSearch(processes);
+        const results = [];
+        const resolved = new Set();
+        let scanned = 0;
+        let found = 0;
+        let deleted = 0;
+
+        for await (const item of walkDirectoryFiles(directory, true)) {
+            scanned += 1;
+            const forms = pathForms(item.path);
+            if (!searchMatchesForms(search, forms)) {
+                reportProgress({ scanned, deleted });
+                continue;
+            }
+
+            // Só nos arquivos aprovados pelo filtro rápido: descobre quais
+            // CNJs eles atendem, para depois listar os que ficaram sem arquivo.
+            const matchedProcesses = [];
+            search.terms.forEach((term, index) => {
+                if (!termMatchesForms(term, forms)) return;
+                resolved.add(index);
+                matchedProcesses.push(processes[index]);
+            });
+
+            found += 1;
+            try {
+                await item.parent.removeEntry(item.handle.name);
+                deleted += 1;
+                results.push({ status: 'ok', reference: matchedProcesses.join('\n'), message: item.path });
+            } catch (error) {
+                // a lista copiada pelo toy leva só os CNJs afetados
+                results.push({ status: 'fail', reference: matchedProcesses.join('\n'), message: `${item.path}: ${error.message}` });
+            }
+            reportProgress({ scanned, deleted });
+        }
+
+        // "reference" alimenta a lista de não apagados exibida pelo toy.
+        processes.forEach((process, index) => {
+            if (resolved.has(index)) return;
+            results.push({ status: 'missing', reference: process, message: `${process}: nenhum arquivo localizado.` });
+        });
+        if (results.length === 0) results.push({ status: 'missing', reference: '', message: 'Nenhum arquivo encontrado para os CNJs informados.' });
+
+        reportProgress({ scanned, deleted }, true);
+        respondToToyRequest(source, 'gantoys-delete-result', request.requestId, { result: { total: found, results } });
+    } catch (error) {
+        respondToToyRequest(source, 'gantoys-delete-result', request.requestId, {
+            error: { name: error.name, message: error.message }
+        });
+    }
+}
+
 async function handleCopyRequest(source, request) {
     try {
         const sourceDirectory = GAN_TOYS_DIRECTORY_HANDLES.get(request.sourceId);
         const destinationDirectory = GAN_TOYS_DIRECTORY_HANDLES.get(request.destinationId);
         if (!sourceDirectory || !destinationDirectory) throw new Error('Selecione novamente as pastas de origem e destino.');
-        if (!await requestDirectoryAccess(sourceDirectory, false) || !await requestDirectoryAccess(destinationDirectory, true)) {
-            throw new Error('É necessário conceder permissão de leitura na origem e escrita no destino.');
+
+        // Mover exige escrita nos dois lados: o arquivo é gravado no destino e
+        // removido da origem. Copiar exige escrita apenas no destino.
+        const move = request.mode === 'santander' && Boolean(request.move);
+        const sourcePermission = await requestDirectoryAccess(sourceDirectory, move);
+        if (!sourcePermission || !await requestDirectoryAccess(destinationDirectory, true)) {
+            throw new Error(move
+                ? 'É necessário conceder permissão de leitura na origem e escrita no destino (e na origem para mover).'
+                : 'É necessário conceder permissão de leitura na origem e escrita no destino.');
         }
 
         const reportProgress = createProgressReporter(source, request.requestId);
@@ -923,19 +1041,29 @@ async function handleCopyRequest(source, request) {
                 found += 1;
                 try {
                     const plan = await planFileCopy(item.handle, destinationDirectory, item.handle.name);
-                    if (plan.action === 'same-file' || plan.action === 'identical') {
-                        // Mesmo arquivo ou mesmo conteúdo: não copia nem renomeia.
+                    if (plan.action === 'same-file') {
+                        // Mesmo arquivo dos dois lados: não há para onde mover.
+                        results.push({
+                            status: 'same',
+                            reference: matchedProcesses.join('\n'),
+                            message: `${item.path}: ${skipReason(plan.action)}`
+                        });
+                    } else if (plan.action === 'identical' && !move) {
+                        // Mesmo conteúdo no destino: não copia nem renomeia.
                         results.push({
                             status: 'same',
                             reference: matchedProcesses.join('\n'),
                             message: `${item.path}: ${skipReason(plan.action)}`
                         });
                     } else {
-                        await writeDestinationFile(destinationDirectory, item.handle.name, plan.sourceFile);
+                        const overwritten = plan.action === 'overwrite';
+                        // 'create' grava; 'overwrite' regrava; 'identical' já tem o conteúdo no destino.
+                        if (plan.action !== 'identical') await writeDestinationFile(destinationDirectory, item.handle.name, plan.sourceFile);
+                        if (move) await removeSourceFile(item);
                         copied += 1;
                         results.push({
-                            status: plan.action === 'overwrite' ? 'updated' : 'ok',
-                            message: plan.action === 'overwrite' ? `${item.path} (sobrescrito)` : item.path
+                            status: overwritten ? 'updated' : 'ok',
+                            message: `${item.path}${move ? moveDetail(plan.action) : overwritten ? ' (sobrescrito)' : ''}`
                         });
                     }
                 } catch (error) {
@@ -1036,12 +1164,13 @@ window.addEventListener('message', (event) => {
         pendingDirectoryPickerRequest = {
             source: event.source,
             requestId: event.data.requestId,
-            mode: event.data.mode || 'readwrite'
+            mode: event.data.mode || 'readwrite',
+            id: event.data.id || null
         };
 
         const modal = document.getElementById('directoryPickerModal');
         const message = document.getElementById('directoryPickerMessage');
-        if (message) message.textContent = 'Confirme para selecionar uma pasta local no seu computador.';
+        if (message) message.textContent = event.data.message || 'Confirme para selecionar uma pasta local no seu computador.';
         if (modal) modal.hidden = false;
         return;
     }
@@ -1053,6 +1182,11 @@ window.addEventListener('message', (event) => {
 
     if (event.data.type === 'gantoys-copy-request') {
         handleCopyRequest(event.source, event.data);
+        return;
+    }
+
+    if (event.data.type === 'gantoys-delete-request') {
+        handleDeleteRequest(event.source, event.data);
         return;
     }
 
@@ -1082,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!request) return;
 
         try {
-            const handle = await window.showGanToysDirectoryPicker(request.mode);
+            const handle = await window.showGanToysDirectoryPicker(request.mode, request.id);
             closeDirectoryPickerModal();
             pendingDirectoryPickerRequest = null;
             const directoryId = crypto.randomUUID();

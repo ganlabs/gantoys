@@ -385,26 +385,76 @@ function hasPetitionEndSignal(text) {
     return hasClosing || hasOAB || hasValor || hasValorRS || hasFls;
 }
 
+const VERSAO_ALGORITMO = 'v7';
+const LIMITE_TRECHO_LOG = 600;
+const LIMITE_TEXTO_LOG = 20000;
+
+// Última análise completa (sinais por página + método de decisão). O retorno
+// público de detectInicialRange continua congelado; este registro é só para o
+// log de correção manual, que precisa do contexto que gerou a divisão errada.
+let ultimaAnalise = null;
+
+async function textoDaPagina(page) {
+    const tc = await page.getTextContent();
+    let text = '';
+    let lastY = -1;
+    for (const item of tc.items) {
+        if (lastY !== -1 && Math.abs(lastY - item.transform[5]) > 2) {
+            text += '\n';
+        }
+        text += item.str;
+        lastY = item.transform[5];
+    }
+    return text;
+}
+
+function resumirPagina(text, pagina, ocr) {
+    const linhas = text.trim().split('\n').map((linha) => linha.trim()).filter(Boolean);
+    const last20 = text.split('\n').slice(-20).join('\n');
+    const documento = extractDocId(text);
+    return {
+        pagina,
+        caracteres: text.length,
+        linhas: linhas.length,
+        primeiraLinha: (linhas[0] || '').slice(0, 300),
+        inicio: text.slice(0, LIMITE_TRECHO_LOG),
+        fim: text.slice(-LIMITE_TRECHO_LOG),
+        ocr,
+        documento: documento[0] ? { sistema: documento[0], id: documento[1] } : null,
+        paginaDoSistema: isSystemPage(text),
+        novoDocumento: Boolean(text.trim()) && isNewDocByContent(text),
+        fechamento: isRealClosing(last20),
+        sinalDeFim: hasPetitionEndSignal(last20),
+        padroesDeInicio: START_PATTERNS.map((pat, indice) => (pat.test(text) ? indice : -1)).filter((indice) => indice >= 0),
+        marcadoresFortes: STRONG_MARKERS.filter((marcador) => text.slice(0, 300).includes(marcador)),
+    };
+}
+
+function registrarAnalise(dados, resultado) {
+    const { pagesText, ocrPages, ...decisao } = dados;
+    ultimaAnalise = {
+        ...decisao,
+        geradoEm: new Date().toISOString(),
+        paginas: pagesText.map((text, indice) => resumirPagina(text, indice + 1, ocrPages.has(indice + 1))),
+    };
+    return resultado;
+}
+
 async function detectInicialRange(pdfBytes) {
     const doc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
     const totalPages = doc.numPages;
     const pagesText = [];
+    const ocrPages = new Set();
     for (let i = 1; i <= totalPages; i++) {
         const page = await doc.getPage(i);
-        const tc = await page.getTextContent();
-        let text = '';
-        let lastY = -1;
-        for (const item of tc.items) {
-            if (lastY !== -1 && Math.abs(lastY - item.transform[5]) > 2) {
-                text += '\n';
-            }
-            text += item.str;
-            lastY = item.transform[5];
-        }
-        pagesText.push(text);
+        pagesText.push(await textoDaPagina(page));
     }
 
     let flags = [];
+    let startMethod = null;
+    let endMethod = null;
+    let score = 0;
+    let candidatosFim = [];
 
     // FASE 0: PROCON
     let isProcon = false, proconStart = null;
@@ -418,7 +468,7 @@ async function detectInicialRange(pdfBytes) {
     }
 
     // FASE 1: INÍCIO
-    let startPage = null, startMethod = null;
+    let startPage = null;
 
     if (isProcon && proconStart) {
         startPage = proconStart; startMethod = 'procon'; flags.push('PROCON');
@@ -456,7 +506,8 @@ async function detectInicialRange(pdfBytes) {
                 if (typeof log === 'function') log(`   > Lendo pág ${i} com OCR...`);
                 const { data: { text } } = await worker.recognize(canvas);
                 pagesText[i-1] = text;
-                
+                ocrPages.add(i);
+
                 for (const pat of START_PATTERNS) {
                     if (pat.test(text)) { startPage = i; startMethod = 'ocr_pattern'; break; }
                 }
@@ -478,6 +529,7 @@ async function detectInicialRange(pdfBytes) {
                     if (typeof log === 'function') log(`   > Lendo pág ${i+1} com OCR...`);
                     const { data: { text } } = await worker.recognize(canvas);
                     pagesText[i] = text;
+                    ocrPages.add(i + 1);
 
                     const last20 = text.split('\n').slice(-20).join('\n');
                     const hasC = isRealClosing(last20);
@@ -488,7 +540,12 @@ async function detectInicialRange(pdfBytes) {
             await worker.terminate();
         }
 
-        if (!startPage) return { start: null, end: null, error: 'Não detectou início (mesmo com OCR)' };
+        if (!startPage) {
+            return registrarAnalise({
+                pagesText, ocrPages, inicioMetodo: null, fimMetodo: null, pontuacao: null,
+                flags, procon: { encontrado: isProcon, inicio: proconStart }, candidatosFim,
+            }, { start: null, end: null, error: 'Não detectou início (mesmo com OCR)' });
+        }
 
         // Refinamento: candidato alternativo se o primeiro for muito curto
         let firstEnd = null;
@@ -562,7 +619,7 @@ async function detectInicialRange(pdfBytes) {
 
     // FASE 2: FIM
     let endById = null, endByContent = null, endByClosingConfirmed = null, endByClosingOnly = null, endByClosingNoOab = null;
-    let endMethod = null, lastDocId = ['none','none'];
+    let lastDocId = ['none','none'];
 
     for (let i = startPage - 1; i < totalPages; i++) {
         const page = i + 1, txt = pagesText[i];
@@ -593,17 +650,23 @@ async function detectInicialRange(pdfBytes) {
         }
     }
 
+    const registrarProcon = (resultado) => registrarAnalise({
+        pagesText, ocrPages, inicioMetodo: startMethod, fimMetodo: 'procon',
+        pontuacao: resultado.confidence, flags: resultado.flags,
+        procon: { encontrado: isProcon, inicio: proconStart }, candidatosFim,
+    }, resultado);
+
     if (startMethod === 'procon') {
         let firstNum = null;
         for (let i = startPage; i < totalPages; i++) {
-            if (isSystemPage(pagesText[i])) return { start: startPage, end: i, confidence: 3, flags: ['PROCON','review'] };
+            if (isSystemPage(pagesText[i])) return registrarProcon({ start: startPage, end: i, confidence: 3, flags: ['PROCON','review'] });
             const docId = extractDocId(pagesText[i]);
             if (docId[0] !== null) {
                 if (firstNum === null) firstNum = docId[1];
-                else if (docId[1] !== firstNum) return { start: startPage, end: i, confidence: 3, flags: ['PROCON','review'] };
-            } else if (isNewDocByContent(pagesText[i])) return { start: startPage, end: i, confidence: 3, flags: ['PROCON','review'] };
+                else if (docId[1] !== firstNum) return registrarProcon({ start: startPage, end: i, confidence: 3, flags: ['PROCON','review'] });
+            } else if (isNewDocByContent(pagesText[i])) return registrarProcon({ start: startPage, end: i, confidence: 3, flags: ['PROCON','review'] });
         }
-        return { start: startPage, end: totalPages, confidence: 2, flags: ['PROCON','review'] };
+        return registrarProcon({ start: startPage, end: totalPages, confidence: 2, flags: ['PROCON','review'] });
     }
 
     let endPage = null;
@@ -613,6 +676,7 @@ async function detectInicialRange(pdfBytes) {
     if (endByClosingConfirmed !== null) cand.push(['close_conf', endByClosingConfirmed]);
     if (endByClosingNoOab !== null) cand.push(['close_no_oab', endByClosingNoOab]);
     if (endByClosingOnly !== null) cand.push(['close_only', endByClosingOnly]);
+    candidatosFim = cand.map(([metodo, pagina]) => ({ metodo, pagina }));
     if (cand.length > 0) { cand.sort((a,b) => a[1]-b[1]); endPage = cand[0][1]; endMethod = cand[0][0]; }
 
     if (!endPage) {
@@ -623,7 +687,6 @@ async function detectInicialRange(pdfBytes) {
     if (!endPage) { endPage = totalPages; endMethod = 'fallback'; }
 
     // SCORE
-    let score = 0;
     if (startMethod === 'pattern' || startMethod === 'inic1') score += 2;
     else if (startMethod === 'pattern_alt') { score += 1; if (!flags.includes('review')) flags.push('review'); }
     else if (startMethod === 'termo2') { score += 1; if (!flags.includes('review')) flags.push('review'); }
@@ -641,7 +704,10 @@ async function detectInicialRange(pdfBytes) {
     score = Math.max(0, Math.min(5, score));
     if (!flags.includes('review') && score < 3) flags.push('review');
 
-    return { start: startPage, end: endPage, confidence: score, flags, total: totalPages };
+    return registrarAnalise({
+        pagesText, ocrPages, inicioMetodo: startMethod, fimMetodo: endMethod, pontuacao: score,
+        flags, procon: { encontrado: isProcon, inicio: proconStart }, candidatosFim,
+    }, { start: startPage, end: endPage, confidence: score, flags, total: totalPages });
 }
 
 // ============================================================
@@ -659,6 +725,8 @@ let currentDoc = null;
 let currentPageNum = 1;
 let isRenderingPage = false;
 let customScale = null;
+let logDir = null;
+let logDirPromise = null;
 
 // Elementos
 const dropZone = document.getElementById('dropZone');
@@ -1010,6 +1078,129 @@ async function salvar(dir, nome, bytes) {
     });
 }
 
+const NOME_ARQUIVO_LOG = 'gannovodiv-correcoes.log';
+
+function pickLogDirectory() {
+    if (logDir) return Promise.resolve(logDir);
+    if (!logDirPromise) {
+        logDirPromise = requestGanToys('gantoys-directory-picker-result', {
+            type: 'gantoys-directory-picker-request',
+            mode: 'readwrite',
+            id: 'gannovodiv-log',
+            message: 'O log de correções é gravado na pasta escolhida. Selecione a pasta onde está o index.html do GAN Toys.'
+        }).then((response) => {
+            logDir = response.directory;
+            return logDir;
+        }).catch((error) => {
+            logDirPromise = null;
+            throw error;
+        });
+    }
+    return logDirPromise;
+}
+
+async function acrescentarLog(dir, texto) {
+    const bytes = new TextEncoder().encode(texto);
+    await requestGanToys('gantoys-file-result', {
+        type: 'gantoys-file-request',
+        action: 'append',
+        directoryId: dir.id,
+        name: NOME_ARQUIVO_LOG,
+        bytes: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    });
+}
+
+function textoLimitado(text, limite = LIMITE_TEXTO_LOG) {
+    if (!text) return '';
+    if (text.length <= limite) return text;
+    return `${text.slice(0, limite)}\n[... ${text.length - limite} caracteres omitidos]`;
+}
+
+async function textosDeFronteira(doc, automatico, manual) {
+    if (!doc) return [];
+    const paginas = new Set();
+    const adicionar = (inicio, fim) => {
+        for (let pagina = Math.max(1, inicio); pagina <= Math.min(doc.numPages, fim); pagina++) paginas.add(pagina);
+    };
+    if (automatico.start != null) adicionar(automatico.start - 2, automatico.start + 2);
+    if (automatico.end != null) adicionar(automatico.end - 2, automatico.end + 2);
+    adicionar(manual.start - 1, manual.start + 1);
+    adicionar(manual.end - 1, manual.end + 1);
+
+    const textos = [];
+    for (const pagina of [...paginas].sort((a, b) => a - b)) {
+        const page = await doc.getPage(pagina);
+        textos.push({ pagina, texto: textoLimitado(await textoDaPagina(page)) });
+    }
+    return textos;
+}
+
+async function registrarCorrecaoLog(antes, manual) {
+    const dir = await pickLogDirectory();
+    const trace = antes.trace;
+    const fronteiras = await textosDeFronteira(currentDoc, antes, manual);
+
+    const registro = {
+        schema: 1,
+        tipo: 'correcao',
+        registradoEm: new Date().toISOString(),
+        ambiente: {
+            toy: 'divisor-automatico-santander',
+            algoritmo: VERSAO_ALGORITMO,
+            url: location.href,
+            navegador: navigator.userAgent,
+            idioma: navigator.language,
+        },
+        arquivo: {
+            nome: antes.file,
+            cnj: antes.cnj,
+            bytes: currentManualFile.size,
+            modificadoEm: new Date(currentManualFile.lastModified).toISOString(),
+            totalPaginas: antes.total ?? null,
+        },
+        automatico: {
+            inicio: antes.start ?? null,
+            fim: antes.end ?? null,
+            paginas: antes.start != null && antes.end != null ? antes.end - antes.start + 1 : null,
+            confianca: trace ? trace.pontuacao : null,
+            inicioMetodo: trace ? trace.inicioMetodo : null,
+            fimMetodo: trace ? trace.fimMetodo : null,
+            flags: antes.flags || [],
+            precisaRevisao: Boolean(antes.needsReview),
+            erro: antes.error || null,
+        },
+        manual: {
+            inicio: manual.start,
+            fim: manual.end,
+            paginas: manual.end - manual.start + 1,
+        },
+        correcao: {
+            inicioDelta: antes.start != null ? manual.start - antes.start : null,
+            fimDelta: antes.end != null ? manual.end - antes.end : null,
+            mudouInicio: antes.start != null ? manual.start !== antes.start : null,
+            mudouFim: antes.end != null ? manual.end !== antes.end : null,
+        },
+        decisao: trace ? {
+            pontuacao: trace.pontuacao,
+            inicioMetodo: trace.inicioMetodo,
+            fimMetodo: trace.fimMetodo,
+            candidatosFim: trace.candidatosFim || [],
+            procon: trace.procon || null,
+            parametros: {
+                inicio: START_PATTERNS.map(String),
+                fim: CLOSING_PATTERNS.map(String),
+                marcadoresFortes: STRONG_MARKERS,
+                continuacao: CONTINUATION_WORDS,
+            },
+        } : null,
+        paginas: trace ? trace.paginas : [],
+        fronteiras,
+    };
+
+    await acrescentarLog(dir, `${JSON.stringify(registro)}\n`);
+    return `${dir.name}/${NOME_ARQUIVO_LOG}`;
+}
+
 async function processarTudo() {
     try {
         globalDestDir = await pickDestinationDirectory();
@@ -1045,6 +1236,7 @@ async function processarTudo() {
             const cnj = cnjFromName(f.name);
 
             log(`Detectando limites...`);
+            ultimaAnalise = null;
             const range = await detectInicialRange(bytes);
             
             if (range.error || !range.start) {
@@ -1059,14 +1251,19 @@ async function processarTudo() {
 
             reportData.push({ 
                 file: f.name, cnj, start: range.start, end: range.end, total: range.total,
-                pages: range.end - range.start + 1, flags: range.flags, needsReview 
+                pages: range.end - range.start + 1, flags: range.flags, needsReview,
+                autoStart: range.start, autoEnd: range.end, trace: ultimaAnalise
             });
 
             log(`Salvo com sucesso.`);
         } catch (e) {
             log(`ERRO: ${e.message}`);
             counts.err++;
-            reportData.push({ file: f.name, cnj: cnjFromName(f.name), error: e.message, needsReview: false });
+            reportData.push({
+                file: f.name, cnj: cnjFromName(f.name), error: e.message, needsReview: false,
+                total: ultimaAnalise ? ultimaAnalise.paginas.length : null,
+                autoStart: null, autoEnd: null, trace: ultimaAnalise
+            });
         }
 
         // Atualiza stats em realtime
@@ -1205,9 +1402,31 @@ document.getElementById('btnManualSplit').addEventListener('click', async () => 
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Cortando...';
     
     try {
-        await splitSavePDF(currentManualFile, start, end, globalDestDir, cnj);
-        
+        // O log guarda a divisão automática original; a primeira correção não a
+        // apaga, e correções repetidas continuam comparando com ela.
         const r = reportData.find(x => x.cnj === cnj);
+        const antes = {
+            file: currentManualFile.name,
+            cnj,
+            start: r ? r.autoStart ?? null : null,
+            end: r ? r.autoEnd ?? null : null,
+            total: r ? r.total ?? null : currentDoc ? currentDoc.numPages : null,
+            flags: r && r.trace ? r.trace.flags : r ? r.flags : [],
+            needsReview: r && r.trace ? r.trace.flags.includes('review') : r ? r.needsReview : false,
+            error: r ? r.error : null,
+            trace: r ? r.trace : null,
+        };
+
+        await splitSavePDF(currentManualFile, start, end, globalDestDir, cnj);
+
+        let avisoLog = '';
+        try {
+            const caminho = await registrarCorrecaoLog(antes, { start, end });
+            avisoLog = ` Log de correção gravado em ${caminho}.`;
+        } catch (error) {
+            avisoLog = ` O log de correção não foi gravado: ${error.message}`;
+        }
+
         if (r) {
             r.start = start;
             r.end = end;
@@ -1217,8 +1436,8 @@ document.getElementById('btnManualSplit').addEventListener('click', async () => 
             r.error = null;
         }
         renderReport();
-        
-        alert("Divisão manual concluída e sobrescrita com sucesso!");
+
+        alert(`Divisão manual concluída e sobrescrita com sucesso!${avisoLog}`);
         closePdfModal();
     } catch(e) {
         alert("Erro na divisão: " + e.message);

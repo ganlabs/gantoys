@@ -511,17 +511,181 @@ test('NovoDiv — Corrigir abre o editor com o intervalo detectado e a divisão 
     assert.equal(pagina.seletor('#inpCurrentPage').value, '9');
     assert.equal(pagina.seletor('#manualEnd').value, '3');
 
+    const logDir = montarArvore('Log');
+    pagina.app.enfileirarPasta(logDir);
     pagina.digitar('#manualStart', '1');
     pagina.digitar('#manualEnd', '2');
     pagina.clicar('#btnManualSplit');
+    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
+    await pagina.ponte.confirmarPasta();
     await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'divisão manual' });
 
-    assert.deepEqual(pagina.alertas, ['Divisão manual concluída e sobrescrita com sucesso!']);
+    assert.deepEqual(pagina.alertas, [
+        'Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Log/gannovodiv-correcoes.log.',
+    ]);
     assert.deepEqual(await tamanhosGravados(pagina, `Inicial_${CNJ}.pdf`), [[100, 200], [101, 200]]);
     assert.deepEqual(await tamanhosGravados(pagina, `Docs_${CNJ}.pdf`), [[102, 200], [103, 200]]);
     assert.deepEqual(celulasDaLinha(pagina, 0), [NOME, '1 a 2 (2p)', 'Inicial Docs Corrigir', 'OK']);
     assert.equal(pagina.seletor('#pdfModal').classList.contains('open'), false);
     assert.equal(pagina.texto('#btnManualSplit'), 'Dividir');
+});
+
+test('NovoDiv — correção manual grava log JSONL com o contexto e acrescenta as próximas', async (t) => {
+    const pagina = await abrirNovoDiv(t, { paginas: [PAGINA_SISTEMA, PAGINA_INICIAL, PAGINA_FECHAMENTO, PAGINA_PROCURACAO] });
+    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 4)]);
+    await processar(pagina);
+    await pagina.tick(0);
+
+    const logDir = montarArvore('Log');
+    pagina.app.enfileirarPasta(logDir);
+
+    // Primeira correção: a pasta do log é escolhida uma única vez.
+    pagina.clicar('#reportTbody button:nth-child(3)');
+    await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor aberto' });
+    pagina.digitar('#manualStart', '1');
+    pagina.digitar('#manualEnd', '2');
+    pagina.clicar('#btnManualSplit');
+    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
+    assert.equal(
+        pagina.app.texto('#directoryPickerMessage'),
+        'O log de correções é gravado na pasta escolhida. Selecione a pasta onde está o index.html do GAN Toys.'
+    );
+    await pagina.ponte.confirmarPasta();
+    assert.deepEqual(dados(logDir.opcoesUsadas), { mode: 'readwrite', id: 'gannovodiv-log' });
+    await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'primeira correção' });
+
+    // Segunda correção: sem novo diálogo, o log é acrescentado no mesmo arquivo.
+    const pedidosAntes = pagina.ponte.tipos().filter((tipo) => tipo === 'gantoys-directory-picker-request').length;
+    pagina.janela.openManualSplit(CNJ);
+    await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor reaberto' });
+    pagina.digitar('#manualStart', '4');
+    pagina.digitar('#manualEnd', '4');
+    pagina.clicar('#btnManualSplit');
+    await pagina.aguardar(() => pagina.alertas.length === 2, { descricao: 'segunda correção' });
+    assert.equal(
+        pagina.ponte.tipos().filter((tipo) => tipo === 'gantoys-directory-picker-request').length,
+        pedidosAntes,
+        'a segunda correção não pode pedir a pasta do log de novo'
+    );
+
+    const linhas = logDir.conteudo('gannovodiv-correcoes.log').trim().split('\n').map((linha) => JSON.parse(linha));
+    assert.equal(linhas.length, 2);
+    assert.equal(linhas[0].schema, 1);
+    assert.equal(linhas[0].tipo, 'correcao');
+    assert.equal(linhas[0].arquivo.nome, NOME);
+    assert.equal(linhas[0].arquivo.cnj, CNJ);
+    assert.equal(linhas[0].arquivo.totalPaginas, 4);
+    assert.deepEqual(linhas[0].automatico, {
+        inicio: 2,
+        fim: 3,
+        paginas: 2,
+        confianca: 3,
+        inicioMetodo: 'pattern',
+        fimMetodo: 'content',
+        flags: [],
+        precisaRevisao: false,
+        erro: null,
+    });
+    assert.deepEqual(linhas[0].manual, { inicio: 1, fim: 2, paginas: 2 });
+    assert.deepEqual(linhas[0].correcao, { inicioDelta: -1, fimDelta: -1, mudouInicio: true, mudouFim: true });
+
+    // Contexto suficiente para um agente reconstruir a falha.
+    assert.equal(linhas[0].decisao.pontuacao, 3);
+    assert.equal(linhas[0].decisao.inicioMetodo, 'pattern');
+    assert.equal(linhas[0].decisao.fimMetodo, 'content');
+    assert.ok(linhas[0].decisao.parametros.inicio.length > 0);
+    assert.ok(linhas[0].decisao.parametros.fim.length > 0);
+    assert.deepEqual(linhas[0].paginas.map((p) => p.pagina), [1, 2, 3, 4]);
+    assert.equal(linhas[0].paginas[0].paginaDoSistema, true);
+    assert.equal(linhas[0].paginas[1].paginaDoSistema, false);
+    assert.deepEqual(linhas[0].paginas[1].padroesDeInicio, [0]);
+    assert.equal(linhas[0].paginas[2].fechamento, true);
+    assert.deepEqual(linhas[0].fronteiras.map((f) => f.pagina), [1, 2, 3, 4]);
+    assert.match(linhas[0].fronteiras[1].texto, /EXCELENTÍSSIMO/);
+
+    // O log guarda a divisão automática original, não a correção anterior.
+    assert.equal(linhas[1].automatico.inicio, 2);
+    assert.equal(linhas[1].automatico.fim, 3);
+    assert.equal(linhas[1].automatico.inicioMetodo, 'pattern');
+    assert.deepEqual(linhas[1].manual, { inicio: 4, fim: 4, paginas: 1 });
+    assert.deepEqual(linhas[1].correcao, { inicioDelta: 2, fimDelta: 1, mudouInicio: true, mudouFim: true });
+    assert.match(pagina.alertas[1], /^Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Log\/gannovodiv-correcoes\.log\.$/);
+});
+
+test('NovoDiv — cancelar a pasta do log não impede a divisão manual', async (t) => {
+    const pagina = await abrirNovoDiv(t, { paginas: [PAGINA_SISTEMA, PAGINA_INICIAL, PAGINA_FECHAMENTO, PAGINA_PROCURACAO] });
+    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 4)]);
+    await processar(pagina);
+    await pagina.tick(0);
+
+    pagina.clicar('#reportTbody button:nth-child(3)');
+    await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor aberto' });
+    pagina.digitar('#manualStart', '1');
+    pagina.digitar('#manualEnd', '2');
+    pagina.clicar('#btnManualSplit');
+    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
+    await pagina.ponte.cancelarPasta();
+    await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'divisão sem log' });
+
+    assert.deepEqual(pagina.alertas, [
+        'Divisão manual concluída e sobrescrita com sucesso! O log de correção não foi gravado: Seleção de pasta cancelada.',
+    ]);
+    assert.deepEqual(await tamanhosGravados(pagina, `Inicial_${CNJ}.pdf`), [[100, 200], [101, 200]]);
+    assert.equal(pagina.seletor('#pdfModal').classList.contains('open'), false);
+});
+
+test('NovoDiv — correção de processo com erro grava log sem divisão automática', async (t) => {
+    const pagina = await abrirNovoDiv(t, { paginas: ['página 1', 'página 2'] });
+    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 2)]);
+    await processar(pagina);
+    await pagina.tick(0);
+
+    const logDir = montarArvore('Log');
+    pagina.app.enfileirarPasta(logDir);
+
+    pagina.janela.openManualSplit(CNJ);
+    await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor aberto' });
+    pagina.digitar('#manualStart', '1');
+    pagina.digitar('#manualEnd', '2');
+    pagina.clicar('#btnManualSplit');
+    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
+    await pagina.ponte.confirmarPasta();
+    await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'correção do processo com erro' });
+
+    const registro = JSON.parse(logDir.conteudo('gannovodiv-correcoes.log').trim());
+    assert.deepEqual(registro.automatico, {
+        inicio: null,
+        fim: null,
+        paginas: null,
+        confianca: null,
+        inicioMetodo: null,
+        fimMetodo: null,
+        flags: [],
+        precisaRevisao: false,
+        erro: 'Tesseract is not defined',
+    });
+    assert.deepEqual(registro.correcao, { inicioDelta: null, fimDelta: null, mudouInicio: null, mudouFim: null });
+    assert.equal(registro.decisao, null);
+    assert.deepEqual(registro.paginas, []);
+    assert.equal(registro.arquivo.totalPaginas, null);
+    assert.deepEqual(registro.fronteiras.map((f) => f.pagina), [1, 2]);
+});
+
+test('NovoDiv — utilitários do log tratam texto longo e ausência de documento', async (t) => {
+    const pagina = await abrirNovoDiv(t);
+
+    assert.equal(pagina.janela.textoLimitado('', 5), '');
+    assert.equal(pagina.janela.textoLimitado('curto', 5), 'curto');
+    assert.equal(pagina.janela.textoLimitado('0123456789', 5), '01234\n[... 5 caracteres omitidos]');
+
+    assert.deepEqual(dados(await pagina.janela.textosDeFronteira(null, { start: 1, end: 1 }, { start: 1, end: 1 })), []);
+    const semTexto = {
+        numPages: 2,
+        async getPage() {
+            return { async getTextContent() { return { items: [] }; } };
+        },
+    };
+    assert.deepEqual(dados(await pagina.janela.textosDeFronteira(semTexto, { start: null, end: null }, { start: null, end: null })), [{ pagina: 1, texto: '' }]);
 });
 
 test('NovoDiv — divisão manual com intervalo inválido é recusada', async (t) => {
