@@ -635,7 +635,7 @@ Nas duas abas, os quadros `Copiados` e `Não copiados` só aparecem quando têm 
 
 ## Avisos e limitações
 
-- Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem; se a seleção não responder em 60 segundos, o erro é `A seleção de pasta não respondeu.`
+- Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem. A escolha de pasta não tem limite de tempo: uma seleção demorada não gera erro.
 - Se a cópia ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de cópia não respondeu.` e a barra mostra `Não foi possível concluir a cópia.`
 - Se as pastas escolhidas não estiverem mais disponíveis, a cópia falha com `Selecione novamente as pastas de origem e destino.`; sem permissão, falha com `É necessário conceder permissão de leitura na origem e escrita no destino.` Com `Mover` marcado, a mensagem de permissão é `É necessário conceder permissão de leitura na origem e escrita no destino (e na origem para mover).`
 - Um arquivo já existente no destino com o mesmo conteúdo não é recopiado: entra no quadro `Não copiados` com o estado `IGUAL` e o motivo `já existe no destino com o mesmo conteúdo`. Se o arquivo do destino for o mesmo arquivo da origem, o motivo é `origem e destino são o mesmo arquivo` (e, com `Mover`, nada é apagado).
@@ -719,7 +719,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 ## Requisitos
 
 - O toy precisa rodar dentro do aplicativo GAN Toys: a escolha da pasta de destino e a gravação dos arquivos são pedidas ao aplicativo hospedeiro por mensagem. Fora do host, não existe seletor de pasta e o processamento nem começa.
-- O log de correção manual é gravado pelo aplicativo hospedeiro na pasta escolhida pelo usuário. A pasta precisa de permissão de escrita, e o navegador pede a escolha na primeira correção de cada sessão.
+- O log de correção manual é gravado na mesma pasta escolhida para os PDFs da divisão automática. O toy não pede outra pasta para o log.
 - `pdf-lib` e `pdf.js` são carregados do próprio projeto (`../../vendor/pdf-lib/pdf-lib.min.js` e `../../vendor/pdfjs/pdf.min.js`, com worker em `../../vendor/pdfjs/pdf.worker.min.js`); nenhum download é feito para eles.
 - O OCR de emergência depende da CDN `https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js`. Sem internet o OCR não existe: o arquivo que precisaria dele falha em vez de ser lido como imagem.
 - Cada PDF precisa ter o número CNJ no nome, no padrão `0000000-00.0000.0.00.0000` ou como 20 dígitos seguidos. Arquivos cujo nome começa com `Inicial` ou `Docs` são descartados da fila.
@@ -732,7 +732,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 3. Acompanhe o passo `Processamento`: a linha de status mostra `Analisando 1 de N: <arquivo>`, a barra avança em porcentagem, os contadores `Total`, `Concluídos`, `A Revisar` e `Erros` são atualizados a cada arquivo e o log registra `Lendo bytes de ...`, `Detectando limites...`, `Separando PDF (início a fim)...` e `Salvo com sucesso.`
 4. Ao terminar, o passo `Auditoria` é ativado e aparece a mensagem `Os resultados foram guardados em <pasta>.`
 5. Clique em `Ver Relatório` para abrir `Relatório Detalhado` e conferir a linha de cada processo.
-6. Na coluna `Visualizar`, use `Inicial` ou `Docs` para abrir o PDF gerado, ou `Corrigir` para refazer a divisão à mão. Na primeira correção, escolha a pasta do log quando o aplicativo pedir. As correções seguintes acrescentam registros no mesmo arquivo, sem novo pedido.
+6. Na coluna `Visualizar`, use `Inicial` ou `Docs` para abrir o PDF gerado, ou `Corrigir` para refazer a divisão à mão. Cada correção acrescenta um registro no log da pasta de destino, sem novo pedido de pasta.
 7. Clique em `Exportar CSV` para baixar o relatório, ou em `Novo Processamento` para voltar ao início.
 
 ## Campos e controles
@@ -748,7 +748,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 - **Corrigir** — abre o arquivo original no visualizador próprio, com os campos `Início` e `Fim` preenchidos com o intervalo detectado.
 - **Marcar Início** e **Marcar Fim** — copiam a página que está sendo exibida para os campos `Início` e `Fim`.
 - **Início** e **Fim** — números inteiros, mínimo 1; definem o intervalo da Inicial na correção manual.
-- **Dividir** — grava a divisão manual por cima dos arquivos do processo, marca a linha do relatório com a origem `Manual` e acrescenta um registro de correção no arquivo `gannovodiv-correcoes.log` da pasta do log.
+- **Dividir** — grava a divisão manual por cima dos arquivos do processo, marca a linha do relatório com a origem `Manual` e acrescenta um registro de correção no arquivo `gannovodiv-correcoes.log` da pasta de destino.
 - **Fit** — reajusta a página ao quadro; sem zoom manual o rótulo é `Fit`, com zoom manual o rótulo passa a mostrar o percentual aplicado.
 - **Pág N de M** — campo numérico de página; valores fora de 1 e do total são ignorados.
 - **Contadores do painel** — `Total`, `Concluídos`, `A Revisar` e `Erros`.
@@ -758,7 +758,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 
 - Na pasta escolhida: `Inicial_<CNJ>.pdf` com as páginas detectadas da petição e `Docs_<CNJ>.pdf` com todas as páginas restantes, na ordem do original. O arquivo de documentos só é criado quando existem páginas fora do intervalo da Inicial.
 - Ao final da tela de processamento, além do caminho da pasta, pode aparecer `Atenção: N processo(s) geraram dúvidas algorítmicas e requerem revisão humana.`
-- Na pasta do log: `gannovodiv-correcoes.log`, em JSON Lines. Cada linha é um objeto JSON com a correção manual: data, arquivo, CNJ, divisão automática original, divisão manual, deltas, método de início e de fim, pontuação, candidatos de fim, flags, parâmetros das regras, sinais de cada página e o texto das páginas vizinhas às fronteiras. O arquivo acumula correções; a primeira gravação cria o arquivo.
+- Na pasta de destino, junto dos PDFs: `gannovodiv-correcoes.log`, em JSON Lines. Cada linha é um objeto JSON com a correção manual: data, arquivo, CNJ, divisão automática original, divisão manual, deltas, método de início e de fim, pontuação, candidatos de fim, flags, parâmetros das regras, sinais de cada página e o texto das páginas vizinhas às fronteiras. O arquivo acumula correções; a primeira gravação cria o arquivo.
 - `Relatório Detalhado` com as colunas `Arquivo`, `Páginas Iniciais` (formato `12 a 34 (23p)`), `Visualizar` e `Status`.
 - CSV baixado como `NovoDiv_Relatorio_<data-hora>.csv`, em UTF-8 com marca de ordem de bytes, separado por ponto e vírgula e com as colunas `Arquivo`, `CNJ`, `Pagina_Inicial`, `Pagina_Final`, `Total_Paginas_Peticao`, `Status`, `Precisa_Revisao`, `Flags` e `Mensagem_Erro`. Em `Status` os valores são `OK`, `REVISAR` e `ERRO`; em `Precisa_Revisao`, `SIM` ou `NÃO`.
 
@@ -766,12 +766,13 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 
 - `Nenhum PDF válido selecionado.` — a seleção ou o arraste não trouxe nenhum arquivo `.pdf`.
 - `Nenhum PDF Integral encontrado. Certifique-se de que o nome contém o número CNJ.` — nenhum arquivo passou no filtro de nome.
-- `É necessário selecionar uma pasta de destino para salvar os PDFs.` — a escolha de pasta falhou ou estourou o limite de espera, que é de 120 segundos; nesse caso o erro interno é `A operação com a pasta não respondeu.`
+- Cancelar a escolha da pasta de destino não mostra alerta e não inicia o processamento.
+- `Não foi possível selecionar a pasta de destino: <mensagem>` — a escolha de pasta falhou. O seletor não tem limite de tempo: uma escolha demorada não gera erro.
 - `Não detectou início (mesmo com OCR)` — o arquivo entra como erro no relatório e o lote continua.
 - `Não foi possível carregar o PDF gerado: <mensagem>` — falha ao ler o arquivo gravado para visualização.
 - `Arquivo original não encontrado na memória.` e `Erro ao abrir PDF para edição visual: <mensagem>` — falhas ao abrir o modo de correção.
 - `Intervalo de páginas inválido.` — `Início`/`Fim` vazios, menores que 1 ou em ordem invertida.
-- `Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em <pasta>/gannovodiv-correcoes.log.` — a correção substitui os arquivos do processo e remove a pendência de revisão.
+- `Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em <pasta de destino>/gannovodiv-correcoes.log.` — a correção substitui os arquivos do processo e remove a pendência de revisão.
 - `Divisão manual concluída e sobrescrita com sucesso! O log de correção não foi gravado: <mensagem>` — a divisão valeu, mas a gravação do log falhou ou a pasta do log foi cancelada.
 - Um arquivo com erro não interrompe o lote: os demais são processados e a contagem `Erros` aumenta.
 - O CNJ é lido do nome do arquivo (no formato pontuado ou com 20 dígitos seguidos); sem ele o arquivo nem entra na fila.
@@ -793,7 +794,7 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 - OCR: `Tesseract.createWorker('por')`, com cada página renderizada em canvas na escala 1.5. A varredura cobre as 10 primeiras páginas quando o texto inicial tem menos de 500 caracteres, e depois continua pelas páginas sem texto até encontrar fechamento com OAB; as mensagens são `[!] Imagem sem texto detectada. Iniciando OCR de emergência...` e `> Lendo pág N com OCR...`.
 - Visualizador próprio: a roda do mouse troca uma página por vez, com pausa de gesto de 120 ms, impulso de 400 por página e intervalo mínimo de 160 ms entre trocas. O zoom anda em passos de 0,2, com mínimo de 0,4, e o ajuste `Fit` calcula a escala pela área visível descontando 40 pixels de largura e 80 de altura.
 - A divisão usa `pdf-lib`: copia as páginas do intervalo para o arquivo da Inicial e as páginas antes e depois do intervalo, na ordem original, para o arquivo de documentos. Os bytes são gravados pelo aplicativo hospedeiro.
-- O log de correção é enviado ao aplicativo hospedeiro como `gantoys-file-request` com `action: 'append'`. O host grava com `createWritable({ keepExistingData: true })` e `seek(fim)`, então o arquivo existente é preservado. O log é escrito depois da divisão manual; uma falha no log não desfaz a divisão.
+- O log de correção usa o mesmo `directoryId` da pasta de destino da divisão. O toy envia `gantoys-file-request` com `action: 'append'`; o host grava com `createWritable({ keepExistingData: true })` e `seek(fim)`, então o arquivo existente é preservado. O log é escrito depois da divisão manual; uma falha no log não desfaz a divisão.
 - Cada página do log traz caracteres, linhas, primeira linha, início e fim do texto, marca de OCR, identificador de documento, classificação de página de sistema, detecção de documento novo, fechamento, sinal de fim, índices dos padrões de início que casaram e marcadores fortes. As páginas vizinhas às fronteiras automáticas e manuais entram com o texto completo, limitado a 20.000 caracteres por página.
 
 ### Adicionar uma regra de divisão sem quebrar as antigas

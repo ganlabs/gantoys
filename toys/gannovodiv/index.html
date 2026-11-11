@@ -725,8 +725,7 @@ let currentDoc = null;
 let currentPageNum = 1;
 let isRenderingPage = false;
 let customScale = null;
-let logDir = null;
-let logDirPromise = null;
+let escolhendoPasta = false;
 
 // Elementos
 const dropZone = document.getElementById('dropZone');
@@ -974,6 +973,7 @@ function setStep(step) {
 function limparTudo() {
     filesToProcess = [];
     reportData = [];
+    globalDestDir = null;
     fileInput.value = '';
     fileBadge.classList.add('hidden');
     actionUpload.classList.add('hidden');
@@ -1035,17 +1035,20 @@ async function splitSavePDF(file, start, end, destDir, nomeBase) {
     }
 }
 
-function requestGanToys(type, payload) {
+function requestGanToys(type, payload, opcoes = {}) {
     return new Promise((resolve, reject) => {
         const requestId = crypto.randomUUID();
-        const timeout = window.setTimeout(() => {
+        const timeoutMs = opcoes.timeoutMs ?? 120000;
+        // O seletor de pasta depende do usuário: sem limite artificial, uma
+        // escolha demorada não vira erro nem mostra alerta depois da escolha.
+        const timeout = timeoutMs > 0 ? window.setTimeout(() => {
             window.removeEventListener('message', receiveResult);
             reject(new Error('A operação com a pasta não respondeu.'));
-        }, 120000);
+        }, timeoutMs) : null;
 
         function receiveResult(event) {
             if (!event.data || event.data.type !== type || event.data.requestId !== requestId) return;
-            window.clearTimeout(timeout);
+            if (timeout) window.clearTimeout(timeout);
             window.removeEventListener('message', receiveResult);
             if (event.data.error) {
                 const error = new Error(event.data.error.message);
@@ -1065,7 +1068,7 @@ function pickDestinationDirectory() {
     return requestGanToys('gantoys-directory-picker-result', {
         type: 'gantoys-directory-picker-request',
         mode: 'readwrite'
-    }).then((response) => response.directory);
+    }, { timeoutMs: 0 }).then((response) => response.directory);
 }
 
 async function salvar(dir, nome, bytes) {
@@ -1079,25 +1082,6 @@ async function salvar(dir, nome, bytes) {
 }
 
 const NOME_ARQUIVO_LOG = 'gannovodiv-correcoes.log';
-
-function pickLogDirectory() {
-    if (logDir) return Promise.resolve(logDir);
-    if (!logDirPromise) {
-        logDirPromise = requestGanToys('gantoys-directory-picker-result', {
-            type: 'gantoys-directory-picker-request',
-            mode: 'readwrite',
-            id: 'gannovodiv-log',
-            message: 'O log de correções é gravado na pasta escolhida. Selecione a pasta onde está o index.html do GAN Toys.'
-        }).then((response) => {
-            logDir = response.directory;
-            return logDir;
-        }).catch((error) => {
-            logDirPromise = null;
-            throw error;
-        });
-    }
-    return logDirPromise;
-}
 
 async function acrescentarLog(dir, texto) {
     const bytes = new TextEncoder().encode(texto);
@@ -1136,7 +1120,9 @@ async function textosDeFronteira(doc, automatico, manual) {
 }
 
 async function registrarCorrecaoLog(antes, manual) {
-    const dir = await pickLogDirectory();
+    // O log fica na mesma pasta escolhida para os PDFs da divisão automática.
+    const dir = globalDestDir;
+    if (!dir) throw new Error('A pasta de destino da divisão não está disponível.');
     const trace = antes.trace;
     const fronteiras = await textosDeFronteira(currentDoc, antes, manual);
 
@@ -1202,11 +1188,24 @@ async function registrarCorrecaoLog(antes, manual) {
 }
 
 async function processarTudo() {
-    try {
-        globalDestDir = await pickDestinationDirectory();
-    } catch {
-        alert('É necessário selecionar uma pasta de destino para salvar os PDFs.');
-        return;
+    if (escolhendoPasta) return;
+
+    if (!globalDestDir) {
+        escolhendoPasta = true;
+        btnProcess.disabled = true;
+        try {
+            globalDestDir = await pickDestinationDirectory();
+        } catch (error) {
+            // Cancelar a seleção ou um pedido substituído chega como AbortError
+            // e não deve gerar alerta. Falhas reais mostram a mensagem do app.
+            if (error.name !== 'AbortError') {
+                alert(`Não foi possível selecionar a pasta de destino: ${error.message}`);
+            }
+            return;
+        } finally {
+            escolhendoPasta = false;
+            btnProcess.disabled = false;
+        }
     }
 
     // Prepara UI

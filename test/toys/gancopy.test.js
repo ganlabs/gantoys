@@ -575,18 +575,17 @@ test('gancopy — erro do seletor de pasta aparece no alerta e mantém a pasta a
     ]);
 });
 
-test('gancopy — seletor indisponível no app mantém o diálogo aberto e não alerta no toy', async (t) => {
+test('gancopy — seletor indisponível no app fecha o diálogo e alerta no toy', async (t) => {
     const ctx = await abrir(t);
-    const { app, pagina, ponte } = ctx;
+    const { pagina, ponte } = ctx;
     const alertas = alertasDe(pagina);
 
     pagina.clicar('#santander-source');
     await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: 'diálogo aberto' });
     await ponte.confirmarPasta();
 
-    assert.equal(app.texto('#directoryPickerMessage'), 'Não foi possível abrir o seletor de pastas. Nenhuma pasta preparada no teste.');
-    assert.equal(ponte.modalDePastaAberto(), true);
-    assert.deepEqual(alertas, []);
+    assert.equal(ponte.modalDePastaAberto(), false);
+    assert.deepEqual(alertas, ['Não foi possível abrir o seletor de pastas. Nenhuma pasta preparada no teste.']);
     assert.equal(pagina.texto('#santander-source-name'), 'Nenhuma pasta selecionada');
 });
 
@@ -679,18 +678,6 @@ test('gancopy — copiar lista sem pendências não escreve nada', async (t) => 
     assert.deepEqual(pagina.registro.clipboard.escritas, []);
     assert.deepEqual(pagina.registro.execCommand, []);
     assert.equal(pagina.texto('#santander-notcopied-copy'), 'Copiar lista');
-});
-
-test('gancopy — seleção de pasta sem resposta é interrompida com o aviso do toy', async (t) => {
-    const { pagina } = await abrir(t, { preparar: comTimersCurtos });
-    const alertas = alertasDe(pagina);
-
-    pagina.clicar('#santander-source');
-    await pagina.aguardar(() => alertas.length === 1, { descricao: 'alerta de seleção sem resposta' });
-
-    assert.deepEqual(alertas, ['A seleção de pasta não respondeu.']);
-    assert.equal(pagina.texto('#santander-source-name'), 'Nenhuma pasta selecionada');
-    assert.equal(pagina.seletor('#santander-copy').disabled, true);
 });
 
 test('gancopy — cópia sem resposta é interrompida com o aviso do toy', async (t) => {

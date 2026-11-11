@@ -142,7 +142,7 @@ test('App — o diálogo confirma, devolve um id reaproveitável e cancela com A
     assert.equal(carta.de('gantoys-directory-picker-result', 'pasta-3').directory.name, 'SemModo');
 });
 
-test('App — as falhas do seletor viram AbortError e o aviso fica na tela', async (t) => {
+test('App — as falhas do seletor chegam ao toy com o erro real e fecham o diálogo', async (t) => {
     const app = await abrirApp(t);
     const carta = correio();
 
@@ -162,22 +162,26 @@ test('App — as falhas do seletor viram AbortError e o aviso fica na tela', asy
         throw erro;
     };
     const recusa = await pedirPasta('falha-1');
-    assert.deepEqual(plano(recusa.error), { name: 'AbortError', message: 'Seleção de pasta indisponível neste contexto.' });
-    assert.equal(app.texto('#directoryPickerMessage'), `${AVISO_PASTA} permissão negada pelo usuário`);
-    assert.equal(app.seletor('#directoryPickerModal').hidden, false);
+    assert.deepEqual(plano(recusa.error), {
+        name: 'NotAllowedError',
+        message: `${AVISO_PASTA} permissão negada pelo usuário`,
+    });
+    assert.equal(app.seletor('#directoryPickerModal').hidden, true);
 
     // Navegador sem a File System Access API: o aviso cita o caminho alternativo.
     delete app.janela.showDirectoryPicker;
     const semApi = await pedirPasta('falha-2');
-    assert.deepEqual(plano(semApi.error), { name: 'AbortError', message: 'Seleção de pasta indisponível neste contexto.' });
-    assert.equal(app.texto('#directoryPickerMessage'),
-        `${AVISO_PASTA} Este navegador não expõe o seletor de pastas. Use o Chrome ou o Edge.`);
+    assert.deepEqual(plano(semApi.error), {
+        name: 'Error',
+        message: `${AVISO_PASTA} Este navegador não expõe o seletor de pastas. Use o Chrome ou o Edge.`,
+    });
+    assert.equal(app.seletor('#directoryPickerModal').hidden, true);
 
     // Erro sem mensagem: fica só o aviso genérico.
     app.janela.showDirectoryPicker = async () => { throw { name: 'Weird' }; };
     const semMensagem = await pedirPasta('falha-3');
-    assert.deepEqual(plano(semMensagem.error), { name: 'AbortError', message: 'Seleção de pasta indisponível neste contexto.' });
-    assert.equal(app.texto('#directoryPickerMessage'), AVISO_PASTA);
+    assert.deepEqual(plano(semMensagem.error), { name: 'Weird', message: AVISO_PASTA });
+    assert.equal(app.seletor('#directoryPickerModal').hidden, true);
 
     // Cancelamento do próprio navegador: nada de aviso, o erro do seletor passa.
     app.janela.showDirectoryPicker = async () => {
@@ -187,8 +191,6 @@ test('App — as falhas do seletor viram AbortError e o aviso fica na tela', asy
     };
     const cancelado = await pedirPasta('falha-4');
     assert.deepEqual(plano(cancelado.error), { name: 'AbortError', message: 'cancelado pelo usuário' });
-    // O novo pedido repõe a instrução e o cancelamento não escreve aviso por cima.
-    assert.equal(app.texto('#directoryPickerMessage'), 'Confirme para selecionar uma pasta local no seu computador.');
     assert.equal(app.seletor('#directoryPickerModal').hidden, true);
 });
 

@@ -1223,23 +1223,18 @@ document.addEventListener('DOMContentLoaded', () => {
             GAN_TOYS_DIRECTORY_HANDLES.set(directoryId, handle);
             respondToDirectoryPickerRequest(request, { directory: { id: directoryId, name: handle.name } });
         } catch (error) {
+            // O toy precisa receber uma resposta sempre: sem ela, ele fica
+            // esperando e mostra o alerta de destino depois do limite. O erro
+            // real também evita que uma falha do seletor vire um cancelamento.
             const aviso = diretorioIndisponivel(error);
-            if (!aviso) {
-                respondToDirectoryPickerRequest(request, {
-                    error: { name: error.name, message: error.message }
-                });
-                closeDirectoryPickerModal();
-                pendingDirectoryPickerRequest = null;
-                return;
-            }
-            // Indisponível neste contexto: o diálogo explica e o toy recebe um
-            // AbortError para não abrir um alerta redundante por cima.
             respondToDirectoryPickerRequest(request, {
-                error: { name: 'AbortError', message: 'Seleção de pasta indisponível neste contexto.' }
+                error: {
+                    name: aviso ? (error.name || 'NotSupportedError') : error.name,
+                    message: aviso || error.message
+                }
             });
+            closeDirectoryPickerModal();
             pendingDirectoryPickerRequest = null;
-            const message = document.getElementById('directoryPickerMessage');
-            if (message) message.textContent = aviso;
         }
     });
 });

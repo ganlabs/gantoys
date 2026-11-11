@@ -326,18 +326,17 @@ test('ganapagadorcnj — erro do seletor de pasta aparece no alerta e mantém a 
     ]);
 });
 
-test('ganapagadorcnj — seletor indisponível no app mantém o diálogo aberto e não alerta no toy', async (t) => {
+test('ganapagadorcnj — seletor indisponível no app fecha o diálogo e alerta no toy', async (t) => {
     const ctx = await abrir(t);
-    const { app, pagina, ponte } = ctx;
+    const { pagina, ponte } = ctx;
     const alertas = alertasDe(pagina);
 
     pagina.clicar('#cnj-source');
     await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: 'diálogo aberto' });
     await ponte.confirmarPasta();
 
-    assert.equal(app.texto('#directoryPickerMessage'), 'Não foi possível abrir o seletor de pastas. Nenhuma pasta preparada no teste.');
-    assert.equal(ponte.modalDePastaAberto(), true);
-    assert.deepEqual(alertas, []);
+    assert.equal(ponte.modalDePastaAberto(), false);
+    assert.deepEqual(alertas, ['Não foi possível abrir o seletor de pastas. Nenhuma pasta preparada no teste.']);
     assert.equal(pagina.texto('#cnj-source-name'), 'Nenhuma pasta selecionada');
 });
 

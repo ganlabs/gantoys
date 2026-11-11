@@ -191,31 +191,56 @@ test('NovoDiv — cancelar a escolha de pasta não inicia o processamento', asyn
     await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo de pasta' });
 
     await pagina.ponte.cancelarPasta();
-    assert.deepEqual(pagina.alertas, ['É necessário selecionar uma pasta de destino para salvar os PDFs.']);
+    assert.deepEqual(pagina.alertas, []);
     assert.equal(pagina.seletor('#stepUpload').classList.contains('hidden'), false);
     assert.equal(pagina.seletor('#stepDashboard').classList.contains('hidden'), true);
     assert.deepEqual(pagina.destino.caminhos(), []);
 });
 
-test('NovoDiv — pasta que não responde dentro do limite cancela o processamento', async (t) => {
-    const pagina = await abrirNovoDiv(t);
-    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 2)]);
+test('NovoDiv — a seleção de pasta não tem limite de tempo e não alerta depois da escolha', async (t) => {
+    const pagina = await abrirNovoDiv(t, { paginas: [PAGINA_SISTEMA, PAGINA_INICIAL, PAGINA_FECHAMENTO, PAGINA_PROCURACAO] });
+    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 4)]);
 
     const setTimeoutOriginal = pagina.janela.setTimeout;
     const limites = [];
     pagina.janela.setTimeout = (fn, ms) => {
-        if (ms === 120000) { limites.push(ms); fn(); return 0; }
+        if (ms === 120000) limites.push(ms);
         return setTimeoutOriginal(fn, ms);
     };
 
     pagina.clicar('#btnProcess');
-    await pagina.tick(20);
+    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo de pasta' });
+    assert.deepEqual(limites, [], 'o seletor do usuário não pode ter timeout');
 
-    assert.deepEqual(limites, [120000]);
-    assert.deepEqual(pagina.alertas, ['É necessário selecionar uma pasta de destino para salvar os PDFs.']);
-    assert.equal(pagina.seletor('#stepDashboard').classList.contains('hidden'), true);
-    assert.deepEqual(pagina.ponte.tipos(), ['gantoys-directory-picker-request']);
-    assert.deepEqual(pagina.destino.caminhos(), []);
+    await pagina.ponte.confirmarPasta();
+    await pagina.aguardar(() => pagina.seletor('#doneSection').classList.contains('hidden') === false, {
+        descricao: 'fim do processamento',
+        timeout: 8000,
+    });
+    assert.deepEqual(pagina.alertas, []);
+    assert.deepEqual(pagina.destino.caminhos(), [`Docs_${CNJ}.pdf`, `Inicial_${CNJ}.pdf`]);
+});
+
+test('NovoDiv — duas chamadas de processar abrem uma única seleção de pasta', async (t) => {
+    const pagina = await abrirNovoDiv(t, { paginas: [PAGINA_SISTEMA, PAGINA_INICIAL, PAGINA_FECHAMENTO, PAGINA_PROCURACAO] });
+    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 4)]);
+
+    pagina.clicar('#btnProcess');
+    pagina.janela.processarTudo();
+    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo de pasta' });
+    assert.equal(
+        pagina.ponte.tipos().filter((tipo) => tipo === 'gantoys-directory-picker-request').length,
+        1,
+        'a segunda chamada não pode abrir outro pedido de pasta'
+    );
+
+    await pagina.ponte.confirmarPasta();
+    await pagina.aguardar(() => pagina.seletor('#doneSection').classList.contains('hidden') === false, {
+        descricao: 'fim do processamento',
+        timeout: 8000,
+    });
+    assert.deepEqual(pagina.alertas, []);
+    assert.deepEqual(pagina.destino.caminhos(), [`Docs_${CNJ}.pdf`, `Inicial_${CNJ}.pdf`]);
 });
 
 test('NovoDiv — grava Inicial e Docs com o intervalo detectado e monta o relatório', async (t) => {
@@ -511,17 +536,13 @@ test('NovoDiv — Corrigir abre o editor com o intervalo detectado e a divisão 
     assert.equal(pagina.seletor('#inpCurrentPage').value, '9');
     assert.equal(pagina.seletor('#manualEnd').value, '3');
 
-    const logDir = montarArvore('Log');
-    pagina.app.enfileirarPasta(logDir);
     pagina.digitar('#manualStart', '1');
     pagina.digitar('#manualEnd', '2');
     pagina.clicar('#btnManualSplit');
-    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
-    await pagina.ponte.confirmarPasta();
     await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'divisão manual' });
 
     assert.deepEqual(pagina.alertas, [
-        'Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Log/gannovodiv-correcoes.log.',
+        'Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Destino/gannovodiv-correcoes.log.',
     ]);
     assert.deepEqual(await tamanhosGravados(pagina, `Inicial_${CNJ}.pdf`), [[100, 200], [101, 200]]);
     assert.deepEqual(await tamanhosGravados(pagina, `Docs_${CNJ}.pdf`), [[102, 200], [103, 200]]);
@@ -536,25 +557,15 @@ test('NovoDiv — correção manual grava log JSONL com o contexto e acrescenta 
     await processar(pagina);
     await pagina.tick(0);
 
-    const logDir = montarArvore('Log');
-    pagina.app.enfileirarPasta(logDir);
-
-    // Primeira correção: a pasta do log é escolhida uma única vez.
+    // O log usa a pasta já escolhida para os PDFs: nenhum diálogo novo.
     pagina.clicar('#reportTbody button:nth-child(3)');
     await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor aberto' });
     pagina.digitar('#manualStart', '1');
     pagina.digitar('#manualEnd', '2');
     pagina.clicar('#btnManualSplit');
-    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
-    assert.equal(
-        pagina.app.texto('#directoryPickerMessage'),
-        'O log de correções é gravado na pasta escolhida. Selecione a pasta onde está o index.html do GAN Toys.'
-    );
-    await pagina.ponte.confirmarPasta();
-    assert.deepEqual(dados(logDir.opcoesUsadas), { mode: 'readwrite', id: 'gannovodiv-log' });
     await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'primeira correção' });
 
-    // Segunda correção: sem novo diálogo, o log é acrescentado no mesmo arquivo.
+    // Segunda correção: o log é acrescentado no mesmo arquivo, sem diálogo.
     const pedidosAntes = pagina.ponte.tipos().filter((tipo) => tipo === 'gantoys-directory-picker-request').length;
     pagina.janela.openManualSplit(CNJ);
     await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor reaberto' });
@@ -565,10 +576,10 @@ test('NovoDiv — correção manual grava log JSONL com o contexto e acrescenta 
     assert.equal(
         pagina.ponte.tipos().filter((tipo) => tipo === 'gantoys-directory-picker-request').length,
         pedidosAntes,
-        'a segunda correção não pode pedir a pasta do log de novo'
+        'a correção não pode pedir a pasta do log'
     );
 
-    const linhas = logDir.conteudo('gannovodiv-correcoes.log').trim().split('\n').map((linha) => JSON.parse(linha));
+    const linhas = pagina.destino.conteudo('gannovodiv-correcoes.log').trim().split('\n').map((linha) => JSON.parse(linha));
     assert.equal(linhas.length, 2);
     assert.equal(linhas[0].schema, 1);
     assert.equal(linhas[0].tipo, 'correcao');
@@ -609,29 +620,7 @@ test('NovoDiv — correção manual grava log JSONL com o contexto e acrescenta 
     assert.equal(linhas[1].automatico.inicioMetodo, 'pattern');
     assert.deepEqual(linhas[1].manual, { inicio: 4, fim: 4, paginas: 1 });
     assert.deepEqual(linhas[1].correcao, { inicioDelta: 2, fimDelta: 1, mudouInicio: true, mudouFim: true });
-    assert.match(pagina.alertas[1], /^Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Log\/gannovodiv-correcoes\.log\.$/);
-});
-
-test('NovoDiv — cancelar a pasta do log não impede a divisão manual', async (t) => {
-    const pagina = await abrirNovoDiv(t, { paginas: [PAGINA_SISTEMA, PAGINA_INICIAL, PAGINA_FECHAMENTO, PAGINA_PROCURACAO] });
-    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 4)]);
-    await processar(pagina);
-    await pagina.tick(0);
-
-    pagina.clicar('#reportTbody button:nth-child(3)');
-    await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor aberto' });
-    pagina.digitar('#manualStart', '1');
-    pagina.digitar('#manualEnd', '2');
-    pagina.clicar('#btnManualSplit');
-    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
-    await pagina.ponte.cancelarPasta();
-    await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'divisão sem log' });
-
-    assert.deepEqual(pagina.alertas, [
-        'Divisão manual concluída e sobrescrita com sucesso! O log de correção não foi gravado: Seleção de pasta cancelada.',
-    ]);
-    assert.deepEqual(await tamanhosGravados(pagina, `Inicial_${CNJ}.pdf`), [[100, 200], [101, 200]]);
-    assert.equal(pagina.seletor('#pdfModal').classList.contains('open'), false);
+    assert.match(pagina.alertas[1], /^Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Destino\/gannovodiv-correcoes\.log\.$/);
 });
 
 test('NovoDiv — correção de processo com erro grava log sem divisão automática', async (t) => {
@@ -640,19 +629,14 @@ test('NovoDiv — correção de processo com erro grava log sem divisão automá
     await processar(pagina);
     await pagina.tick(0);
 
-    const logDir = montarArvore('Log');
-    pagina.app.enfileirarPasta(logDir);
-
     pagina.janela.openManualSplit(CNJ);
     await pagina.aguardar(() => pagina.seletor('#customViewer').style.display === 'flex', { descricao: 'editor aberto' });
     pagina.digitar('#manualStart', '1');
     pagina.digitar('#manualEnd', '2');
     pagina.clicar('#btnManualSplit');
-    await pagina.aguardar(() => pagina.ponte.modalDePastaAberto(), { descricao: 'diálogo da pasta do log' });
-    await pagina.ponte.confirmarPasta();
     await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'correção do processo com erro' });
 
-    const registro = JSON.parse(logDir.conteudo('gannovodiv-correcoes.log').trim());
+    const registro = JSON.parse(pagina.destino.conteudo('gannovodiv-correcoes.log').trim());
     assert.deepEqual(registro.automatico, {
         inicio: null,
         fim: null,
@@ -1069,9 +1053,8 @@ test('NovoDiv — falha ao abrir a correção e processo fora da memória avisam
     assert.deepEqual(pagina.alertas, ['Erro ao abrir PDF para edição visual: PDF corrompido']);
     assert.equal(pagina.seletor('#customViewer').style.display, 'flex');
 
-    // Depois de limpar a fila o processo não está mais na memória.
-    pagina.clicar('#btnRestart');
-    pagina.clicar('#reportTbody button:nth-child(3)');
+    // Um processo que não está na memória avisa sem abrir o editor.
+    pagina.janela.openManualSplit('9999999-99.9999.9.99.9999');
     assert.deepEqual(pagina.alertas, [
         'Erro ao abrir PDF para edição visual: PDF corrompido',
         'Arquivo original não encontrado na memória.',
