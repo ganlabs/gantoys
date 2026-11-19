@@ -11,7 +11,11 @@
 
    As transformações por coluna vêm do kit compartilhado: formatCnj para o
    número do processo, normalizeNameValue para os nomes e extractMoney para o
-   valor da causa. */
+   valor da causa. No Espírito Santo, a comarca escrita como "comarca da
+   capital" é substituída pelo nome definido no código da serventia (os quatro
+   últimos dígitos do CNJ). As demais comarcas mantêm o nome já escrito, com
+   duas exceções que o sistema de destino exige: "Aracruz e Ibiraçu" vira
+   ARACRUZ e "Bom Jesus de Itabapoana" vira BOM JESUS DO ITABAPOANA. */
 
 const EXTENSOES_ACEITAS = ['xlsx', 'xlsm'];
 const MENSAGEM_FORMATO = 'Formato de arquivo não suportado. Use um arquivo .xlsx ou .xlsm.';
@@ -27,6 +31,34 @@ const CAPITAIS_POR_UF = {
     RS: 'PORTO ALEGRE', RO: 'PORTO VELHO', RR: 'BOA VISTA', SC: 'FLORIANOPOLIS',
     SP: 'SAO PAULO', SE: 'ARACAJU', TO: 'PALMAS'
 };
+
+/**
+ * Comarca do Espírito Santo pelo código da serventia (OOOO do CNJ).
+ * A tabela só é usada quando a planilha traz "comarca da capital" no lugar do
+ * nome. Fora isso, o nome já escrito é mantido.
+ */
+const COMARCAS_POR_CODIGO_ES = {
+    '0012': 'CARIACICA',
+    '0021': 'GUARAPARI',
+    '0024': 'VITORIA',
+    '0025': 'FUNDAO',
+    '0035': 'VILA VELHA',
+    '0048': 'SERRA',
+    '0050': 'VIANA',
+    '0059': 'ARACRUZ'
+};
+
+/**
+ * Comarca definida pelo código da serventia de um processo do ES (8.08).
+ * Devolve null quando o processo não é do ES, '' quando o código não está na
+ * tabela e o nome da comarca quando está.
+ */
+function comarcaPeloCodigoEs(processo) {
+    const digitos = String(processo ?? '').replace(/\D/g, '');
+    if (digitos.length !== 20 || digitos.slice(13, 16) !== '808') return null;
+    return COMARCAS_POR_CODIGO_ES[digitos.slice(16, 20)] || '';
+}
+
 
 /** Colunas de cadastro reconhecidas e suas transformações padrão. */
 const COLUNAS_DE_CADASTRO = [
@@ -401,7 +433,20 @@ function calcularNovosValoresECores(mapaLinha) {
     if (mapaLinha.has('comarca')) {
         let com = normalizeNameValue(texto('comarca'));
         const comNorm = normalizarCabecalho(com);
-        if (comNorm === 'CAPITAL') {
+        const comarcaEs = comNorm.includes('CAPITAL') ? comarcaPeloCodigoEs(texto('processo')) : null;
+        if (comarcaEs) {
+            // No ES, "comarca da capital" não é Vitória: o código da serventia
+            // (OOOO do CNJ) define a comarca correta.
+            com = comarcaEs;
+        } else if (comNorm.startsWith('ARACRUZ E IBIRACU')) {
+            // O sistema de destino não aceita a comarca dupla.
+            com = 'ARACRUZ';
+        } else if (comNorm === 'BOM JESUS DE ITABAPOANA') {
+            // O sistema de destino exige "do", não "de".
+            com = 'BOM JESUS DO ITABAPOANA';
+        } else if (comarcaEs === '') {
+            // Código fora da tabela: mantém o nome escrito, sem cortar "CAPITAL".
+        } else if (comNorm === 'CAPITAL') {
             const uf = texto('uf').toUpperCase().trim();
             if (CAPITAIS_POR_UF[uf]) com = CAPITAIS_POR_UF[uf];
         } else if (comNorm.includes('CAPITAL')) {

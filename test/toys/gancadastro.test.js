@@ -835,6 +835,74 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
     assert.ok(sheet1.includes('AC'), 'audiencia vazia com data virou AC');
 });
 
+test('gancadastro — no ES, comarca da capital vira a comarca do código da serventia', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    const celulas = (linha, processo, comarca) => [
+        `<c r="A${linha}" t="inlineStr"><is><t>${processo}</t></is></c>`,
+        `<c r="C${linha}" t="inlineStr"><is><t>${comarca}</t></is></c>`,
+    ].join('');
+
+    const sheetEs = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>',
+        '<row r="1">',
+        '<c r="A1" t="inlineStr"><is><t>Núm. Processo</t></is></c>',
+        '<c r="C1" t="inlineStr"><is><t>Comarca</t></is></c>',
+        '</row>',
+        `<row r="2">${celulas(2, '0000001-11.2026.8.08.0024', 'Comarca da Capital')}</row>`,
+        `<row r="3">${celulas(3, '0000002-22.2026.8.08.0012', 'Comarca da Capital')}</row>`,
+        `<row r="4">${celulas(4, '0000003-33.2026.8.08.0048', 'Comarca da Capital')}</row>`,
+        `<row r="5">${celulas(5, '0000004-44.2026.8.08.0035', 'Comarca da Capital')}</row>`,
+        `<row r="6">${celulas(6, '0000005-55.2026.8.08.0025', 'Comarca da Capital')}</row>`,
+        `<row r="7">${celulas(7, '0000006-66.2026.8.08.0050', 'Comarca da Capital')}</row>`,
+        `<row r="8">${celulas(8, '0000007-77.2026.8.08.0021', 'Comarca da Capital')}</row>`,
+        `<row r="9">${celulas(9, '0000008-88.2026.8.08.0025', 'Fundão')}</row>`,
+        `<row r="10">${celulas(10, '0000009-99.2026.8.08.0050', 'Guarapari')}</row>`,
+        `<row r="11">${celulas(11, '0000010-10.2026.8.08.0069', 'Comarca da Capital')}</row>`,
+        `<row r="12">${celulas(12, '0000011-11.2026.8.05.0024', 'Ilhéus')}</row>`,
+        `<row r="13">${celulas(13, '0000012-12.2026.8.08.0059', 'Comarca da Capital')}</row>`,
+        `<row r="14">${celulas(14, '0000013-13.2026.8.08.0015', 'Aracruz e Ibiraçu')}</row>`,
+        `<row r="15">${celulas(15, '0000014-14.2026.8.19.0001', 'Bom Jesus de Itabapoana')}</row>`,
+        '</sheetData></worksheet>',
+    ].join('');
+
+    selecionarArquivo(pagina, await montarPlanilha(pagina, { customSheet1: sheetEs }), 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    pagina.script(readFileSync('vendor/xlsx/xlsx.full.min.js', 'utf8'));
+    pagina.janela.__saidaXlsx = Array.from(destino.paraObjeto()[NOME_SAIDA]);
+    const lido = await pagina.script(`(() => {
+        const livro = XLSX.read(new Uint8Array(window.__saidaXlsx), { type: 'array' });
+        const aba = livro.Sheets[livro.SheetNames[0]];
+        const comarcas = {};
+        for (let linha = 2; linha <= 15; linha += 1) comarcas['C' + linha] = String(aba['C' + linha].v);
+        return comarcas;
+    })()`);
+
+    assert.deepEqual(JSON.parse(JSON.stringify(lido)), {
+        C2: 'VITORIA',
+        C3: 'CARIACICA',
+        C4: 'SERRA',
+        C5: 'VILA VELHA',
+        C6: 'FUNDAO',
+        C7: 'VIANA',
+        C8: 'GUARAPARI',
+        C9: 'FUNDAO',
+        C10: 'GUARAPARI',
+        C11: 'COMARCA DA CAPITAL',
+        C12: 'ILHEUS',
+        C13: 'ARACRUZ',
+        C14: 'ARACRUZ',
+        C15: 'BOM JESUS DO ITABAPOANA',
+    });
+});
+
 test('gancadastro — aplica pintura condicional laranja e vermelha em styles.xml', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;
