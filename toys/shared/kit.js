@@ -461,6 +461,11 @@ function resolveCarteiraReu(text) {
         const normalized = norm(query);
         if (!normalized) return null;
         if (normalizedAliases[normalized] !== undefined) return refs[normalizedAliases[normalized]];
+        // "FAB e RIO+" juntos são FAB. RIO+ só vale quando vem sozinho.
+        const temFab = tokens(query).has('FAB') || normalized.includes('ZONA OESTE');
+        if (temFab && /RIO\s*\+/.test(normalized)) {
+            return refs.find((ref) => norm(ref[1]).includes('ZONA OESTE')) || null;
+        }
         const exactReu = refs.find((ref) => normalized.includes(norm(ref[1])));
         if (exactReu) return exactReu;
         const variants = [...new Set([normalized, normalized.replace(/\s+/g, ''), normalized.replace(/([A-Z])(\d)/g, '$1 $2')])];

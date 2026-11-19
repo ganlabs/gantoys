@@ -263,6 +263,31 @@ test('kit — resolve-carteira-reu e normalize-documents copiam sem a primeira c
     igual(pagina.registro.clipboard.escritas, ['Mercado Livre - Mercado Livre - JC\tREU A DEFINIR']);
 });
 
+test('kit — réu FAB junto com RIO+ resolve FAB, e RIO+ sozinho resolve RIO+', async (t) => {
+    const pagina = await abrirKit(t);
+
+    igual(pagina.janela.runTool('resolve-carteira-reu', 'F.AB. ZONA OESTE S.A. E RIO+ SANEAMENTO BL3 S.A.', {}).rows[0], [
+        'F.AB. ZONA OESTE S.A. E RIO+ SANEAMENTO BL3 S.A.',
+        'Saneamento - FAB',
+        'F.AB. ZONA OESTE S.A.',
+    ]);
+    igual(pagina.janela.runTool('resolve-carteira-reu', 'FAB E RIO+', {}).rows[0], [
+        'FAB E RIO+',
+        'Saneamento - FAB',
+        'F.AB. ZONA OESTE S.A.',
+    ]);
+    igual(pagina.janela.runTool('resolve-carteira-reu', 'RIO+ SANEAMENTO BL3 S.A.', {}).rows[0], [
+        'RIO+ SANEAMENTO BL3 S.A.',
+        'Saneamento - Rio+',
+        'RIO+ SANEAMENTO BL3 S.A.',
+    ]);
+    igual(pagina.janela.runTool('resolve-carteira-reu', 'RIO+', {}).rows[0], [
+        'RIO+',
+        'Saneamento - Rio+',
+        'RIO+ SANEAMENTO BL3 S.A.',
+    ]);
+});
+
 test('kit — tabela separada por espaços e linhas curtas preenchem com vazio', async (t) => {
     const pagina = await abrirKit(t);
 

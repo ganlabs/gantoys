@@ -782,6 +782,8 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
         'JACAREPAGUA',
         'Audiencia Marcada',
         '15/10/2026',
+        'Saneamento - Rio+',
+        'F.AB. ZONA OESTE S.A. E RIO+ SANEAMENTO BL3 S.A.',
     ];
     const sharedRegras = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
@@ -809,6 +811,7 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
         '<row r="10"><c r="C10" t="s"><v>22</v></c><c r="E10" t="s"><v>18</v></c></row>',
         '<row r="11"><c r="C11" t="s"><v>22</v></c><c r="E11" t="s"><v>21</v></c></row>',
         '<row r="12"><c r="G12" t="inlineStr"><is><t></t></is></c><c r="H12" t="s"><v>24</v></c></row>',
+        '<row r="13"><c r="A13" t="s"><v>25</v></c><c r="B13" t="s"><v>26</v></c></row>',
         '</sheetData></worksheet>',
     ].join('');
 
@@ -824,6 +827,11 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
 
     assert.ok(sheet1.includes('BANCO BRADESCO SA'), 'regras de carteira e réu aplicadas');
     assert.ok(sheet1.includes('Mercado Livre'), 'resolveCarteiraReu atualizou carteira');
+    assert.ok(
+        sheet1.includes('<c r="B13" t="inlineStr"><is><t>F.AB. ZONA OESTE S.A.</t></is></c>'),
+        'réu FAB junto com RIO+ vira FAB'
+    );
+    assert.ok(sheet1.includes('Saneamento - FAB'), 'carteira do réu combinado vira FAB');
     assert.ok(sheet1.includes('r="A4"') && sheet1.includes('<v>12</v>') && sheet1.includes('r="B4"') && sheet1.includes('<v>13</v>'), 'exceção manteve carteira e réu originais');
     assert.ok(sheet1.includes('SAO PAULO'), 'capital virou a capital da UF');
     assert.ok(sheet1.includes('MEIER'), 'capital com sufixo virou o sufixo limpo');
@@ -866,6 +874,7 @@ test('gancadastro — no ES, comarca da capital vira a comarca do código da ser
         `<row r="13">${celulas(13, '0000012-12.2026.8.08.0059', 'Comarca da Capital')}</row>`,
         `<row r="14">${celulas(14, '0000013-13.2026.8.08.0015', 'Aracruz e Ibiraçu')}</row>`,
         `<row r="15">${celulas(15, '0000014-14.2026.8.19.0001', 'Bom Jesus de Itabapoana')}</row>`,
+        `<row r="16">${celulas(16, '0000015-15.2026.8.08.0048', 'JUIZADO ESPECIAL CIVEL')}</row>`,
         '</sheetData></worksheet>',
     ].join('');
 
@@ -881,7 +890,7 @@ test('gancadastro — no ES, comarca da capital vira a comarca do código da ser
         const livro = XLSX.read(new Uint8Array(window.__saidaXlsx), { type: 'array' });
         const aba = livro.Sheets[livro.SheetNames[0]];
         const comarcas = {};
-        for (let linha = 2; linha <= 15; linha += 1) comarcas['C' + linha] = String(aba['C' + linha].v);
+        for (let linha = 2; linha <= 16; linha += 1) comarcas['C' + linha] = String(aba['C' + linha].v);
         return comarcas;
     })()`);
 
@@ -900,6 +909,7 @@ test('gancadastro — no ES, comarca da capital vira a comarca do código da ser
         C13: 'ARACRUZ',
         C14: 'ARACRUZ',
         C15: 'BOM JESUS DO ITABAPOANA',
+        C16: 'SERRA',
     });
 });
 

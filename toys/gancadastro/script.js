@@ -11,10 +11,11 @@
 
    As transformações por coluna vêm do kit compartilhado: formatCnj para o
    número do processo, normalizeNameValue para os nomes e extractMoney para o
-   valor da causa. No Espírito Santo, a comarca escrita como "comarca da
-   capital" é substituída pelo nome definido no código da serventia (os quatro
-   últimos dígitos do CNJ). As demais comarcas mantêm o nome já escrito, com
-   duas exceções que o sistema de destino exige: "Aracruz e Ibiraçu" vira
+   valor da causa. No Espírito Santo, quando a célula da Comarca traz a unidade
+   judiciária no lugar do nome ("comarca da capital", "juizado especial
+   cível"), ela é substituída pelo nome definido no código da serventia (os
+   quatro últimos dígitos do CNJ). As demais comarcas mantêm o nome já escrito,
+   com duas exceções que o sistema de destino exige: "Aracruz e Ibiraçu" vira
    ARACRUZ e "Bom Jesus de Itabapoana" vira BOM JESUS DO ITABAPOANA. */
 
 const EXTENSOES_ACEITAS = ['xlsx', 'xlsm'];
@@ -47,6 +48,16 @@ const COMARCAS_POR_CODIGO_ES = {
     '0050': 'VIANA',
     '0059': 'ARACRUZ'
 };
+
+/**
+ * Textos que descrevem a unidade judiciária, não o nome da comarca. Quando a
+ * célula da Comarca traz um destes, o código da serventia define a comarca.
+ */
+const MARCADORES_DE_UNIDADE = ['CAPITAL', 'JUIZADO', 'VARA', 'FORO', 'JUSTICA', 'CARTORIO', 'OFICIO', 'SECRETARIA'];
+
+function ehUnidadeJudiciaria(comarcaNormalizada) {
+    return MARCADORES_DE_UNIDADE.some((marcador) => comarcaNormalizada.includes(marcador));
+}
 
 /**
  * Comarca definida pelo código da serventia de um processo do ES (8.08).
@@ -433,10 +444,11 @@ function calcularNovosValoresECores(mapaLinha) {
     if (mapaLinha.has('comarca')) {
         let com = normalizeNameValue(texto('comarca'));
         const comNorm = normalizarCabecalho(com);
-        const comarcaEs = comNorm.includes('CAPITAL') ? comarcaPeloCodigoEs(texto('processo')) : null;
+        const comarcaEs = ehUnidadeJudiciaria(comNorm) ? comarcaPeloCodigoEs(texto('processo')) : null;
         if (comarcaEs) {
-            // No ES, "comarca da capital" não é Vitória: o código da serventia
-            // (OOOO do CNJ) define a comarca correta.
+            // No ES, a célula pode trazer a unidade judiciária ("comarca da
+            // capital", "juizado especial cível") no lugar da comarca. O código
+            // da serventia (OOOO do CNJ) define a comarca correta.
             com = comarcaEs;
         } else if (comNorm.startsWith('ARACRUZ E IBIRACU')) {
             // O sistema de destino não aceita a comarca dupla.
@@ -445,7 +457,7 @@ function calcularNovosValoresECores(mapaLinha) {
             // O sistema de destino exige "do", não "de".
             com = 'BOM JESUS DO ITABAPOANA';
         } else if (comarcaEs === '') {
-            // Código fora da tabela: mantém o nome escrito, sem cortar "CAPITAL".
+            // Código fora da tabela: mantém o nome escrito, sem cortar o texto.
         } else if (comNorm === 'CAPITAL') {
             const uf = texto('uf').toUpperCase().trim();
             if (CAPITAIS_POR_UF[uf]) com = CAPITAIS_POR_UF[uf];
