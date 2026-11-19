@@ -325,10 +325,10 @@ test('gancadastro — processa a planilha e grava o cadastro datado na pasta des
     assert.equal(pagina.texto('#planilha-nome'), 'cadastro.xlsx');
     assert.equal(pagina.texto('#destino-nome'), 'Destino');
     assert.equal(pagina.texto('#resultado-resumo'), `${NOME_SAIDA} gravado em Destino.`);
-    assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['12', '1', '3', '1']);
+    assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['11', '2', '3', '1']);
     assert.deepEqual(pagina.textos('#resultado-numeros .stat span'), ['alteradas', 'sem mudança', 'ignoradas', 'não convertidas']);
     assert.deepEqual(pagina.textos('#resultado-lista .result-name'), ['Plan1', 'Planilha1', 'Vazia']);
-    assert.deepEqual(pagina.textos('#resultado-lista .result-status'), ['12 células alteradas', '0 células alteradas', '0 células alteradas']);
+    assert.deepEqual(pagina.textos('#resultado-lista .result-status'), ['11 células alteradas', '0 células alteradas', '0 células alteradas']);
     assert.equal(pagina.existe('.folder-grid'), true, 'a tela precisa ter os seletores organizados em .folder-grid e sem area de logs');
     assert.equal(pagina.todos('.folder-card').length, 2, 'dois cards de seletores lado a lado');
     assert.equal(pagina.existe('#log-area'), false, 'a area de logs foi removida');
@@ -336,7 +336,7 @@ test('gancadastro — processa a planilha e grava o cadastro datado na pasta des
     assert.equal(pagina.texto('#progresso-porcento'), '100%');
     assert.equal(pagina.atributo('#progresso-barra', 'style'), 'width: 100%;');
     assert.equal(pagina.texto('#progresso-titulo'), 'Concluído');
-    assert.equal(pagina.texto('#progresso-detalhe'), '3 abas processadas, 12 células alteradas.');
+    assert.equal(pagina.texto('#progresso-detalhe'), '3 abas processadas, 11 células alteradas.');
     assert.equal(pagina.seletor('#mensagem').classList.contains('hidden'), true, 'sem erro na tela');
     assert.equal(pagina.seletor('#processar').disabled, false, 'o botão volta a ficar disponível');
 });
@@ -433,14 +433,13 @@ test('gancadastro — pacote com prefixo de namespace é reescrito no mesmo name
         sheet1.includes('<x:c r="A2" s="1" t="inlineStr"><x:is><x:t>0004469-51.2026.8.05.0103</x:t></x:is></x:c>'),
         'a célula com prefixo precisa sair reescrita, no mesmo namespace do documento'
     );
-    assert.ok(sheet1.includes('<x:c r="F2" s="3" t="inlineStr"><x:is><x:t>20000</x:t></x:is></x:c>'), 'valor da causa reescrito com prefixo e formato Texto');
+    assert.ok(sheet1.includes('<x:c r="F2"><x:v>20000</x:v></x:c>'), 'valor da causa reescrito como número, no mesmo prefixo');
     assert.ok(sheet1.includes('<x:c r="B3" s="2" t="inlineStr"><x:is><x:t>SEM ADVOGADO</x:t></x:is></x:c>'), 'estilo preservado na célula com prefixo');
     assert.ok(sheet1.includes('<x:c r="A3"><x:v>12345</x:v></x:c>'), 'valor fora de 20 dígitos fica intacto');
     assert.ok(sheet1.includes('<x:c r="G2" t="s"><x:v>13</x:v></x:c>'), 'coluna fora do mapa fica intacta');
-    assert.match(saida.partes['xl/styles.xml'], /<cellXfs count="4">/, 'o valor da causa ganha um xf de Texto');
-    assert.match(saida.partes['xl/styles.xml'], /<xf [^>]*fontId="0"[^>]*numFmtId="49"[^>]*applyNumberFormat="1"/, 'xf de Texto preserva os demais atributos');
+    assert.equal(saida.partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'nenhum xf novo: o valor já está no formato Geral');
     assert.equal(saida.partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
-    assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['12', '1', '3', '1']);
+    assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['11', '2', '3', '1']);
 });
 
 test('gancadastro — a saída preserva formatação, abas e nomes, e só reescreve o necessário', async (t) => {
@@ -462,8 +461,7 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
     // Mesmas partes do pacote, mesmas abas, mesmos nomes.
     assert.deepEqual(saida.nomes, original.nomes, 'as partes do pacote continuam as mesmas');
     assert.equal(partes['xl/workbook.xml'], original.partes['xl/workbook.xml'], 'workbook.xml sai idêntico');
-    assert.match(partes['xl/styles.xml'], /<cellXfs count="4">/, 'o valor da causa ganha um xf de Texto');
-    assert.match(partes['xl/styles.xml'], /<xf [^>]*fontId="0"[^>]*numFmtId="49"[^>]*applyNumberFormat="1"/, 'xf de Texto preserva os demais atributos');
+    assert.equal(partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'nenhum xf novo: o valor já está no formato Geral');
     assert.equal(partes['xl/sharedStrings.xml'], original.partes['xl/sharedStrings.xml'], 'sharedStrings.xml sai idêntico');
     assert.equal(partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
     assert.equal(partes['xl/worksheets/sheet3.xml'], original.partes['xl/worksheets/sheet3.xml'], 'aba vazia sai idêntica');
@@ -476,16 +474,17 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
     assert.ok(sheet1.includes(reescrita('C2', '0')), 'SEM OAB vira 0');
     assert.ok(sheet1.includes(reescrita('D2', 'TJ')), 'SEM UF vira TJ');
     assert.ok(sheet1.includes(reescrita('E2', 'ILHEUS')), 'comarca sem acento');
-    assert.ok(sheet1.includes(reescrita('F2', '20000', ' s="3"')), 'valor da causa sem o sufixo de centavos, em formato Texto');
+    assert.ok(sheet1.includes('<c r="F2"><v>20000</v></c>'), 'valor da causa gravado como número, sem o sufixo de centavos');
     assert.ok(sheet1.includes(reescrita('B3', 'SEM ADVOGADO', ' s="2"')), 'SEM ADV vira SEM ADVOGADO com o estilo da célula');
     assert.ok(sheet1.includes(reescrita('E3', 'NAO ENCONTRADO')), 'comarca normalizada');
-    assert.ok(sheet1.includes(reescrita('F3', '1234,56', ' s="3"')), 'valor no padrão brasileiro, em formato Texto');
+    assert.ok(sheet1.includes('<c r="F3"><v>1234.56</v></c>'), 'valor no padrão brasileiro gravado como número de verdade');
     assert.ok(sheet1.includes(reescrita('D4', 'TJ')), 'célula de texto inline também é processada');
-    assert.ok(sheet1.includes(reescrita('F4', '1500,5', ' s="3"')), 'valor numérico vira o padrão brasileiro, em formato Texto');
     assert.ok(sheet1.includes(reescrita('B5', 'JOSE  DA SILVA')), 'a normalização vale para todas as linhas');
 
-    // Células que não mudam ficam como estavam — a numérica inválida, a vazia,
-    // a que tem fórmula, a inline sem texto, a sem `r` e a coluna fora do mapa.
+    // Células que não mudam ficam como estavam — o valor já numérico, a
+    // numérica inválida, a vazia, a que tem fórmula, a inline sem texto, a
+    // sem `r` e a coluna fora do mapa.
+    assert.ok(sheet1.includes('<c r="F4" t="n"><v>1500.5</v></c>'), 'valor já numérico e no formato Geral fica intacto');
     assert.ok(sheet1.includes('<c r="A3"><v>12345</v></c>'), 'valor fora de 20 dígitos fica intacto');
     assert.ok(sheet1.includes('<c r="A4" t="s"><v>15</v></c>'), 'CNJ já pontuado não é reescrito');
     assert.ok(sheet1.includes('<c r="B4"/>'), 'célula vazia fica intacta');
@@ -519,10 +518,11 @@ const SHEET_VALOR_NUMERICO = [
     '<row r="2"><c r="F2" s="1"><v>1234.56</v></c></row>',
     '<row r="3"><c r="F3" s="1"><v>0</v></c></row>',
     '<row r="4"><c r="F4" s="1" t="inlineStr"><is><t>20000</t></is></c></row>',
+    '<row r="5"><c r="F5" s="1" t="inlineStr"><is><t>12.345,67</t></is></c></row>',
     '</sheetData></worksheet>',
 ].join('');
 
-test('gancadastro — valor da causa ganha formato Texto sem perder o alinhamento', async (t) => {
+test('gancadastro — valor da causa vira número no formato Geral sem perder o alinhamento', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;
     const destino = montarArvore('Destino', {});
@@ -543,29 +543,38 @@ test('gancadastro — valor da causa ganha formato Texto sem perder o alinhament
 
     const blocoXfs = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(styles)[1];
     const xfs = [...blocoXfs.matchAll(/<xf\b[^>]*?\/>|<xf\b[^>]*?>[\s\S]*?<\/xf>/g)].map((encontrado) => encontrado[0]);
-    const celula = /<c r="F2" s="(\d+)" t="inlineStr"><is><t>1234,56<\/t><\/is><\/c>/.exec(sheet1);
-    assert.ok(celula, 'o valor numérico vira texto inline "1234,56"');
+    assert.match(styles, /<cellXfs count="4">/, 'só dois xfs novos: valor e valor pintado');
+
+    // O valor vira número de verdade, sem `t="inlineStr"` e no formato Geral.
+    const celula = /<c r="F2" s="(\d+)"><v>1234\.56<\/v><\/c>/.exec(sheet1);
+    assert.ok(celula, 'o valor 1234,56 é gravado como número');
     const xf = xfs[Number(celula[1])];
     assert.ok(xf, 'a célula aponta para um xf existente');
-    assert.match(xf, /numFmtId="49"/, 'o valor da causa usa o formato Texto do Excel');
+    assert.match(xf, /numFmtId="0"/, 'o valor da causa usa o formato Geral do Excel');
     assert.match(xf, /applyNumberFormat="1"/, 'o formato de número é aplicado');
     assert.doesNotMatch(xf, /numFmtId="4"/, 'o formato numérico original sai do xf novo');
     assert.match(xf, /<alignment\b[^>]*horizontal="right"[^>]*vertical="center"\/>/, 'o alinhamento da célula é preservado');
 
-    // Valor 0 pintado de laranja: cor, formato Texto e alinhamento no mesmo xf.
-    const celulaPintada = /<c r="F3" s="(\d+)" t="inlineStr"><is><t>0<\/t><\/is><\/c>/.exec(sheet1);
-    assert.ok(celulaPintada, 'o valor 0 continua escrito como texto');
+    // Valor 0 pintado de laranja: cor, formato Geral e alinhamento no mesmo xf.
+    const celulaPintada = /<c r="F3" s="(\d+)"><v>0<\/v><\/c>/.exec(sheet1);
+    assert.ok(celulaPintada, 'o valor 0 também é gravado como número');
     const xfPintado = xfs[Number(celulaPintada[1])];
-    assert.match(xfPintado, /numFmtId="49"/, 'valor 0 pintado também fica no formato Texto');
+    assert.match(xfPintado, /numFmtId="0"/, 'valor 0 pintado também fica no formato Geral');
     assert.match(xfPintado, /fillId="1" applyFill="1"/, 'valor 0 pintado mantém a cor laranja no xf novo');
     assert.match(xfPintado, /<alignment\b[^>]*horizontal="right"/, 'valor 0 pintado mantém o alinhamento');
 
-    // Célula já em texto e sem mudança de conteúdo recebe só o formato Texto.
-    const celulaEstilo = /<c r="F4" s="(\d+)" t="inlineStr"><is><t>20000<\/t><\/is><\/c>/.exec(sheet1);
-    assert.ok(celulaEstilo, 'o valor em texto continua com o mesmo conteúdo');
-    assert.match(xfs[Number(celulaEstilo[1])], /numFmtId="49"/, 'a célula de valor em texto também fica no formato Texto');
+    // Célula que já era texto numérico também vira número, no mesmo xf do F2.
+    const celulaTexto = /<c r="F4" s="(\d+)"><v>20000<\/v><\/c>/.exec(sheet1);
+    assert.ok(celulaTexto, 'o valor em texto vira número');
+    assert.equal(celulaTexto[1], celula[1], 'valor com e sem centavos usa o mesmo xf');
 
-    // O que um leitor de planilha vê: texto, valor com vírgula e formato "@".
+    // O caso que falhava: "12.345,67" com ponto de milhar. O número sai exato
+    // e o formato Geral exibe "12345,67", sem o ponto que o destino recusa.
+    const celulaMilhar = /<c r="F5" s="(\d+)"><v>12345\.67<\/v><\/c>/.exec(sheet1);
+    assert.ok(celulaMilhar, 'o ponto de milhar sai do valor gravado');
+    assert.equal(celulaMilhar[1], celula[1], 'o valor com milhar usa o mesmo xf');
+
+    // O que um leitor de planilha vê: número, valor exato e formato Geral.
     // Lê o arquivo real com a mesma biblioteca que o projeto vendoriza.
     pagina.script(readFileSync('vendor/xlsx/xlsx.full.min.js', 'utf8'));
     pagina.janela.__saidaXlsx = Array.from(destino.paraObjeto()[NOME_SAIDA]);
@@ -575,11 +584,11 @@ test('gancadastro — valor da causa ganha formato Texto sem perder o alinhament
         return { tipo: aba.F2.t, valor: aba.F2.v, formato: aba.F2.z, tipoZero: aba.F3.t, valorZero: aba.F3.v };
     })()`);
     assert.deepEqual(JSON.parse(JSON.stringify(lido)), {
-        tipo: 's',
-        valor: '1234,56',
-        formato: '@',
-        tipoZero: 's',
-        valorZero: '0',
+        tipo: 'n',
+        valor: 1234.56,
+        formato: 'General',
+        tipoZero: 'n',
+        valorZero: 0,
     });
 });
 
