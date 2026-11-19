@@ -4,6 +4,7 @@
     "favicon.png": "1696916f725b3116f2cef97e07a6d980017d0f9bd24a11b04d80ea9dd9406d8b",
     "logo.png": "cc912cf4fa8fd57476fea205539a25278fdeb2260387f06cf9c313ce339340cc",
     "toys/shared/kit.js": "2cf2b351bd0196370b2b00a5e030211b6b72158108db61f14aed6a5cc68a3f76",
+    "toys/shared/request-id.js": "5c1d2d3d02c410c01034ade18ee9c8bf057c26c1391d69542a44d4c8296d00ab",
     "toys/shared/toy.css": "3487f6eb4a4c23e1512a1180c628f112b3eca00fa7753ef89a2d00ea31145bfe",
     "toys/shared/toy.js": "ddcee9a7c9709c7fda0d0bb8095a20b989b2a255c32f4de87ab1bd7396c432a2",
     "vendor/bootstrap-icons/font/bootstrap-icons.css": "bd6146337f91518bdf30381cd35ab6db9ea4056572bfb7d8c7d6a3bd642c7fba",

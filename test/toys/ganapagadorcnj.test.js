@@ -25,8 +25,7 @@ async function abrir(t, opcoes = {}) {
     return { app, pagina, ponte };
 }
 
-/** Zera os temporizadores longos do toy (60 s e 2 min) para os avisos de
- *  inatividade serem observáveis sem espera real. */
+/** Zera os temporizadores de 2 min para observar os avisos sem espera real. */
 function comTimersCurtos(janela) {
     const original = janela.setTimeout.bind(janela);
     janela.setTimeout = (fn, ms = 0, ...resto) => original(fn, Math.min(ms, 20), ...resto);
@@ -406,16 +405,43 @@ test('ganapagadorcnj — copiar lista sem pendências não escreve nada', async 
     assert.equal(pagina.texto('#cnj-notdeleted-copy'), 'Copiar lista');
 });
 
-test('ganapagadorcnj — seleção de pasta sem resposta é interrompida com o aviso do toy', async (t) => {
-    const { pagina } = await abrir(t, { preparar: comTimersCurtos });
+test('ganapagadorcnj — seleção após 60 s exclui sem randomUUID nem alerta', async (t) => {
+    const ctx = await abrir(t, {
+        preparar(janela) {
+            Object.defineProperty(janela.crypto, 'randomUUID', { value: undefined, configurable: true });
+        },
+    });
+    const { app, pagina, ponte } = ctx;
+    const pasta = montarArvore('Documentos', { [`${PROCESSO}.pdf`]: 'A', 'outro.txt': 'B' });
     const alertas = alertasDe(pagina);
+    const vencimentos = [];
+    const original = pagina.janela.setTimeout.bind(pagina.janela);
+    const timer = t.mock.method(pagina.janela, 'setTimeout', (fn, ms = 0, ...args) => {
+        if (ms < 60000) return original(fn, ms, ...args);
+        vencimentos.push({ fn, ms, args });
+        return 0;
+    });
 
+    app.enfileirarPasta(pasta);
     pagina.clicar('#cnj-source');
-    await pagina.aguardar(() => alertas.length === 1, { descricao: 'alerta de seleção sem resposta' });
-
-    assert.deepEqual(alertas, ['A seleção de pasta não respondeu.']);
+    await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: 'diálogo de pasta aberto' });
+    // Avança os prazos longos até 60.001 ms, antes da confirmação do usuário.
+    for (const { fn, ms, args } of vencimentos) if (ms <= 60001) fn(...args);
+    await pagina.tick(0);
+    timer.mock.restore();
+    assert.deepEqual(alertas, []);
     assert.equal(pagina.texto('#cnj-source-name'), 'Nenhuma pasta selecionada');
-    assert.equal(pagina.seletor('#cnj-delete').disabled, true);
+
+    await ponte.confirmarPasta();
+    await pagina.aguardar(() => pagina.texto('#cnj-source-name') === 'Documentos', { descricao: 'pasta escolhida após a espera' });
+    pagina.digitar('#cnj-processes', PROCESSO);
+    await apagar(pagina);
+
+    assert.equal(pagina.janela.crypto.randomUUID, undefined);
+    assert.deepEqual(pasta.caminhos(), ['outro.txt']);
+    assert.equal(pagina.texto('#cnj-success'), '1');
+    assert.deepEqual(linhas(pagina, '#cnj-report-list'), [['APAGADO', `${PROCESSO}.pdf`]]);
+    assert.deepEqual(alertas, []);
 });
 
 test('ganapagadorcnj — exclusão sem resposta é interrompida com o aviso do toy', async (t) => {

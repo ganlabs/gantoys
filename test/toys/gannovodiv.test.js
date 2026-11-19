@@ -41,14 +41,14 @@ function pdfjsPorArquivo(lotes) {
     };
 }
 
-async function abrirNovoDiv(t, opcoes = {}) {
+async function abrirNovoDiv(t, opcoes = {}, opcoesApp = {}) {
     const destino = opcoes.destino || montarArvore('Destino');
     const pdfjsLib = opcoes.pdfjsLib || criarPdfjsFake(opcoes.paginas || [PAGINA_NEUTRA, PAGINA_NEUTRA]);
     const globais = { pdfjsLib };
     if (opcoes.tesseract) globais.Tesseract = opcoes.tesseract;
 
-    const app = await carregarApp();
-    const pagina = await carregarToy('gannovodiv', { globais });
+    const app = await carregarApp(opcoesApp);
+    const pagina = await carregarToy('gannovodiv', { globais, preparar: opcoes.preparar });
     t.after(() => { pagina.fechar(); app.fechar(); });
 
     app.enfileirarPasta(destino);
@@ -276,6 +276,30 @@ test('NovoDiv — grava Inicial e Docs com o intervalo detectado e monta o relat
         'Detectando limites...',
         'Separando PDF (2 a 3)...',
     ]);
+});
+
+test('NovoDiv — grava Inicial e Docs sem randomUUID e exibe o destino sem nome', async (t) => {
+    const preparar = (janela) => {
+        Object.defineProperty(janela.crypto, 'randomUUID', { value: undefined, configurable: true });
+    };
+    const pagina = await abrirNovoDiv(t, {
+        paginas: [PAGINA_SISTEMA, PAGINA_INICIAL, PAGINA_FECHAMENTO, PAGINA_PROCURACAO],
+        destino: montarArvore(''),
+        preparar,
+    }, { preparar });
+    assert.equal(pagina.janela.crypto.randomUUID, undefined);
+    assert.equal(pagina.app.janela.crypto.randomUUID, undefined);
+    selecionar(pagina, [await arquivoDeTeste(pagina, NOME, 4)]);
+
+    await processar(pagina);
+
+    assert.deepEqual(pagina.destino.caminhos(), [`Docs_${CNJ}.pdf`, `Inicial_${CNJ}.pdf`]);
+    assert.deepEqual(await tamanhosGravados(pagina, `Inicial_${CNJ}.pdf`), [[101, 200], [102, 200]]);
+    assert.deepEqual(await tamanhosGravados(pagina, `Docs_${CNJ}.pdf`), [[100, 200], [103, 200]]);
+    assert.equal(pagina.texto('#statusText'), 'Extrações concluídas!');
+    assert.equal(pagina.texto('#doneMessage'), 'Os resultados foram guardados em Pasta selecionada.');
+    assert.deepEqual(celulasDaLinha(pagina, 0), [NOME, '2 a 3 (2p)', 'Inicial Docs Corrigir', 'OK']);
+    assert.deepEqual(pagina.alertas, []);
 });
 
 test('NovoDiv — heurística sem confiança marca a linha como Revisar e avisa na tela', async (t) => {

@@ -38,7 +38,8 @@ Apaga, em uma pasta local, os arquivos cujo nome contenha um dos números de pro
 
 ## Avisos e limitações
 
-- Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem; se a seleção não responder em 60 segundos, o erro é `A seleção de pasta não respondeu.`
+- Erros explícitos de seleção aparecem em uma caixa de alerta do navegador. A escolha da pasta não tem limite de tempo.
+- Se o navegador cancelar ou recusar a escolha, o diálogo do app permite outra tentativa. O botão `Cancelar` encerra a escolha.
 - Se a exclusão ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de exclusão não respondeu.` e a barra mostra `Não foi possível concluir a exclusão.`
 - Se a pasta escolhida não estiver mais disponível, a exclusão falha com `A pasta selecionada não está mais disponível. Selecione-a novamente.`; sem permissão, falha com `É necessário conceder permissão de escrita na pasta.`
 - Pastas (mesmo as vazias) nunca são apagadas; só arquivos são removidos. Se uma subpasta ficar vazia, ela permanece na pasta.

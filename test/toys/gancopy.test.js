@@ -12,8 +12,8 @@ function comTimersCurtos(janela) {
     janela.setTimeout = (fn, ms = 0, ...resto) => original(fn, Math.min(ms, 20), ...resto);
 }
 
-async function abrir(t, opcoes = {}) {
-    const app = await carregarApp();
+async function abrir(t, opcoes = {}, opcoesApp = {}) {
+    const app = await carregarApp(opcoesApp);
     const pagina = await carregarToy('gancopy', opcoes);
     t.after(() => {
         pagina.fechar();
@@ -23,14 +23,14 @@ async function abrir(t, opcoes = {}) {
     return { app, pagina, ponte };
 }
 
-async function escolherPasta(ctx, botao, arvore) {
+async function escolherPasta(ctx, botao, arvore, nomeExibido = arvore.nome) {
     const { app, pagina, ponte } = ctx;
     app.enfileirarPasta(arvore);
     pagina.clicar(botao);
     await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: `diálogo de pasta aberto por ${botao}` });
     await ponte.confirmarPasta();
-    await pagina.aguardar(() => pagina.seletor(`${botao}-name`).textContent === arvore.nome, {
-        descricao: `nome da pasta ${arvore.nome} em ${botao}`,
+    await pagina.aguardar(() => pagina.seletor(`${botao}-name`).textContent === nomeExibido, {
+        descricao: `nome da pasta ${nomeExibido} em ${botao}`,
     });
 }
 
@@ -159,6 +159,34 @@ test('gancopy — cópia por processo preserva o nome e grava o conteúdo no des
     assert.equal(pagina.seletor('#santander-notcopied').classList.contains('visible'), false);
     assert.equal(pagina.seletor('#santander-notcopied-copy').disabled, true);
     assert.equal(pagina.seletor('#santander-copy').disabled, false);
+});
+
+test('gancopy — seleciona pastas sem nome e copia arquivo sem randomUUID no toy e no app', async (t) => {
+    const preparar = (janela) => {
+        Object.defineProperty(janela.crypto, 'randomUUID', { value: undefined, configurable: true });
+    };
+    const ctx = await abrir(t, { preparar }, { preparar });
+    const { app, pagina } = ctx;
+    const alertas = alertasDe(pagina);
+    const origem = montarArvore('', { [`sub/${PROCESSO}.pdf`]: 'conteúdo do processo' });
+    const destino = montarArvore('', {});
+
+    assert.equal(pagina.janela.crypto.randomUUID, undefined);
+    assert.equal(app.janela.crypto.randomUUID, undefined);
+    await escolherPasta(ctx, '#santander-source', origem, 'Pasta selecionada');
+    await escolherPasta(ctx, '#santander-destination', destino, 'Pasta selecionada');
+    pagina.digitar('#santander-processes', PROCESSO);
+    assert.equal(pagina.seletor('#santander-copy').disabled, false);
+    await copiar(pagina, '#santander-copy', '#santander-summary');
+
+    assert.deepEqual(destino.caminhos(), [`${PROCESSO}.pdf`]);
+    assert.equal(destino.conteudo(`${PROCESSO}.pdf`), 'conteúdo do processo');
+    assert.deepEqual(destino.escritas, [`${PROCESSO}.pdf`]);
+    assert.equal(pagina.texto('#santander-progress-text'), 'Cópia concluída.');
+    assert.equal(pagina.texto('#santander-success'), '1');
+    assert.equal(pagina.texto('#santander-failure'), '0');
+    assert.deepEqual(linhas(pagina, '#santander-report-list'), [['COPIADO', `sub/${PROCESSO}.pdf`]]);
+    assert.deepEqual(alertas, []);
 });
 
 test('gancopy — processo só de dígitos casa pelo número e copia todos os arquivos que o atendem', async (t) => {

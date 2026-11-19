@@ -595,7 +595,6 @@ window.showGanToysDirectoryPicker = async (mode = 'readwrite', id = null) => {
 const DIRETORIO_INDISPONIVEL = 'Não foi possível abrir o seletor de pastas.';
 
 function diretorioIndisponivel(error) {
-    if (error && error.name === 'AbortError') return null;
     return error && error.message ? `${DIRETORIO_INDISPONIVEL} ${error.message}` : DIRETORIO_INDISPONIVEL;
 }
 
@@ -678,7 +677,7 @@ async function handleRenamerRequest(source, request) {
                 rows.push({ ...item, newName });
             }
 
-            const planId = crypto.randomUUID();
+            const planId = window.ganRequestId();
             GAN_TOYS_RENAME_PLANS.set(planId, rows);
             respondToToyRequest(source, 'gantoys-renamer-result', request.requestId, {
                 result: { planId, total, rows: rows.map((row) => ({ path: row.path, newName: row.newName })) }
@@ -1213,28 +1212,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     confirmButton?.addEventListener('click', async () => {
         const request = pendingDirectoryPickerRequest;
-        if (!request) return;
+        if (!request || confirmButton.disabled) return;
 
+        confirmButton.disabled = true;
+        cancelButton.disabled = true;
         try {
             const handle = await window.showGanToysDirectoryPicker(request.mode, request.id);
+            if (pendingDirectoryPickerRequest !== request) return;
+            const directoryId = window.ganRequestId();
+            GAN_TOYS_DIRECTORY_HANDLES.set(directoryId, handle);
+            respondToDirectoryPickerRequest(request, {
+                directory: { id: directoryId, name: handle.name || 'Pasta selecionada' }
+            });
             closeDirectoryPickerModal();
             pendingDirectoryPickerRequest = null;
-            const directoryId = crypto.randomUUID();
-            GAN_TOYS_DIRECTORY_HANDLES.set(directoryId, handle);
-            respondToDirectoryPickerRequest(request, { directory: { id: directoryId, name: handle.name } });
         } catch (error) {
-            // O toy precisa receber uma resposta sempre: sem ela, ele fica
-            // esperando e mostra o alerta de destino depois do limite. O erro
-            // real também evita que uma falha do seletor vire um cancelamento.
+            if (pendingDirectoryPickerRequest !== request) return;
+            // AbortError também significa pasta recusada. O navegador não
+            // distingue isso de cancelamento: permita escolher outra pasta.
+            if (error.name === 'AbortError') {
+                const message = document.getElementById('directoryPickerMessage');
+                message.textContent = 'A seleção foi cancelada ou o navegador recusou o acesso à pasta. '
+                    + 'Tente novamente com uma subpasta e permita o acesso. Para sair, clique em Cancelar.';
+                return;
+            }
             const aviso = diretorioIndisponivel(error);
             respondToDirectoryPickerRequest(request, {
                 error: {
-                    name: aviso ? (error.name || 'NotSupportedError') : error.name,
-                    message: aviso || error.message
+                    name: error.name || 'NotSupportedError',
+                    message: aviso
                 }
             });
             closeDirectoryPickerModal();
             pendingDirectoryPickerRequest = null;
+        } finally {
+            confirmButton.disabled = false;
+            cancelButton.disabled = false;
         }
     });
 });

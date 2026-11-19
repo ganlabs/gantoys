@@ -41,7 +41,7 @@ Une em um único PDF todos os PDFs de cada subpasta do diretório escolhido. Ent
 - Se a subpasta inteira falhar, o item aparece com o rótulo `Falha` e a mensagem de erro do navegador na linha seguinte, sem interromper as outras subpastas.
 - PDFs protegidos por senha são abertos com `ignoreEncryption: true`; se ainda assim não puderem ser lidos, valem as regras de falha acima.
 - O toy não reordena, não rotaciona e não remove páginas: as páginas entram na ordem alfabética dos arquivos.
-- Cancelar o seletor de pasta não faz nada e não mostra erro.
+- Se o navegador cancelar ou recusar a pasta, o toy mostra as duas possibilidades. A pasta anterior permanece selecionada.
 
 ## Detalhes técnicos
 - Os nomes de subpastas e de arquivos são ordenados com `localeCompare(..., 'pt-BR')`, tanto no modo com File System Access API quanto no clássico.

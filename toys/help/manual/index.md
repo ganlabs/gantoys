@@ -35,6 +35,18 @@ O GAN Toys reúne utilitários jurídicos que rodam inteiramente no navegador. C
 - A única exceção é o toy `Divisor Automático Santander`, que baixa a biblioteca de OCR `tesseract.js` de um CDN na primeira execução; por isso ele precisa de internet, enquanto os demais trabalham offline.
 - O navegador pede a confirmação de leitura ou escrita na primeira vez que um toy abre uma pasta; a permissão vale para a sessão.
 
+## Seleção de pastas
+
+- Cópia Integral e Bradesco, Divisor Automático Santander, Renomeador, Apagador por CNJ e Cadastro usam o seletor compartilhado do app.
+- A escolha da pasta não tem limite de tempo.
+- Se o navegador devolver `AbortError`, o app informa duas possibilidades: cancelamento ou recusa de acesso.
+- O navegador não permite distinguir essas possibilidades com segurança.
+- Para tentar novamente, clique em `Selecionar pasta`, escolha uma subpasta e permita o acesso.
+- Para encerrar a escolha sem alterar a pasta anterior, clique em `Cancelar` no diálogo do app.
+- Se o navegador devolver uma pasta sem nome, o app mostra `Pasta selecionada`.
+- Os identificadores dos pedidos usam `crypto.getRandomValues`; a seleção não depende de `crypto.randomUUID`.
+
+
 ## Esta central de ajuda
 
 - A grade acima lista os manuais, um por toy, na mesma ordem do menu lateral.

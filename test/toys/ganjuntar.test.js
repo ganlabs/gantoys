@@ -215,7 +215,7 @@ test('ganjuntar — grava <subpasta>.pdf na raiz, com as páginas na ordem dos a
     }
 });
 
-test('ganjuntar — cancelar o seletor não muda nada e um erro do seletor cai no seletor clássico', async (t) => {
+test('ganjuntar — AbortError informa cancelamento ou recusa e outros erros usam o seletor clássico', async (t) => {
     const avisos = [];
     const pagina = await abrirToy(t, { preparar: (janela) => { janela.alert = (mensagem) => avisos.push(mensagem); } });
     lerArquivosComoOPagina(pagina, t);
@@ -229,6 +229,8 @@ test('ganjuntar — cancelar o seletor não muda nada e um erro do seletor cai n
     assert.equal(pagina.seletor('#folderInfo').classList.contains('hidden'), true);
     assert.equal(pagina.seletor('#mergeBtn').disabled, true);
     assert.equal(pagina.texto('#folderCount'), '0');
+    assert.equal(pagina.seletor('#folderStatus').hidden, false);
+    assert.match(pagina.texto('#folderStatus'), /cancelada ou o navegador recusou o acesso/);
 
     // Falha que não é cancelamento: aviso no console e seletor clássico no lugar.
     falharSeletorDePasta(pagina, 'SecurityError', 'Bloqueado pela permissions policy.');
@@ -250,6 +252,7 @@ test('ganjuntar — cancelar o seletor não muda nada e um erro do seletor cai n
     definirArquivos(pagina, arquivos);
 
     assert.equal(pagina.texto('#folderPath'), 'Raiz (modo offline)');
+    assert.equal(pagina.seletor('#folderStatus').hidden, true);
     assert.equal(pagina.texto('#pdfCount'), '1');
     assert.equal(pagina.seletor('#mergeBtn').disabled, false);
 });

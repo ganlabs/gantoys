@@ -31,11 +31,13 @@ Processa uma planilha de cadastro em `.xlsx` e grava uma cópia padronizada na p
 - Nomes de coluna aceitos para o processo: `Núm. Processo`, `Num Processo`, `Número do Processo` e `Núm Proc`. A comparação ignora acento, caixa e pontuação.
 - `.xls` não é aceito. `.xlsm` é lido como pacote OOXML: as macros não são interpretadas nem executadas.
 - O toy precisa da pasta escolhida pelo app; o arquivo é gravado pela ponte, sem download alternativo.
+- A escolha da pasta não tem limite de tempo. O limite de resposta da gravação continua em 120 segundos.
+- Se o navegador cancelar ou recusar a escolha, o diálogo do app permite outra tentativa.
 
 ## Regras avançadas de cadastro
 
 - **Carteira e Parte Ré** — se a carteira contiver `Santander` (qualquer caixa), nem a Carteira nem a Parte Ré são modificadas por nenhuma regra e não são pintadas. Se contiver `Bradesco - Indenizatória`, a Parte Ré vira `BANCO BRADESCO SA`. Se a carteira não for Bradesco nem Santander, a Parte Ré é resolvida pelo resolvedor de carteira/réu; se não resolver, Carteira e Parte Ré mantêm os valores originais e são pintadas de laranja.
-- **Comarca** — se o valor for igual a `capital`, é preenchido com a capital correspondente à coluna UF. Se contiver `capital` seguido de texto, apaga a palavra capital e deixa o restante limpo. Se for `LEOPOLDINA`: Órgão `VC` não altera; Órgão `JEC` com Num 10 vira `OLARIA`, com Num 11 vira `PENHA`. Se for `JACAREPAGUA`: Órgão `JEC` vira `FREGUESIA`, Órgão `VC` vira `TAQUARA`.
+- **Comarca** — `capital` vira a capital correspondente à coluna UF. Com texto adicional, o toy remove `capital` e mantém o restante. `LEOPOLDINA` permanece como está, inclusive no JEC 10 e 11. Para `JACAREPAGUA`, Órgão `JEC` vira `FREGUESIA` e Órgão `VC` vira `TAQUARA`.
 - **Tipo Audiência** — se estiver vazio mas houver data na coluna Data Audiência, é preenchido com `AC`.
 
 ## Destaques visuais em cores

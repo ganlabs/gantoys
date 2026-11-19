@@ -2,8 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { carregarApp, carregarToy, montarArvore } from '../../testkit/index.js';
 
-/** Zera os temporizadores longos do toy (60 s e 2 min) para os avisos de
- *  inatividade serem observáveis sem espera real. */
+/** Zera os temporizadores de 2 min para observar os avisos sem espera real. */
 function comTimersCurtos(janela) {
     const original = janela.setTimeout.bind(janela);
     janela.setTimeout = (fn, ms = 0, ...resto) => original(fn, Math.min(ms, 20), ...resto);
@@ -484,15 +483,44 @@ test('ganrenomeador — erro do seletor de pasta aparece no alerta', async (t) =
     ]);
 });
 
-test('ganrenomeador — seleção de pasta sem resposta é interrompida com o aviso do toy', async (t) => {
-    const { pagina } = await abrir(t, { preparar: comTimersCurtos });
+test('ganrenomeador — seleção após 60 s renomeia sem randomUUID nem alerta', async (t) => {
+    const ctx = await abrir(t, {
+        preparar(janela) {
+            Object.defineProperty(janela.crypto, 'randomUUID', { value: undefined, configurable: true });
+        },
+    });
+    const { app, pagina, ponte } = ctx;
+    const origem = montarArvore('Origem', { 'Integral - 1.pdf': 'A' });
     const alertas = alertasDe(pagina);
+    const vencimentos = [];
+    const original = pagina.janela.setTimeout.bind(pagina.janela);
+    const timer = t.mock.method(pagina.janela, 'setTimeout', (fn, ms = 0, ...args) => {
+        if (ms < 60000) return original(fn, ms, ...args);
+        vencimentos.push({ fn, ms, args });
+        return 0;
+    });
 
+    app.enfileirarPasta(origem);
     pagina.clicar('#folderButton');
-    await pagina.aguardar(() => alertas.length === 1, { descricao: 'alerta de seleção sem resposta' });
-
-    assert.deepEqual(alertas, ['A seleção de pasta não respondeu.']);
+    await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: 'diálogo de pasta aberto' });
+    // Avança os prazos longos até 60.001 ms, antes da confirmação do usuário.
+    for (const { fn, ms, args } of vencimentos) if (ms <= 60001) fn(...args);
+    await pagina.tick(0);
+    timer.mock.restore();
+    assert.deepEqual(alertas, []);
     assert.equal(pagina.texto('#folderName'), 'Nenhuma pasta selecionada');
+
+    await ponte.confirmarPasta();
+    await pagina.aguardar(() => pagina.texto('#folderName') === 'Origem', { descricao: 'pasta escolhida após a espera' });
+    pagina.selecionar('#preset', 'integral');
+    await visualizar(ctx, 'Prévia da renomeação — 1 arquivo(s) de 1');
+    await renomear(pagina);
+
+    assert.equal(pagina.janela.crypto.randomUUID, undefined);
+    assert.deepEqual(origem.caminhos(), ['Integral_1.pdf']);
+    assert.equal(origem.conteudo('Integral_1.pdf'), 'A');
+    assert.equal(pagina.texto('#statChanged'), '1');
+    assert.deepEqual(alertas, []);
 });
 
 test('ganrenomeador — prévia sem resposta é interrompida com o aviso do toy', async (t) => {

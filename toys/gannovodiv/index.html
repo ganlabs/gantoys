@@ -283,6 +283,7 @@
 <script src="../../vendor/pdf-lib/pdf-lib.min.js"></script>
 <script src="../../vendor/pdfjs/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="../shared/request-id.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = '../../vendor/pdfjs/pdf.worker.min.js';
 // ALGORITHM v7
@@ -1037,7 +1038,7 @@ async function splitSavePDF(file, start, end, destDir, nomeBase) {
 
 function requestGanToys(type, payload, opcoes = {}) {
     return new Promise((resolve, reject) => {
-        const requestId = crypto.randomUUID();
+        const requestId = window.ganRequestId();
         const timeoutMs = opcoes.timeoutMs ?? 120000;
         // O seletor de pasta depende do usuário: sem limite artificial, uma
         // escolha demorada não vira erro nem mostra alerta depois da escolha.

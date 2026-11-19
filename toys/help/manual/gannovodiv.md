@@ -52,7 +52,8 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 
 - `Nenhum PDF válido selecionado.` — a seleção ou o arraste não trouxe nenhum arquivo `.pdf`.
 - `Nenhum PDF Integral encontrado. Certifique-se de que o nome contém o número CNJ.` — nenhum arquivo passou no filtro de nome.
-- Cancelar a escolha da pasta de destino não mostra alerta e não inicia o processamento.
+- O botão `Cancelar` no diálogo de pasta do app encerra a escolha sem alerta e sem iniciar o processamento.
+- Se o navegador cancelar ou recusar a escolha, o diálogo do app permite outra tentativa com uma subpasta.
 - `Não foi possível selecionar a pasta de destino: <mensagem>` — a escolha de pasta falhou. O seletor não tem limite de tempo: uma escolha demorada não gera erro.
 - `Não detectou início (mesmo com OCR)` — o arquivo entra como erro no relatório e o lote continua.
 - `Não foi possível carregar o PDF gerado: <mensagem>` — falha ao ler o arquivo gravado para visualização.

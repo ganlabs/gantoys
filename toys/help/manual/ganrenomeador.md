@@ -16,7 +16,7 @@ Renomeia arquivos de uma pasta local aplicando um padrão wildcard com substitui
 6. Confira a prévia e clique em `Renomear`. O relatório final mostra uma linha por arquivo, começando por `RENOMEADO` ou `ERRO`.
 
 ## Campos e controles
-- **Pasta dos arquivos** / **Selecionar pasta** — abre o seletor de pasta em modo leitura e escrita. Cancelar o seletor não altera nada e não mostra erro.
+- **Pasta dos arquivos** / **Selecionar pasta** — abre o seletor em leitura e escrita. O botão `Cancelar` do app preserva a pasta anterior.
 - **Preset** — `Personalizado` (sem preset) mais três combinações prontas: `Integral → Integral_`, que usa o padrão `Integral - *.pdf` com substituição `Integral_$1.pdf`; `Inicial → Inicial_`, com `Inicial - *.pdf` e `Inicial_$1.pdf`; e `Docs Inicial → Docs_`, com `Docs Inicial - *.pdf` e `Docs_$1.pdf`.
 - **Padrão a encontrar (aceita * e ?)** — `*` casa com qualquer sequência e `?` com um caractere. Exemplo do campo: `Ex.: Integral - *.pdf`. Cada `*` conta como um curinga e cada sequência de `?` conta como um único curinga, na ordem em que aparecem.
 - **Substituir por** — texto que entra no lugar do que casou. Exemplo do campo: `Ex.: Integra_$1.pdf`. Deixar vazio apaga o trecho casado. Para usar a substituição é preciso ter um padrão preenchido.
@@ -39,7 +39,8 @@ Renomeia arquivos de uma pasta local aplicando um padrão wildcard com substitui
 - Se o plano tiver sido descartado, a renomeação falha com `A prévia expirou. Gere uma nova prévia antes de renomear.`
 - Arquivo cujo nome de destino já existe na mesma pasta falha com `já existe um arquivo com esse nome`; os demais arquivos do plano continuam sendo processados.
 - Conflitos não são avisados na prévia: se dois arquivos apontarem para o mesmo nome novo, o primeiro é renomeado e o segundo falha na execução.
-- Sem resposta do aplicativo hospedeiro, a operação é encerrada com `A operação de renomeação não respondeu.` após 120 segundos, e a seleção de pasta com `A seleção de pasta não respondeu.` após 60 segundos.
+- Sem resposta do aplicativo hospedeiro, a operação termina com `A operação de renomeação não respondeu.` após 120 segundos.
+- A escolha da pasta não tem limite de tempo. Se o navegador cancelar ou recusar a escolha, o diálogo permite outra tentativa.
 - Não existe desfazer: depois de renomear, o plano é descartado e não há como voltar aos nomes anteriores.
 - Arquivos cujo nome não casa com o padrão não entram na prévia e nunca são renomeados, mesmo com `Normalizar extensão` marcado.
 - A busca percorre todos os arquivos da pasta, inclusive os ocultos, sem filtro de extensão.

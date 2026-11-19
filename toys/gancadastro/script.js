@@ -367,13 +367,6 @@ function calcularNovosValoresECores(mapaLinha) {
         } else if (comNorm.includes('CAPITAL')) {
             const resto = com.replace(/\bCAPITAL\b/gi, '').replace(/^[\s\-_/:]+|[\s\-_/:]+$/g, '').trim();
             com = normalizeNameValue(resto);
-        } else if (comNorm === 'LEOPOLDINA') {
-            const orgao = normalizarCabecalho(texto('orgao'));
-            const num = texto('num').trim();
-            if (orgao === 'JEC') {
-                if (num === '10') com = 'OLARIA';
-                else if (num === '11') com = 'PENHA';
-            }
         } else if (comNorm === 'JACAREPAGUA') {
             const orgao = normalizarCabecalho(texto('orgao'));
             if (orgao === 'JEC') com = 'FREGUESIA';
@@ -551,14 +544,16 @@ function nomeDeSaida(data) {
 
 function pedirPelaPonte(tipoResposta, dados) {
     return new Promise((resolve, reject) => {
-        const requestId = crypto.randomUUID();
+        const requestId = window.ganRequestId();
         const encerrar = (erro, resposta) => {
-            window.clearTimeout(relogio);
+            if (relogio !== null) window.clearTimeout(relogio);
             window.removeEventListener('message', receber);
             if (erro) reject(erro);
             else resolve(resposta);
         };
-        const relogio = window.setTimeout(() => encerrar(new Error('A operação não respondeu.')), 120000);
+        const relogio = tipoResposta === 'gantoys-directory-picker-result'
+            ? null
+            : window.setTimeout(() => encerrar(new Error('A operação não respondeu.')), 120000);
         function receber(evento) {
             const mensagem = evento.data;
             if (!mensagem || mensagem.type !== tipoResposta || mensagem.requestId !== requestId) return;

@@ -378,6 +378,11 @@ function buildMain(toysMap, anyUsesPdfWorker) {
         (match, rest) => `<img src="${dataUrl('logo.png')}" alt="GAN" class="sidebar-logo"${rest}>`
     );
 
+    html = html.replace(
+        '<script src="toys/shared/request-id.js"></script>',
+        () => `<script>\n${escapeScript(read('toys/shared/request-id.js'))}\n</script>`
+    );
+
     // app.js -> inline + mapa de toys embutido
     // IMPORTANTE: usar função de substituição evita que \$& (ex.: "\\$&" do pdf-lib)
     // seja expandido pelo String.prototype.replace ao embutir app.js e o mapa de toys.

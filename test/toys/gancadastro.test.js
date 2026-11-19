@@ -184,7 +184,7 @@ const AINDA_NAO_LIBERA = 'o processamento precisa liberar depois de ler a planil
 async function abrir(t, opcoes = {}) {
     const app = await carregarApp();
     // O toy lê o pacote com o JSZip real do vendor.
-    const pagina = await carregarToy('gancadastro', { vendor: [VENDOR.jszip, ...(opcoes.vendor || [])] });
+    const pagina = await carregarToy('gancadastro', { ...opcoes, vendor: [VENDOR.jszip, ...(opcoes.vendor || [])] });
     t.after(() => {
         pagina.fechar();
         app.fechar();
@@ -664,6 +664,78 @@ test('gancadastro — cancelar a escolha da pasta mantém a tela sem erro', asyn
     assert.equal(pagina.seletor('#processar').disabled, true);
 });
 
+test('gancadastro — seleção após 120 s grava a planilha sem randomUUID nem alerta', async (t) => {
+    const ctx = await abrir(t, {
+        preparar(janela) {
+            Object.defineProperty(janela.crypto, 'randomUUID', { value: undefined, configurable: true });
+        },
+    });
+    const { app, pagina, ponte } = ctx;
+    const destino = montarArvore('Destino', {});
+    const alertas = [];
+    pagina.janela.alert = (mensagem) => alertas.push(mensagem);
+    selecionarArquivo(pagina, await montarPlanilha(pagina), 'cadastro.xlsx');
+    await pagina.aguardar(() => pagina.texto('#planilha-nome') === 'cadastro.xlsx', { descricao: 'planilha lida' });
+    const vencimentos = [];
+    const original = pagina.janela.setTimeout.bind(pagina.janela);
+    const timer = t.mock.method(pagina.janela, 'setTimeout', (fn, ms = 0, ...args) => {
+        if (ms < 120000) return original(fn, ms, ...args);
+        vencimentos.push({ fn, ms, args });
+        return 0;
+    });
+
+    app.enfileirarPasta(destino);
+    pagina.clicar('#escolher-destino');
+    await pagina.aguardar(() => ponte.modalDePastaAberto(), { descricao: PEDE_A_PASTA });
+    // Avança os prazos longos até 120.001 ms, antes da confirmação do usuário.
+    for (const { fn, ms, args } of vencimentos) if (ms <= 120001) fn(...args);
+    await pagina.tick(0);
+    timer.mock.restore();
+    assert.equal(pagina.seletor('#mensagem').classList.contains('hidden'), true);
+    assert.deepEqual(alertas, []);
+
+    await ponte.confirmarPasta();
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    assert.equal(pagina.janela.crypto.randomUUID, undefined);
+    assert.deepEqual(destino.escritas, [NOME_SAIDA]);
+    const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
+    assert.ok(saida.partes['xl/worksheets/sheet1.xml'].includes('0004469-51.2026.8.05.0103'), 'o cadastro gravado contém o processo normalizado');
+    assert.equal(pagina.texto('#resultado-resumo'), `${NOME_SAIDA} gravado em Destino.`);
+    assert.equal(pagina.seletor('#mensagem').classList.contains('hidden'), true);
+    assert.deepEqual(alertas, []);
+});
+
+test('gancadastro — gravação sem resposta mantém o limite de 120 s', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina, ponte } = ctx;
+    const destino = montarArvore('Destino', {});
+    selecionarArquivo(pagina, await montarPlanilha(pagina), 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    ponte.desconectar();
+    const vencimentos = [];
+    const original = pagina.janela.setTimeout.bind(pagina.janela);
+    const timer = t.mock.method(pagina.janela, 'setTimeout', (fn, ms = 0, ...args) => {
+        if (ms < 120000) return original(fn, ms, ...args);
+        vencimentos.push({ fn, ms, args });
+        return 0;
+    });
+
+    pagina.clicar('#processar');
+    await pagina.aguardar(() => vencimentos.length === 1, { descricao: 'prazo da gravação registrado' });
+    assert.equal(vencimentos[0].ms, 120000);
+    vencimentos[0].fn(...vencimentos[0].args);
+    await pagina.aguardar(() => pagina.texto('#mensagem') === 'A operação não respondeu.', { descricao: 'erro de gravação sem resposta' });
+    timer.mock.restore();
+
+    assert.equal(pagina.texto('#progresso-titulo'), 'Interrompido');
+    assert.deepEqual(destino.escritas, []);
+    assert.equal(pagina.seletor('#processar').disabled, false);
+});
+
 test('gancadastro — pasta de destino sem permissão de escrita mostra o erro do app', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;
@@ -746,8 +818,9 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
     assert.ok(sheet1.includes('r="A4"') && sheet1.includes('<v>12</v>') && sheet1.includes('r="B4"') && sheet1.includes('<v>13</v>'), 'exceção manteve carteira e réu originais');
     assert.ok(sheet1.includes('SAO PAULO'), 'capital virou a capital da UF');
     assert.ok(sheet1.includes('MEIER'), 'capital com sufixo virou o sufixo limpo');
-    assert.ok(sheet1.includes('OLARIA'), 'Leopoldina 10 JEC virou Olaria');
-    assert.ok(sheet1.includes('PENHA'), 'Leopoldina 11 JEC virou Penha');
+    for (const linha of [7, 8, 9]) {
+        assert.match(sheet1, new RegExp(`<c r="C${linha}" t="s"><v>17</v></c>`), 'Leopoldina permanece na comarca original');
+    }
     assert.ok(sheet1.includes('FREGUESIA'), 'Jacarepagua JEC virou Freguesia');
     assert.ok(sheet1.includes('TAQUARA'), 'Jacarepagua VC virou Taquara');
     assert.ok(sheet1.includes('AC'), 'audiencia vazia com data virou AC');

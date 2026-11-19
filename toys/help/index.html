@@ -339,6 +339,18 @@ O GAN Toys reúne utilitários jurídicos que rodam inteiramente no navegador. C
 - A única exceção é o toy `Divisor Automático Santander`, que baixa a biblioteca de OCR `tesseract.js` de um CDN na primeira execução; por isso ele precisa de internet, enquanto os demais trabalham offline.
 - O navegador pede a confirmação de leitura ou escrita na primeira vez que um toy abre uma pasta; a permissão vale para a sessão.
 
+## Seleção de pastas
+
+- Cópia Integral e Bradesco, Divisor Automático Santander, Renomeador, Apagador por CNJ e Cadastro usam o seletor compartilhado do app.
+- A escolha da pasta não tem limite de tempo.
+- Se o navegador devolver `AbortError`, o app informa duas possibilidades: cancelamento ou recusa de acesso.
+- O navegador não permite distinguir essas possibilidades com segurança.
+- Para tentar novamente, clique em `Selecionar pasta`, escolha uma subpasta e permita o acesso.
+- Para encerrar a escolha sem alterar a pasta anterior, clique em `Cancelar` no diálogo do app.
+- Se o navegador devolver uma pasta sem nome, o app mostra `Pasta selecionada`.
+- Os identificadores dos pedidos usam `crypto.getRandomValues`; a seleção não depende de `crypto.randomUUID`.
+
+
 ## Esta central de ajuda
 
 - A grade acima lista os manuais, um por toy, na mesma ordem do menu lateral.
@@ -387,11 +399,13 @@ Processa uma planilha de cadastro em `.xlsx` e grava uma cópia padronizada na p
 - Nomes de coluna aceitos para o processo: `Núm. Processo`, `Num Processo`, `Número do Processo` e `Núm Proc`. A comparação ignora acento, caixa e pontuação.
 - `.xls` não é aceito. `.xlsm` é lido como pacote OOXML: as macros não são interpretadas nem executadas.
 - O toy precisa da pasta escolhida pelo app; o arquivo é gravado pela ponte, sem download alternativo.
+- A escolha da pasta não tem limite de tempo. O limite de resposta da gravação continua em 120 segundos.
+- Se o navegador cancelar ou recusar a escolha, o diálogo do app permite outra tentativa.
 
 ## Regras avançadas de cadastro
 
 - **Carteira e Parte Ré** — se a carteira contiver `Santander` (qualquer caixa), nem a Carteira nem a Parte Ré são modificadas por nenhuma regra e não são pintadas. Se contiver `Bradesco - Indenizatória`, a Parte Ré vira `BANCO BRADESCO SA`. Se a carteira não for Bradesco nem Santander, a Parte Ré é resolvida pelo resolvedor de carteira/réu; se não resolver, Carteira e Parte Ré mantêm os valores originais e são pintadas de laranja.
-- **Comarca** — se o valor for igual a `capital`, é preenchido com a capital correspondente à coluna UF. Se contiver `capital` seguido de texto, apaga a palavra capital e deixa o restante limpo. Se for `LEOPOLDINA`: Órgão `VC` não altera; Órgão `JEC` com Num 10 vira `OLARIA`, com Num 11 vira `PENHA`. Se for `JACAREPAGUA`: Órgão `JEC` vira `FREGUESIA`, Órgão `VC` vira `TAQUARA`.
+- **Comarca** — `capital` vira a capital correspondente à coluna UF. Com texto adicional, o toy remove `capital` e mantém o restante. `LEOPOLDINA` permanece como está, inclusive no JEC 10 e 11. Para `JACAREPAGUA`, Órgão `JEC` vira `FREGUESIA` e Órgão `VC` vira `TAQUARA`.
 - **Tipo Audiência** — se estiver vazio mas houver data na coluna Data Audiência, é preenchido com `AC`.
 
 ## Destaques visuais em cores
@@ -635,7 +649,8 @@ Nas duas abas, os quadros `Copiados` e `Não copiados` só aparecem quando têm 
 
 ## Avisos e limitações
 
-- Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem. A escolha de pasta não tem limite de tempo: uma seleção demorada não gera erro.
+- Erros explícitos de seleção aparecem em uma caixa de alerta do navegador. A escolha da pasta não tem limite de tempo.
+- Se o navegador cancelar ou recusar a escolha, o diálogo do app permite outra tentativa. O botão `Cancelar` encerra a escolha.
 - Se a cópia ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de cópia não respondeu.` e a barra mostra `Não foi possível concluir a cópia.`
 - Se as pastas escolhidas não estiverem mais disponíveis, a cópia falha com `Selecione novamente as pastas de origem e destino.`; sem permissão, falha com `É necessário conceder permissão de leitura na origem e escrita no destino.` Com `Mover` marcado, a mensagem de permissão é `É necessário conceder permissão de leitura na origem e escrita no destino (e na origem para mover).`
 - Um arquivo já existente no destino com o mesmo conteúdo não é recopiado: entra no quadro `Não copiados` com o estado `IGUAL` e o motivo `já existe no destino com o mesmo conteúdo`. Se o arquivo do destino for o mesmo arquivo da origem, o motivo é `origem e destino são o mesmo arquivo` (e, com `Mover`, nada é apagado).
@@ -696,7 +711,8 @@ Apaga, em uma pasta local, os arquivos cujo nome contenha um dos números de pro
 
 ## Avisos e limitações
 
-- Erros de seleção de pasta aparecem em uma caixa de alerta do navegador com a mensagem do erro, ou `Não foi possível selecionar a pasta.` quando não há mensagem; se a seleção não responder em 60 segundos, o erro é `A seleção de pasta não respondeu.`
+- Erros explícitos de seleção aparecem em uma caixa de alerta do navegador. A escolha da pasta não tem limite de tempo.
+- Se o navegador cancelar ou recusar a escolha, o diálogo do app permite outra tentativa. O botão `Cancelar` encerra a escolha.
 - Se a exclusão ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de exclusão não respondeu.` e a barra mostra `Não foi possível concluir a exclusão.`
 - Se a pasta escolhida não estiver mais disponível, a exclusão falha com `A pasta selecionada não está mais disponível. Selecione-a novamente.`; sem permissão, falha com `É necessário conceder permissão de escrita na pasta.`
 - Pastas (mesmo as vazias) nunca são apagadas; só arquivos são removidos. Se uma subpasta ficar vazia, ela permanece na pasta.
@@ -766,7 +782,8 @@ Localiza a Petição Inicial dentro de PDFs de processo integral e grava a Inici
 
 - `Nenhum PDF válido selecionado.` — a seleção ou o arraste não trouxe nenhum arquivo `.pdf`.
 - `Nenhum PDF Integral encontrado. Certifique-se de que o nome contém o número CNJ.` — nenhum arquivo passou no filtro de nome.
-- Cancelar a escolha da pasta de destino não mostra alerta e não inicia o processamento.
+- O botão `Cancelar` no diálogo de pasta do app encerra a escolha sem alerta e sem iniciar o processamento.
+- Se o navegador cancelar ou recusar a escolha, o diálogo do app permite outra tentativa com uma subpasta.
 - `Não foi possível selecionar a pasta de destino: <mensagem>` — a escolha de pasta falhou. O seletor não tem limite de tempo: uma escolha demorada não gera erro.
 - `Não detectou início (mesmo com OCR)` — o arquivo entra como erro no relatório e o lote continua.
 - `Não foi possível carregar o PDF gerado: <mensagem>` — falha ao ler o arquivo gravado para visualização.
@@ -1037,7 +1054,7 @@ Une em um único PDF todos os PDFs de cada subpasta do diretório escolhido. Ent
 - Se a subpasta inteira falhar, o item aparece com o rótulo `Falha` e a mensagem de erro do navegador na linha seguinte, sem interromper as outras subpastas.
 - PDFs protegidos por senha são abertos com `ignoreEncryption: true`; se ainda assim não puderem ser lidos, valem as regras de falha acima.
 - O toy não reordena, não rotaciona e não remove páginas: as páginas entram na ordem alfabética dos arquivos.
-- Cancelar o seletor de pasta não faz nada e não mostra erro.
+- Se o navegador cancelar ou recusar a pasta, o toy mostra as duas possibilidades. A pasta anterior permanece selecionada.
 
 ## Detalhes técnicos
 - Os nomes de subpastas e de arquivos são ordenados com `localeCompare(..., 'pt-BR')`, tanto no modo com File System Access API quanto no clássico.
@@ -1320,7 +1337,7 @@ Renomeia arquivos de uma pasta local aplicando um padrão wildcard com substitui
 6. Confira a prévia e clique em `Renomear`. O relatório final mostra uma linha por arquivo, começando por `RENOMEADO` ou `ERRO`.
 
 ## Campos e controles
-- **Pasta dos arquivos** / **Selecionar pasta** — abre o seletor de pasta em modo leitura e escrita. Cancelar o seletor não altera nada e não mostra erro.
+- **Pasta dos arquivos** / **Selecionar pasta** — abre o seletor em leitura e escrita. O botão `Cancelar` do app preserva a pasta anterior.
 - **Preset** — `Personalizado` (sem preset) mais três combinações prontas: `Integral → Integral_`, que usa o padrão `Integral - *.pdf` com substituição `Integral_$1.pdf`; `Inicial → Inicial_`, com `Inicial - *.pdf` e `Inicial_$1.pdf`; e `Docs Inicial → Docs_`, com `Docs Inicial - *.pdf` e `Docs_$1.pdf`.
 - **Padrão a encontrar (aceita * e ?)** — `*` casa com qualquer sequência e `?` com um caractere. Exemplo do campo: `Ex.: Integral - *.pdf`. Cada `*` conta como um curinga e cada sequência de `?` conta como um único curinga, na ordem em que aparecem.
 - **Substituir por** — texto que entra no lugar do que casou. Exemplo do campo: `Ex.: Integra_$1.pdf`. Deixar vazio apaga o trecho casado. Para usar a substituição é preciso ter um padrão preenchido.
@@ -1343,7 +1360,8 @@ Renomeia arquivos de uma pasta local aplicando um padrão wildcard com substitui
 - Se o plano tiver sido descartado, a renomeação falha com `A prévia expirou. Gere uma nova prévia antes de renomear.`
 - Arquivo cujo nome de destino já existe na mesma pasta falha com `já existe um arquivo com esse nome`; os demais arquivos do plano continuam sendo processados.
 - Conflitos não são avisados na prévia: se dois arquivos apontarem para o mesmo nome novo, o primeiro é renomeado e o segundo falha na execução.
-- Sem resposta do aplicativo hospedeiro, a operação é encerrada com `A operação de renomeação não respondeu.` após 120 segundos, e a seleção de pasta com `A seleção de pasta não respondeu.` após 60 segundos.
+- Sem resposta do aplicativo hospedeiro, a operação termina com `A operação de renomeação não respondeu.` após 120 segundos.
+- A escolha da pasta não tem limite de tempo. Se o navegador cancelar ou recusar a escolha, o diálogo permite outra tentativa.
 - Não existe desfazer: depois de renomear, o plano é descartado e não há como voltar aos nomes anteriores.
 - Arquivos cujo nome não casa com o padrão não entram na prévia e nunca são renomeados, mesmo com `Normalizar extensão` marcado.
 - A busca percorre todos os arquivos da pasta, inclusive os ocultos, sem filtro de extensão.

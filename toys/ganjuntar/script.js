@@ -10,6 +10,7 @@ const elements = {
     folderBtn: document.getElementById('folderBtn'),
     folderInput: document.getElementById('folderInput'),
     folderInfo: document.getElementById('folderInfo'),
+    folderStatus: document.getElementById('folderStatus'),
     folderPath: document.getElementById('folderPath'),
     folderCount: document.getElementById('folderCount'),
     pdfCount: document.getElementById('pdfCount'),
@@ -34,6 +35,7 @@ function podeUsarSeletorDePasta() {
 }
 
 async function selectFolder() {
+    elements.folderStatus.hidden = true;
     if (!podeUsarSeletorDePasta()) {
         elements.folderInput.click();
         return;
@@ -61,16 +63,21 @@ async function selectFolder() {
         elements.mergeBtn.disabled = state.subfolders.length === 0;
 
     } catch (err) {
-        // Cancelar é escolha do usuário; qualquer outra falha cai no seletor
-        // clássico de pasta, que continua funcionando em modo offline
-        // (resultado por download).
-        if (err.name === 'AbortError') return;
+        // O navegador usa AbortError tanto para cancelar quanto para recusar
+        // uma pasta. Informe as duas possibilidades sem abrir outro seletor.
+        if (err.name === 'AbortError') {
+            elements.folderStatus.textContent = 'A seleção foi cancelada ou o navegador recusou o acesso à pasta. '
+                + 'Tente novamente com uma subpasta e permita o acesso.';
+            elements.folderStatus.hidden = false;
+            return;
+        }
         console.warn('showDirectoryPicker indisponível, usando o seletor de pasta do navegador:', err);
         elements.folderInput.click();
     }
 }
 
 async function selectFolderFromFiles(fileList) {
+    elements.folderStatus.hidden = true;
     const files = Array.from(fileList || []).filter(file =>
         file.name.toLowerCase().endsWith('.pdf') && !file.name.startsWith('Integral_')
     );

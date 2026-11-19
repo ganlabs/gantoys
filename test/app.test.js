@@ -142,7 +142,7 @@ test('App — o diálogo confirma, devolve um id reaproveitável e cancela com A
     assert.equal(carta.de('gantoys-directory-picker-result', 'pasta-3').directory.name, 'SemModo');
 });
 
-test('App — as falhas do seletor chegam ao toy com o erro real e fecham o diálogo', async (t) => {
+test('App — erros explícitos chegam ao toy e AbortError permite outra escolha', async (t) => {
     const app = await abrirApp(t);
     const carta = correio();
 
@@ -155,7 +155,7 @@ test('App — as falhas do seletor chegam ao toy com o erro real e fecham o diá
         return carta.de('gantoys-directory-picker-result', requestId);
     };
 
-    // O seletor recusa (permissão, gesto ausente): aviso na tela, AbortError no toy.
+    // Falhas explícitas de permissão ou contexto chegam ao toy.
     app.janela.showDirectoryPicker = async () => {
         const erro = new Error('permissão negada pelo usuário');
         erro.name = 'NotAllowedError';
@@ -168,7 +168,7 @@ test('App — as falhas do seletor chegam ao toy com o erro real e fecham o diá
     });
     assert.equal(app.seletor('#directoryPickerModal').hidden, true);
 
-    // Navegador sem a File System Access API: o aviso cita o caminho alternativo.
+    // Navegador sem a File System Access API recebe orientação.
     delete app.janela.showDirectoryPicker;
     const semApi = await pedirPasta('falha-2');
     assert.deepEqual(plano(semApi.error), {
@@ -183,14 +183,23 @@ test('App — as falhas do seletor chegam ao toy com o erro real e fecham o diá
     assert.deepEqual(plano(semMensagem.error), { name: 'Weird', message: AVISO_PASTA });
     assert.equal(app.seletor('#directoryPickerModal').hidden, true);
 
-    // Cancelamento do próprio navegador: nada de aviso, o erro do seletor passa.
+    // O navegador não distingue cancelamento de pasta recusada.
     app.janela.showDirectoryPicker = async () => {
-        const erro = new Error('cancelado pelo usuário');
+        const erro = new Error('Pasta recusada pelo navegador.');
         erro.name = 'AbortError';
         throw erro;
     };
-    const cancelado = await pedirPasta('falha-4');
-    assert.deepEqual(plano(cancelado.error), { name: 'AbortError', message: 'cancelado pelo usuário' });
+    assert.equal(await pedirPasta('falha-4'), undefined);
+    assert.equal(app.seletor('#directoryPickerModal').hidden, false);
+    assert.match(app.texto('#directoryPickerMessage'), /cancelada ou o navegador recusou/);
+    assert.equal(app.seletor('#directoryPickerConfirm').disabled, false);
+
+    // O mesmo pedido aceita outra escolha, sem perder a resposta do toy.
+    app.janela.showDirectoryPicker = async () => montarArvore('Permitida', {}).handle;
+    app.clicar('#directoryPickerConfirm');
+    await app.tick(0);
+    await app.tick(0);
+    assert.equal(carta.de('gantoys-directory-picker-result', 'falha-4').directory.name, 'Permitida');
     assert.equal(app.seletor('#directoryPickerModal').hidden, true);
 });
 
@@ -250,6 +259,55 @@ test('App — o seletor do app repassa o modo pedido e assume leitura e escrita'
     assert.deepEqual(modos, ['read', 'readwrite']);
     assert.equal(leitura.name, 'Direta');
     assert.equal(padrao.name, 'Direta');
+});
+
+test('App — pastas sem nome e navegador sem randomUUID continuam disponíveis para gravação', async (t) => {
+    const app = await abrirApp(t, {
+        preparar(janela) {
+            Object.defineProperty(janela.crypto, 'randomUUID', { value: undefined, configurable: true });
+        }
+    });
+    const carta = correio();
+    const primeira = montarArvore('', {});
+    const segunda = montarArvore('', {});
+    const id1 = await registrarHandle(app, carta, primeira.handle, 'primeira', 'readwrite', 'Pasta selecionada');
+    const id2 = await registrarHandle(app, carta, segunda.handle, 'segunda', 'readwrite', 'Pasta selecionada');
+
+    await pedir(app, carta, {
+        type: 'gantoys-file-request', requestId: 'gravar', action: 'write',
+        directoryId: id1, name: 'prova.txt', bytes: new Uint8Array([65]),
+    }, 'gantoys-file-result');
+    assert.deepEqual([...primeira.paraObjeto()['prova.txt']], [65]);
+    assert.deepEqual(segunda.caminhos(), []);
+    assert.notEqual(id1, id2);
+});
+
+test('App — uma seleção em andamento não abre outro seletor e não responde ao pedido substituído', async (t) => {
+    const app = await abrirApp(t);
+    const carta = correio();
+    let concluir;
+    let chamadas = 0;
+    app.janela.showDirectoryPicker = () => {
+        chamadas += 1;
+        return new Promise((resolve) => { concluir = resolve; });
+    };
+    enviar(app, carta, { type: 'gantoys-directory-picker-request', requestId: 'antiga' });
+    app.clicar('#directoryPickerConfirm');
+    app.clicar('#directoryPickerConfirm');
+    assert.equal(chamadas, 1);
+    enviar(app, carta, { type: 'gantoys-directory-picker-request', requestId: 'nova' });
+    concluir(montarArvore('Antiga', {}).handle);
+    await app.tick(0);
+    await app.tick(0);
+    assert.equal(carta.de('gantoys-directory-picker-result', 'antiga').error.name, 'AbortError');
+    assert.equal(carta.de('gantoys-directory-picker-result', 'nova'), undefined);
+    assert.equal(app.seletor('#directoryPickerModal').hidden, false);
+
+    app.janela.showDirectoryPicker = async () => montarArvore('Nova', {}).handle;
+    app.clicar('#directoryPickerConfirm');
+    await app.tick(0);
+    await app.tick(0);
+    assert.equal(carta.de('gantoys-directory-picker-result', 'nova').directory.name, 'Nova');
 });
 
 /* ---------------------------------------------------------------------------
