@@ -994,10 +994,10 @@ async function handleCopyRequest(source, request) {
             const results = Array(request.processes.length);
             let scanned = 0;
             let copied = 0;
-            let pending = request.processes.length;
+            const pending = new Set(search.terms.keys());
 
-            for await (const item of walkDirectoryFiles(sourceDirectory, true)) {
-                if (pending === 0) break;
+            const files = pending.size ? walkDirectoryFiles(sourceDirectory, true) : [];
+            for await (const item of files) {
                 scanned += 1;
                 if (!item.handle.name.toLowerCase().endsWith('.pdf')) {
                     reportProgress({ scanned, copied, total: request.processes.length });
@@ -1010,8 +1010,8 @@ async function handleCopyRequest(source, request) {
                     continue;
                 }
 
-                for (let index = 0; index < search.terms.length; index += 1) {
-                    if (results[index] || !termMatchesForms(search.terms[index], forms)) continue;
+                for (const index of pending) {
+                    if (!termMatchesForms(search.terms[index], forms)) continue;
                     const targetName = `INICIAL ${request.clients[index]}.pdf`;
                     try {
                         const plan = await planFileCopy(item.handle, destinationDirectory, targetName);
@@ -1034,13 +1034,14 @@ async function handleCopyRequest(source, request) {
                     } catch (error) {
                         results[index] = { status: 'fail', reference: request.processes[index], message: `${request.processes[index]}: ${error.message}` };
                     }
-                    pending -= 1;
+                    pending.delete(index);
                 }
                 reportProgress({ scanned, copied, total: request.processes.length });
+                if (pending.size === 0) break;
             }
 
-            for (let index = 0; index < request.processes.length; index += 1) {
-                if (!results[index]) results[index] = { status: 'missing', reference: request.processes[index], message: `${request.processes[index]}: nenhum PDF localizado.` };
+            for (const index of pending) {
+                results[index] = { status: 'missing', reference: request.processes[index], message: `${request.processes[index]}: nenhum PDF localizado.` };
             }
             reportProgress({ scanned, copied, total: request.processes.length }, true);
             respondToToyRequest(source, 'gantoys-copy-result', request.requestId, { result: { total: request.processes.length, results } });

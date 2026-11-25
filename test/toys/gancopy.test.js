@@ -394,6 +394,38 @@ test('gancopy — repetir a cópia limpa o resultado anterior e reaproveita o ar
     ]);
 });
 
+for (const banco of ['santander', 'bradesco']) {
+    test(`gancopy — ${banco} sobrescreve na segunda cópia se a origem mudou sem mudar o tamanho`, async (t) => {
+        const ctx = await abrir(t);
+        const { pagina } = ctx;
+        const nome = `${PROCESSO}.pdf`;
+        const alvo = banco === 'bradesco' ? 'INICIAL 45678.pdf' : nome;
+        const origem = montarArvore('Origem', { [nome]: 'versao-1' });
+        const destino = montarArvore('Destino');
+        pagina.clicar(`#tab-${banco}`);
+        await escolherPasta(ctx, `#${banco}-source`, origem);
+        await escolherPasta(ctx, `#${banco}-destination`, destino);
+        pagina.digitar(`#${banco}-processes`, PROCESSO);
+        if (banco === 'bradesco') pagina.digitar('#bradesco-clients', '45678');
+
+        await copiar(pagina, `#${banco}-copy`, `#${banco}-summary`);
+        assert.equal(destino.conteudo(alvo), 'versao-1');
+
+        const arquivo = await origem.handle.getFileHandle(nome);
+        const escrita = await arquivo.createWritable();
+        await escrita.write('versao-2');
+        await escrita.close();
+        await copiar(pagina, `#${banco}-copy`, `#${banco}-summary`);
+        assert.deepEqual(destino.caminhos(), [alvo]);
+        assert.equal(destino.conteudo(alvo), 'versao-2');
+        assert.equal(linhas(pagina, `#${banco}-report-list`)[0][0], 'ATUALIZADO');
+
+        await copiar(pagina, `#${banco}-copy`, `#${banco}-summary`);
+        assert.equal(linhas(pagina, `#${banco}-notcopied-list`)[0][0], 'IGUAL');
+        assert.deepEqual(destino.escritas, [alvo, alvo]);
+    });
+}
+
 test('gancopy — Bradesco pareia processo e pasta cliente linha a linha', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;

@@ -619,6 +619,32 @@ test('App — Bradesco: pareia processo e pasta cliente pela ordem das linhas e 
     assert.equal(destino.conteudo('INICIAL Cliente B.pdf'), 'dois');
 });
 
+test('App — Bradesco atende duas linhas do mesmo processo sem entrar na pasta seguinte', async (t) => {
+    const app = await abrirApp(t);
+    const carta = correio();
+    const origem = montarArvore('Origem', { '111.pdf': 'primeiro' });
+    const destino = montarArvore('Destino');
+    const sourceId = await registrarHandle(app, carta, {
+        ...origem.handle,
+        async *values() {
+            yield* origem.handle.values();
+            throw new Error('Acesso negado ao restante da pasta.');
+        },
+    }, 'origem');
+    const destinationId = await registrarPasta(app, carta, destino, 'destino');
+    const resposta = await pedir(app, carta, {
+        type: 'gantoys-copy-request', requestId: 'repetido', mode: 'bradesco',
+        sourceId, destinationId, processes: ['111', '111'], clients: ['A', 'B'],
+    }, 'gantoys-copy-result');
+
+    assert.deepEqual(plano(resposta.result.results), [
+        { status: 'ok', message: '111 → INICIAL A.pdf' },
+        { status: 'ok', message: '111 → INICIAL B.pdf' },
+    ]);
+    assert.equal(destino.conteudo('INICIAL A.pdf'), 'primeiro');
+    assert.equal(destino.conteudo('INICIAL B.pdf'), 'primeiro');
+});
+
 test('App — Bradesco: igual, sobrescrito, falha de gravação e processo sem PDF', async (t) => {
     const app = await abrirApp(t);
     const carta = correio();

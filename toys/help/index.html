@@ -641,6 +641,7 @@ Na aba `Arquivo`:
 Na aba `Bradesco`:
 
 - Para cada processo, o primeiro PDF localizado na origem é copiado com o nome `INICIAL <pasta cliente>.pdf`, usando a pasta cliente da mesma posição da lista.
+- A busca termina quando cada linha encontra seu primeiro PDF. Se a cópia falhar, o relatório registra `ERRO` sem tentar outro PDF para essa linha.
 - O contador `Processos` mostra o tamanho da lista de processos; `Copiados` e `Não copiados` dividem esse total.
 - Cada linha do quadro `Copiados` mostra `<processo> -> INICIAL <pasta cliente>.pdf`, com o estado `COPIADO` ou `ATUALIZADO`.
 - Processos sem PDF recebem a linha `NÃO LOCALIZADO` com a mensagem `<processo>: nenhum PDF localizado.`
@@ -654,7 +655,7 @@ Nas duas abas, os quadros `Copiados` e `Não copiados` só aparecem quando têm 
 - Se a cópia ficar 2 minutos sem enviar progresso, o processo é interrompido com `A operação de cópia não respondeu.` e a barra mostra `Não foi possível concluir a cópia.`
 - Se as pastas escolhidas não estiverem mais disponíveis, a cópia falha com `Selecione novamente as pastas de origem e destino.`; sem permissão, falha com `É necessário conceder permissão de leitura na origem e escrita no destino.` Com `Mover` marcado, a mensagem de permissão é `É necessário conceder permissão de leitura na origem e escrita no destino (e na origem para mover).`
 - Um arquivo já existente no destino com o mesmo conteúdo não é recopiado: entra no quadro `Não copiados` com o estado `IGUAL` e o motivo `já existe no destino com o mesmo conteúdo`. Se o arquivo do destino for o mesmo arquivo da origem, o motivo é `origem e destino são o mesmo arquivo` (e, com `Mover`, nada é apagado).
-- Um arquivo já existente com conteúdo diferente é sobrescrito, recebe o estado `ATUALIZADO` e o sufixo ` (sobrescrito)` no relatório. O toy não pergunta antes de sobrescrever.
+- Nas duas abas, cada execução compara o conteúdo, não a data. Se o conteúdo mudou, o toy sobrescreve o arquivo de destino sem confirmação, mesmo quando o tamanho permanece igual. O relatório mostra `ATUALIZADO` e ` (sobrescrito)`.
 - Com `Mover em vez de copiar`, o arquivo é gravado no destino e só então removido da origem. Se a remoção falhar (por exemplo, arquivo em uso), o destino fica com o arquivo e a linha entra em `Não movidos` com o estado `ERRO` e a mensagem `<caminho>: não foi possível remover da origem: <motivo>`. A ação é definitiva: o toy não usa a lixeira nem pergunta antes de remover.
 - No modo `Bradesco` só entram arquivos com nome terminando em `.pdf` e cada processo consome apenas o primeiro PDF que casar.
 - O destino é plano: arquivos vindos de subpastas diferentes com o mesmo nome caem na mesma pasta, e o último processado sobrescreve o anterior.
