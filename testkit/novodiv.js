@@ -139,14 +139,12 @@ export function paginaNeutra() {
  * regra NOVA no topo da tabela, como se tivesse vindo de um processo analisado
  * depois (é a simulação do fluxo "a LLM propôs uma regra nova").
  */
-export async function abrirDetector(t) {
+export async function abrirDetector(t, opcoes = {}) {
     let paginas = [CORRIDO];
     const pagina = await carregarToy('gannovodiv', {
         globais: {
             pdfjsLib: criarPdfjsFake(() => paginas),
-            // Página sem texto levaria ao OCR: o dublê devolve texto vazio, para
-            // a decisão depender só das regras, nunca do OCR.
-            Tesseract: criarTesseractFake(['']),
+            Tesseract: criarTesseractFake(opcoes.ocr ?? ['']),
         },
     });
     t.after(() => pagina.fechar());

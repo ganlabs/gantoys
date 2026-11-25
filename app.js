@@ -1,13 +1,9 @@
 const GANTOYS = {
     currentToy: null,
-    toyStates: {},
 
     init() {
         this.persistThemePayload();
         this.setupOrbMotion();
-        window.addEventListener('beforeunload', () => {
-            this.persistCurrentToyState();
-        });
     },
 
     setupOrbMotion() {
@@ -34,10 +30,6 @@ const GANTOYS = {
     },
 
     loadToy(toyName) {
-        if (this.currentToy && this.currentToy !== toyName) {
-            this.saveState(this.currentToy);
-        }
-
         this.currentToy = toyName;
 
         const toyFrame = document.getElementById('toyFrame');
@@ -60,7 +52,6 @@ const GANTOYS = {
 
         iframe.addEventListener('load', () => {
             this.injectThemeStyles(iframe);
-            this.restoreState(toyName);
         });
     },
 
@@ -490,90 +481,6 @@ const GANTOYS = {
                 console.warn('Cannot inject theme styles:', e);
             }
         });
-    },
-
-    persistCurrentToyState() {
-        if (!this.currentToy) return;
-        this.saveState(this.currentToy);
-    },
-
-    saveState(toyName) {
-        try {
-            const iframe = document.getElementById('toyIframe');
-            if (!iframe) return;
-
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            const state = {};
-
-            doc.querySelectorAll('input, select, textarea').forEach(el => {
-                if (!el.name) return;
-                // Radios formam UM valor por nome: guardar o value de cada um
-                // sobrescreveria o grupo (e o value do primeiro radio virava o
-                // do último escolhido, corrompendo o formulário).
-                if (el.type === 'radio') {
-                    if (el.checked) state[el.name] = el.value;
-                    return;
-                }
-                if (el.type === 'checkbox') {
-                    state[el.name] = el.checked;
-                    return;
-                }
-                state[el.name] = el.value;
-            });
-
-            localStorage.setItem('toy_state_' + toyName, JSON.stringify(state));
-        } catch (e) {
-            console.warn('Cannot save state:', e);
-        }
-    },
-
-    restoreState(toyName) {
-        try {
-            const savedState = localStorage.getItem('toy_state_' + toyName);
-            if (!savedState) return;
-
-            const state = JSON.parse(savedState);
-            const iframe = document.getElementById('toyIframe');
-            if (!iframe) return;
-
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-
-            Object.keys(state).forEach(key => {
-                const fields = doc.querySelectorAll(`[name="${key}"]`);
-                if (!fields.length) return;
-
-                // Notifica o toy do valor restaurado: cada um mantém UI derivada
-                // (painéis condicionais, contadores) reagindo a input/change.
-                const notify = (el) => {
-                    el.dispatchEvent(new Event('input', { bubbles: true }));
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
-                };
-
-                const first = fields[0];
-                if (first.type === 'radio') {
-                    const target = [...fields].find(el => el.type === 'radio' && el.value === String(state[key]));
-                    if (!target || target.checked) return;
-                    fields.forEach(el => { if (el.type === 'radio') el.checked = el === target; });
-                    notify(target);
-                    return;
-                }
-                if (first.type === 'checkbox') {
-                    const raw = state[key];
-                    const on = raw === true || raw === 'true' || raw === 'on' || raw === 1 || raw === '1';
-                    fields.forEach(el => {
-                        if (el.type !== 'checkbox' || el.checked === on) return;
-                        el.checked = on;
-                        notify(el);
-                    });
-                    return;
-                }
-                if (first.value === String(state[key])) return;
-                first.value = state[key];
-                notify(first);
-            });
-        } catch (e) {
-            console.warn('Cannot restore state:', e);
-        }
     }
 };
 

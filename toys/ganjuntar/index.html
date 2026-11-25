@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-toy="ganjuntar">
 <head>
     <script>
         (function () {
@@ -65,43 +65,86 @@
     <header class="brand">
       <img class="brand-logo" src="../../favicon.png" alt="GAN">
       <h1>Juntar PDFs</h1>
-      <p>Una os PDFs de cada subpasta do diretório escolhido em um único arquivo.</p>
+      <p>Una os PDFs de cada subpasta ou selecione arquivos e defina a ordem da união.</p>
     </header>
 
-    <section class="glass-card" aria-label="Juntar PDFs por subpasta">
+    <section class="glass-card" aria-label="Juntar PDFs">
+      <nav class="tabs" role="tablist" aria-label="Modo de junção">
+        <button class="tab" id="tabFolders" role="tab" aria-selected="true" aria-controls="panelFolders">Por subpastas</button>
+        <button class="tab" id="tabFiles" role="tab" aria-selected="false" aria-controls="panelFiles">Selecionar arquivos</button>
+      </nav>
+
       <div class="panel">
-        <div class="card-heading">
-          <h2>Selecionar Pasta</h2>
-          <p>Escolha a pasta que contém as subpastas com os PDFs a unir.</p>
-        </div>
+        <section class="mode-panel" id="panelFolders" role="tabpanel" aria-labelledby="tabFolders">
+          <div class="card-heading">
+            <h2>Selecionar Pasta</h2>
+            <p>Escolha a pasta que contém as subpastas com os PDFs a unir.</p>
+          </div>
 
-        <button class="btn btn-primary btn-block" id="folderBtn">
-          <i class="bi bi-folder2-open" aria-hidden="true"></i>
-          <span>Selecionar Pasta</span>
-        </button>
-        <input type="file" id="folderInput" hidden webkitdirectory directory multiple accept=".pdf,application/pdf">
-        <p class="hint" id="folderStatus" role="status" hidden></p>
+          <button class="btn btn-primary btn-block" id="folderBtn">
+            <i class="bi bi-folder2-open" aria-hidden="true"></i>
+            <span>Selecionar Pasta</span>
+          </button>
+          <input type="file" id="folderInput" hidden webkitdirectory directory multiple accept=".pdf,application/pdf">
+          <p class="hint" id="folderStatus" role="status" hidden></p>
 
-        <div class="tile tile-accent stack hidden" id="folderInfo">
-          <div class="folder-path muted" id="folderPath"></div>
-          <div class="row row-center">
-            <div class="stat">
-              <strong id="folderCount">0</strong>
-              <span>Pastas</span>
-            </div>
-            <div class="stat">
-              <strong id="pdfCount">0</strong>
-              <span>PDFs</span>
+          <div class="tile tile-accent stack hidden" id="folderInfo">
+            <div class="folder-path muted" id="folderPath"></div>
+            <div class="row row-center">
+              <div class="stat">
+                <strong id="folderCount">0</strong>
+                <span>Pastas</span>
+              </div>
+              <div class="stat">
+                <strong id="pdfCount">0</strong>
+                <span>PDFs</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="subfolders-list hidden" id="subfoldersList"></div>
+          <div class="subfolders-list hidden" id="subfoldersList"></div>
 
-        <button class="btn btn-primary btn-block" id="mergeBtn" disabled>
-          <i class="bi bi-link-45deg" aria-hidden="true"></i>
-          <span>Juntar PDFs</span>
-        </button>
+          <button class="btn btn-primary btn-block" id="mergeBtn" disabled>
+            <i class="bi bi-link-45deg" aria-hidden="true"></i>
+            <span>Juntar PDFs</span>
+          </button>
+        </section>
+
+        <section class="mode-panel" id="panelFiles" role="tabpanel" aria-labelledby="tabFiles" hidden>
+          <div class="card-heading">
+            <h2>Selecionar arquivos</h2>
+            <p>Escolha os PDFs e use as setas para alterar a ordem da união.</p>
+          </div>
+
+          <button class="btn btn-primary btn-block" id="filesBtn" type="button">
+            <i class="bi bi-files" aria-hidden="true"></i>
+            <span>Selecionar PDFs</span>
+          </button>
+          <input type="file" id="filesInput" hidden multiple accept=".pdf,application/pdf">
+          <p class="hint" id="filesStatus" role="status" hidden></p>
+
+          <div class="tile tile-accent stack hidden" id="filesInfo">
+            <div class="row row-center">
+              <div class="stat">
+                <strong id="filesCount">0</strong>
+                <span>PDFs selecionados</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="file-order hidden" id="fileOrder"></div>
+
+          <div class="stack">
+            <label class="input-label" for="outputName">Nome do arquivo final</label>
+            <input type="text" id="outputName" value="PDFs unidos" spellcheck="false">
+            <p class="hint">O PDF final é baixado. Nos navegadores compatíveis, você escolhe onde salvar.</p>
+          </div>
+
+          <button class="btn btn-primary btn-block" id="mergeFilesBtn" type="button" disabled>
+            <i class="bi bi-link-45deg" aria-hidden="true"></i>
+            <span>Juntar PDFs</span>
+          </button>
+        </section>
 
         <div class="progress-area" id="progressContainer">
           <div class="progress-top">
@@ -126,6 +169,7 @@
     </section>
   </main>
 
+  <script src="../shared/state.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

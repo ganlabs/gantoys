@@ -16,7 +16,7 @@ Consequências para quem mexe no código:
 - scripts clássicos (`<script src>`), nunca módulos ES (`type="module"`), que o
   navegador bloqueia em `file://`;
 - recursos compartilhados ficam em `toys/shared/` e são carregados por caminho
-  relativo (`../shared/toy.css`, `../shared/toy.js`); no bundle os dois entram
+  relativo (`../shared/toy.css`, `../shared/toy.js`, `../shared/state.js`); no bundle entram
   uma única vez e chegam aos toys como `Blob URL` do documento pai;
 - nada de Service Worker nem de `Worker` a partir de arquivo local (`Blob URL`
   criado pelo documento pai funciona: é o que o worker do pdf.js usa);
@@ -70,6 +70,13 @@ definidos em `toys/shared/toy.css`:
   o CSS do produto, então a lista é desenhada pelo tema. O `<select>` original
   permanece no DOM, escondido, como fonte do valor (`name`, `value` e `change`
   continuam valendo para o script do toy).
+- **Estado:** todo toy declara `data-toy="<nome>"` no `<html>` e carrega
+  `../shared/state.js`. O script injeta a barra "Guardar estado / Limpar estado"
+  abaixo do cabeçalho e restaura os campos do localStorage ao abrir. O checkbox
+  vem marcado; desmarcado, o toy não guarda nada. "Limpar estado" apaga o
+  registro, zera os campos e recarrega o toy. File inputs não entram no estado
+  (o navegador não permite repor arquivos escolhidos). Estado extra do toy vai
+  por `GanToyState.set(...)`/`GanToyState.onRestore(...)`.
 - O CSS local de cada toy (`styles.css` ou `<style>` inline) cobre apenas o que é
   específico daquele toy, sempre lendo os tokens `--toy-*`.
 - Nenhuma cor de tema é fixada no CSS local: tema claro/escuro e os seis visuais

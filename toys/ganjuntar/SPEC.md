@@ -3,7 +3,7 @@
 ## Project Overview
 - **Name**: Ganjuntar (PDF Merger)
 - **Type**: Single-page offline web app
-- **Core Functionality**: Merge PDF files from subfolders into single files per folder
+- **Core Functionality**: Merge PDF files from subfolders into single files per folder, or merge a hand-picked list of files in the order the user defines
 - **Target Users**: Anyone needing to combine PDFs organized in folders
 
 ## UI/UX Specification
@@ -14,7 +14,8 @@
   `<section class="glass-card"><div class="panel">…</div></section>`
 - CSS local (`styles.css`) só com o que é específico do toy, sempre via tokens `--toy-*`
 - Dependência local: `../../vendor/pdf-lib/pdf-lib.min.js` (processamento de PDF)
-- Sections: Header, Folder Selection, Processing Status, Results
+- Sections: Header, Mode Tabs, Folder Selection panel, Selected Files panel, Processing Status, Results
+- Estado persistente do shared (`../shared/state.js`): barra "Guardar estado / Limpar estado"
 
 ### Visual Design
 - **Theme**: Glassmorphism (tema e variante visual vêm do app; o toy apenas aplica `data-theme`/`data-visual`)
@@ -35,9 +36,11 @@
 2. **Folder Selector**: botão `.btn .btn-primary .btn-block` com `<i class="bi bi-folder2-open">` (estado `.selected` do shared no modo offline)
 3. **Folder Summary**: `.tile .tile-accent .stack` com os números em `.stat` dentro de `.row .row-center`
 4. **Folder Tree View**: `.subfolders-list` com um `.tile` por subpasta (nome à esquerda, `.badge .badge-accent` com a contagem à direita)
-5. **Progress Bar**: `.progress-area`/`.progress-top`/`.progress-wrap`/`.progress-bar` (`.visible` alternado pelo script) + `.progress-detail`
-6. **Results List**: cartão oculto por `.hidden` com `.result-list` de `.result-item` (+ `.ok`/`.fail`), cabeçalho `.result-item-head`, `.result-name`, `.result-status` e `.result-meta`
-7. **Ícones**: apenas Bootstrap Icons (`bi-folder2-open`, `bi-link-45deg`, `bi-file-earmark-pdf`, `bi-check-lg`, `bi-x-lg`)
+5. **Mode Tabs**: `.tabs`/`.tab` do shared, com `.mode-panel[hidden]` alternando "Por subpastas" e "Selecionar arquivos"
+6. **Selected Files**: `.file-order` com um `.tile` por arquivo (número, nome, botões subir/descer/remover) e campo `#outputName` para o nome final
+7. **Progress Bar**: `.progress-area`/`.progress-top`/`.progress-wrap`/`.progress-bar` (`.visible` alternado pelo script) + `.progress-detail`
+8. **Results List**: cartão oculto por `.hidden` com `.result-list` de `.result-item` (+ `.ok`/`.fail`), cabeçalho `.result-item-head`, `.result-name`, `.result-status` e `.result-meta`
+9. **Ícones**: apenas Bootstrap Icons (`bi-folder2-open`, `bi-files`, `bi-link-45deg`, `bi-file-earmark-pdf`, `bi-check-lg`, `bi-x-lg`, `bi-arrow-up`, `bi-arrow-down`)
 
 ### Responsive
 - Mobile-friendly (min-width: 320px)
@@ -57,11 +60,16 @@
    - Sort files alphabetically before merging
    - Merge using pdf-lib library
    - Save output as "{folder_name}.pdf" to base directory
-4. **Progress Feedback**:
+4. **Selected Files Mode**:
+   - `<input type="file" multiple accept=".pdf,application/pdf">` escolhe os PDFs
+   - A lista exibida é a ordem da união; setas sobem/descem e o X remove
+   - O nome final vem de `#outputName` (sufixo `.pdf` aplicado quando falta)
+   - `showSaveFilePicker` quando disponível; senão download do Blob
+5. **Progress Feedback**:
    - Show current folder being processed
    - Progress percentage
    - Each file status
-5. **Download/Save**:
+6. **Download/Save**:
    - Use File System Access API if available
    - Fallback: Offer individual downloads
 
@@ -89,6 +97,7 @@
 - [ ] Shows folder structure after selection
 - [ ] Merges PDFs per subfolder
 - [ ] Sorts files before merging
-- [ ] Names output after folder
+- [ ] Merges hand-picked files in the order shown on screen
+- [ ] Names output after folder (folder mode) or after `#outputName` (files mode)
 - [ ] Progress feedback visible
 - [ ] Downloads work

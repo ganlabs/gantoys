@@ -27,6 +27,14 @@ function dados(valor) {
     return JSON.parse(JSON.stringify(valor));
 }
 
+/** Nome do log do dia, na data local (mesma regra do toy). */
+function nomeDoLog() {
+    const agora = new Date();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    return `gannovodiv-correcoes-${agora.getFullYear()}-${mes}-${dia}.log`;
+}
+
 // pdf.js falso que troca de páginas a cada arquivo do lote.
 function pdfjsPorArquivo(lotes) {
     let indice = 0;
@@ -566,7 +574,7 @@ test('NovoDiv — Corrigir abre o editor com o intervalo detectado e a divisão 
     await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'divisão manual' });
 
     assert.deepEqual(pagina.alertas, [
-        'Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Destino/gannovodiv-correcoes.log.',
+        `Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Destino/${nomeDoLog()}.`,
     ]);
     assert.deepEqual(await tamanhosGravados(pagina, `Inicial_${CNJ}.pdf`), [[100, 200], [101, 200]]);
     assert.deepEqual(await tamanhosGravados(pagina, `Docs_${CNJ}.pdf`), [[102, 200], [103, 200]]);
@@ -603,10 +611,16 @@ test('NovoDiv — correção manual grava log JSONL com o contexto e acrescenta 
         'a correção não pode pedir a pasta do log'
     );
 
-    const linhas = pagina.destino.conteudo('gannovodiv-correcoes.log').trim().split('\n').map((linha) => JSON.parse(linha));
+    const linhas = pagina.destino.conteudo(nomeDoLog()).trim().split('\n').map((linha) => JSON.parse(linha));
     assert.equal(linhas.length, 2);
     assert.equal(linhas[0].schema, 1);
     assert.equal(linhas[0].tipo, 'correcao');
+    assert.equal(linhas[0].ambiente.algoritmo, 'v8');
+    assert.equal(linhas[0].ambiente.pdfjs, 'fake');
+    assert.equal(linhas[0].ambiente.release, null);
+    assert.equal(typeof linhas[0].ambiente.fusoHorarioMinutos, 'number');
+    assert.equal(linhas[0].ambiente.url.includes('?'), false);
+    assert.equal(linhas[0].ambiente.url.includes('#'), false);
     assert.equal(linhas[0].arquivo.nome, NOME);
     assert.equal(linhas[0].arquivo.cnj, CNJ);
     assert.equal(linhas[0].arquivo.totalPaginas, 4);
@@ -630,13 +644,29 @@ test('NovoDiv — correção manual grava log JSONL com o contexto e acrescenta 
     assert.equal(linhas[0].decisao.fimMetodo, 'content');
     assert.ok(linhas[0].decisao.parametros.inicio.length > 0);
     assert.ok(linhas[0].decisao.parametros.fim.length > 0);
+    assert.match(linhas[0].decisao.geradaEm, /^\d{4}-\d{2}-\d{2}T/);
+    assert.deepEqual(linhas[0].decisao.candidatoFimSelecionado, { metodo: 'content', pagina: 3 });
+    assert.deepEqual(linhas[0].decisao.parametros.limites, {
+        inicioGeral: 1200,
+        inicioDefensoria: 500,
+        extensaoAssinatura: 3,
+        trechoResumo: 600,
+        textoFronteira: 20000,
+    });
     assert.deepEqual(linhas[0].paginas.map((p) => p.pagina), [1, 2, 3, 4]);
     assert.equal(linhas[0].paginas[0].paginaDoSistema, true);
     assert.equal(linhas[0].paginas[1].paginaDoSistema, false);
     assert.deepEqual(linhas[0].paginas[1].padroesDeInicio, [0]);
+    assert.deepEqual(linhas[0].paginas[1].padroesDeInicioNoTopo, [0]);
+    assert.equal(linhas[0].paginas[1].candidatoInicio, true);
+    assert.deepEqual(linhas[0].paginas[1].rejeicoesInicio, []);
+    assert.equal(linhas[0].paginas[2].assinaturaFinal, true);
     assert.equal(linhas[0].paginas[2].fechamento, true);
     assert.deepEqual(linhas[0].fronteiras.map((f) => f.pagina), [1, 2, 3, 4]);
     assert.match(linhas[0].fronteiras[1].texto, /EXCELENTÍSSIMO/);
+    assert.equal(linhas[0].fronteiras[1].caracteres, PAGINA_INICIAL.length);
+    assert.equal(linhas[0].fronteiras[1].truncado, false);
+    assert.equal(linhas[0].fronteiras[1].caracteresOmitidos, 0);
 
     // O log guarda a divisão automática original, não a correção anterior.
     assert.equal(linhas[1].automatico.inicio, 2);
@@ -644,7 +674,10 @@ test('NovoDiv — correção manual grava log JSONL com o contexto e acrescenta 
     assert.equal(linhas[1].automatico.inicioMetodo, 'pattern');
     assert.deepEqual(linhas[1].manual, { inicio: 4, fim: 4, paginas: 1 });
     assert.deepEqual(linhas[1].correcao, { inicioDelta: 2, fimDelta: 1, mudouInicio: true, mudouFim: true });
-    assert.match(pagina.alertas[1], /^Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Destino\/gannovodiv-correcoes\.log\.$/);
+    assert.equal(
+        pagina.alertas[1],
+        `Divisão manual concluída e sobrescrita com sucesso! Log de correção gravado em Destino/${nomeDoLog()}.`
+    );
 });
 
 test('NovoDiv — correção de processo com erro grava log sem divisão automática', async (t) => {
@@ -660,7 +693,7 @@ test('NovoDiv — correção de processo com erro grava log sem divisão automá
     pagina.clicar('#btnManualSplit');
     await pagina.aguardar(() => pagina.alertas.length === 1, { descricao: 'correção do processo com erro' });
 
-    const registro = JSON.parse(pagina.destino.conteudo('gannovodiv-correcoes.log').trim());
+    const registro = JSON.parse(pagina.destino.conteudo(nomeDoLog()).trim());
     assert.deepEqual(registro.automatico, {
         inicio: null,
         fim: null,
@@ -684,7 +717,7 @@ test('NovoDiv — utilitários do log tratam texto longo e ausência de document
 
     assert.equal(pagina.janela.textoLimitado('', 5), '');
     assert.equal(pagina.janela.textoLimitado('curto', 5), 'curto');
-    assert.equal(pagina.janela.textoLimitado('0123456789', 5), '01234\n[... 5 caracteres omitidos]');
+    assert.equal(pagina.janela.textoLimitado('0123456789', 5), '012\n[... 5 caracteres omitidos]\n89');
 
     assert.deepEqual(dados(await pagina.janela.textosDeFronteira(null, { start: 1, end: 1 }, { start: 1, end: 1 })), []);
     const semTexto = {
@@ -693,7 +726,18 @@ test('NovoDiv — utilitários do log tratam texto longo e ausência de document
             return { async getTextContent() { return { items: [] }; } };
         },
     };
-    assert.deepEqual(dados(await pagina.janela.textosDeFronteira(semTexto, { start: null, end: null }, { start: null, end: null })), [{ pagina: 1, texto: '' }]);
+    assert.deepEqual(
+        dados(await pagina.janela.textosDeFronteira(semTexto, { start: null, end: null }, { start: null, end: null })),
+        [{ pagina: 1, caracteres: 0, truncado: false, caracteresOmitidos: 0, texto: '' }]
+    );
+
+    const comunicacao = dados(pagina.janela.resumirPagina(
+        `${FILLER}\nTRIBUNAL DE JUSTIÇA\nEXPEDIENTE DE INTIMAÇÃO\nPor ordem do Excelentíssimo Juiz, intime-se a parte.`,
+        1,
+        false
+    ));
+    assert.equal(comunicacao.candidatoInicio, false);
+    assert.deepEqual(comunicacao.rejeicoesInicio, ['comunicacao-judicial']);
 });
 
 test('NovoDiv — divisão manual com intervalo inválido é recusada', async (t) => {

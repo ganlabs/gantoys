@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-toy="gannovodiv">
 <head>
 <script>
     (function () {
@@ -284,9 +284,10 @@
 <script src="../../vendor/pdfjs/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="../shared/request-id.js"></script>
+<script src="../shared/state.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = '../../vendor/pdfjs/pdf.worker.min.js';
-// ALGORITHM v7
+// ALGORITHM v8
 // ============================================================
 
 const START_PATTERNS = [
@@ -323,6 +324,9 @@ const STRONG_MARKERS = [
 ];
 
 const CONTINUATION_WORDS = ['da', 'do', 'de', 'a', 'o'];
+const LIMITE_INICIO_GERAL = 1200;
+const LIMITE_INICIO_DEFENSORIA = 500;
+const MAX_EXTENSAO_ASSINATURA = 3;
 
 function isSystemPage(text) {
     if (text.trim().length < 50) return true;
@@ -337,13 +341,61 @@ function extractDocId(text) {
     if (m) return ['pje', m[1]];
     m = text.match(/Id\.\s*(\d+)\s*[-–]\s*P[áa]g\.\s*\d+/);
     if (m) return ['projudi', m[1]];
-    m = text.match(/Evento\s+\d+,\s*(\w+),/);
-    if (m) return ['eproc', m[1]];
+    m = text.match(/Evento\s+\d+,\s*([^,\n]+),/);
+    if (m) return ['eproc', m[1].trim().replace(/\s+/g, ' ')];
     return [null, null];
+}
+
+function isCourtCommunication(text) {
+    const head = text.slice(0, 1600);
+    const hasCourtHeader = /TRIBUNAL DE JUSTIÇA|PODER JUDICIÁRIO|Vara do Sistema dos Juizados/i.test(head);
+    const hasCourtAct = /EXPEDIENTE DE INTIMAÇÃO|\bINTIMAÇÃO\b|\bDECISÃO\b|\bDESPACHO\b|\bSENTENÇA\b|\bCITAÇÃO\b|\bCERTIDÃO\b/i.test(head);
+    return hasCourtHeader && hasCourtAct;
+}
+
+function isProceduralFiling(text) {
+    if (isCourtCommunication(text)) return true;
+
+    const intro = text.slice(0, 2000).replace(/\s+/g, ' ');
+    const proposesAction = /\b(?:vem\s+(?:propor|ajuizar)|propõe|ajuíza)\b/i.test(intro);
+    if (/\bCONTESTA(?:Ç|C)[AÃ]O\b/i.test(intro)) return true;
+    if (/\bem\s+atendimento\s+ao\s+despacho\b/i.test(intro)) return true;
+    if (/(?:Ref\.?\s*Processo|PROCESSO\s+N[º°:])/i.test(intro) && /\bBANCO\b/i.test(intro) && !proposesAction) return true;
+    if (/\b(?:já|devidamente)\s+qualificad[oa].{0,200}\bnos\s+autos\b/i.test(intro) && !proposesAction) return true;
+    return false;
+}
+
+function limitePadraoInicio(pat) {
+    return /DEFENSORIA/.test(pat.source) ? LIMITE_INICIO_DEFENSORIA : LIMITE_INICIO_GERAL;
+}
+
+function matchesStartPatternNearTop(text) {
+    return START_PATTERNS.some((pat) => pat.test(text.slice(0, limitePadraoInicio(pat))));
+}
+
+function indicesStartPatternNearTop(text) {
+    return START_PATTERNS
+        .map((pat, indice) => (pat.test(text.slice(0, limitePadraoInicio(pat))) ? indice : -1))
+        .filter((indice) => indice >= 0);
+}
+
+function isStartCandidate(text) {
+    return matchesStartPatternNearTop(text) && !isProceduralFiling(text);
+}
+
+function isAttachmentCoverPage(text) {
+    return text.trim().length < 600 && /\bEM\s+ANEXO\b/i.test(text);
+}
+
+function isHardDocumentBoundary(text) {
+    const first = text.trim().split('\n')[0] || '';
+    if (/^(?:Local\s+de\s+pag[ae]mento|Recebi\s+\d+\s+folhas|ROTEIRO\s+PARA\s+O\(A\)\s+AUTOR\(A\)|FORMULÁRIO\s+MLE)/i.test(first)) return true;
+    return /\n\s*Documento\s+anexo:\s*(?:\n|$)/i.test(text.slice(0, 2000));
 }
 
 function isNewDocByContent(text) {
     if (!text.trim()) return false;
+    if (isHardDocumentBoundary(text)) return true;
     const first = text.trim().split('\n')[0];
     const first3 = text.trim().split('\n').slice(0, 3).join('\n');
     if (/^(?:P\s*)?R\s*O\s*C\s*U\s*R\s*A\s*(?:Ç|C)\s*[AÁ]\s*O/i.test(first)) return true;
@@ -359,11 +411,17 @@ function isNewDocByContent(text) {
     return false;
 }
 
+function isInsideCurlyQuote(text, index) {
+    const before = text.slice(0, index);
+    return before.lastIndexOf('“') > before.lastIndexOf('”');
+}
+
 function isRealClosing(text) {
     for (const pat of CLOSING_PATTERNS) {
         const re = new RegExp(pat.source, 'gi');
         let m;
         while ((m = re.exec(text)) !== null) {
+            if (isInsideCurlyQuote(text, m.index)) continue;
             if (/causa/i.test(m[0])) return true;
             if (/termos/i.test(m[0])) return true;
 
@@ -386,7 +444,20 @@ function hasPetitionEndSignal(text) {
     return hasClosing || hasOAB || hasValor || hasValorRS || hasFls;
 }
 
-const VERSAO_ALGORITMO = 'v7';
+function hasTrailingSignatureSignal(text) {
+    return /OAB[/-]/.test(text)
+        || /OAB\s*(?:n[º°]\s*)?\d/.test(text)
+        || /Defensor(?:ia|a|e)?\s+Públic[ao]/i.test(text);
+}
+
+function isMetadataOnlyPage(text) {
+    const first = text.trim().split('\n')[0] || '';
+    return text.trim().length < 600
+        && /^Num\.\s*\d+\s*[-–]\s*P[áa]g\.\s*\d+/i.test(first)
+        && !hasPetitionEndSignal(text);
+}
+
+const VERSAO_ALGORITMO = 'v8';
 const LIMITE_TRECHO_LOG = 600;
 const LIMITE_TEXTO_LOG = 20000;
 
@@ -413,6 +484,15 @@ function resumirPagina(text, pagina, ocr) {
     const linhas = text.trim().split('\n').map((linha) => linha.trim()).filter(Boolean);
     const last20 = text.split('\n').slice(-20).join('\n');
     const documento = extractDocId(text);
+    const padroesDeInicio = START_PATTERNS.map((pat, indice) => (pat.test(text) ? indice : -1)).filter((indice) => indice >= 0);
+    const padroesDeInicioNoTopo = indicesStartPatternNearTop(text);
+    const comunicacaoJudicial = isCourtCommunication(text);
+    const peticaoIncidental = !comunicacaoJudicial && isProceduralFiling(text);
+    const rejeicoesInicio = [];
+    if (padroesDeInicio.length && !padroesDeInicioNoTopo.length) rejeicoesInicio.push('fora-do-topo');
+    if (comunicacaoJudicial) rejeicoesInicio.push('comunicacao-judicial');
+    if (peticaoIncidental) rejeicoesInicio.push('peticao-incidental');
+
     return {
         pagina,
         caracteres: text.length,
@@ -426,7 +506,14 @@ function resumirPagina(text, pagina, ocr) {
         novoDocumento: Boolean(text.trim()) && isNewDocByContent(text),
         fechamento: isRealClosing(last20),
         sinalDeFim: hasPetitionEndSignal(last20),
-        padroesDeInicio: START_PATTERNS.map((pat, indice) => (pat.test(text) ? indice : -1)).filter((indice) => indice >= 0),
+        assinaturaFinal: hasTrailingSignatureSignal(last20),
+        padroesDeInicio,
+        padroesDeInicioNoTopo,
+        candidatoInicio: padroesDeInicioNoTopo.length > 0 && rejeicoesInicio.length === 0,
+        rejeicoesInicio,
+        capaAnexo: isAttachmentCoverPage(text),
+        fronteiraRigida: isHardDocumentBoundary(text),
+        apenasMetadados: isMetadataOnlyPage(text),
         marcadoresFortes: STRONG_MARKERS.filter((marcador) => text.slice(0, 300).includes(marcador)),
     };
 }
@@ -467,25 +554,29 @@ async function detectInicialRange(pdfBytes) {
             isProcon = true; proconStart = i + 1; break;
         }
     }
+    let proconAsInitial = isProcon;
+    if (isProcon && proconStart) {
+        for (let i = proconStart; i < Math.min(50, totalPages); i++) {
+            const id = extractDocId(pagesText[i]);
+            if (id[0] === 'eproc' && /^INIC\d*$/i.test(id[1])) {
+                proconAsInitial = false;
+                break;
+            }
+        }
+    }
 
     // FASE 1: INÍCIO
     let startPage = null;
 
-    if (isProcon && proconStart) {
+    if (proconAsInitial && proconStart) {
         startPage = proconStart; startMethod = 'procon'; flags.push('PROCON');
     } else {
         for (let i = 0; i < totalPages; i++) {
             if (isSystemPage(pagesText[i])) continue;
-            for (const pat of START_PATTERNS) {
-                if (pat.test(pagesText[i])) { startPage = i + 1; startMethod = 'pattern'; break; }
-            }
-            if (startPage) break;
-        }
-        if (!startPage) {
-            for (let i = 0; i < totalPages; i++) {
-                if (!isSystemPage(pagesText[i]) && pagesText[i].trim().length > 200) {
-                    startPage = i + 1; startMethod = 'fallback'; break;
-                }
+            if (isStartCandidate(pagesText[i])) {
+                startPage = i + 1;
+                startMethod = 'pattern';
+                break;
             }
         }
 
@@ -509,8 +600,10 @@ async function detectInicialRange(pdfBytes) {
                 pagesText[i-1] = text;
                 ocrPages.add(i);
 
-                for (const pat of START_PATTERNS) {
-                    if (pat.test(text)) { startPage = i; startMethod = 'ocr_pattern'; break; }
+                if (isStartCandidate(text)) {
+                    startPage = i;
+                    startMethod = 'ocr_pattern';
+                    break;
                 }
                 if (startPage) break;
             }
@@ -542,6 +635,16 @@ async function detectInicialRange(pdfBytes) {
         }
 
         if (!startPage) {
+            for (let i = 0; i < totalPages; i++) {
+                if (!isSystemPage(pagesText[i]) && !isAttachmentCoverPage(pagesText[i]) && pagesText[i].trim().length > 200) {
+                    startPage = i + 1;
+                    startMethod = 'fallback';
+                    break;
+                }
+            }
+        }
+
+        if (!startPage) {
             return registrarAnalise({
                 pagesText, ocrPages, inicioMetodo: null, fimMetodo: null, pontuacao: null,
                 flags, procon: { encontrado: isProcon, inicio: proconStart }, candidatosFim,
@@ -562,13 +665,8 @@ async function detectInicialRange(pdfBytes) {
         const firstPages = firstEnd - startPage + 1;
         if (firstPages <= 2) {
             let bestPages = firstPages, bestStart = startPage;
-            for (let j = firstEnd + 1; j < totalPages; j++) {
-                if (isSystemPage(pagesText[j])) continue;
-                let found = false;
-                for (const pat of START_PATTERNS) {
-                    if (pat.test(pagesText[j])) { found = true; break; }
-                }
-                if (!found) continue;
+            for (let j = firstEnd; j < totalPages; j++) {
+                if (isSystemPage(pagesText[j]) || !isStartCandidate(pagesText[j])) continue;
                 let altEnd = j;
                 const altNum = extractDocId(pagesText[j])[1];
                 for (let k = j + 1; k < Math.min(j + 50, totalPages); k++) {
@@ -616,6 +714,21 @@ async function detectInicialRange(pdfBytes) {
                 }
             }
         }
+
+        // Uma inicial atual pode incorporar a inicial de processo antecedente.
+        // Nesse caso, a cópia original identificada no anexo é o documento útil.
+        if (/Processos?\s+antecedentes?:/i.test(pagesText[startPage - 1])) {
+            for (let i = startPage; i < totalPages; i++) {
+                const text = pagesText[i];
+                if (isSystemPage(text) || !/Para\s+conferir\s+o\s+original/i.test(text)) continue;
+                if (isStartCandidate(text)) {
+                    startPage = i + 1;
+                    startMethod = 'pattern_antecedent';
+                    if (!flags.includes('review')) flags.push('review');
+                    break;
+                }
+            }
+        }
     }
 
     // FASE 2: FIM
@@ -633,7 +746,7 @@ async function detectInicialRange(pdfBytes) {
             }
         }
         if (!isSystemPage(txt) && i > startPage - 1 && endByContent === null && isNewDocByContent(txt)) {
-            if (i > 0 && hasPetitionEndSignal(pagesText[i - 1])) endByContent = page - 1;
+            if (i > 0 && (hasPetitionEndSignal(pagesText[i - 1]) || isHardDocumentBoundary(txt))) endByContent = page - 1;
             else if (/QR.CODE|Para\s+conferir\s+o\s+original/i.test(txt.split('\n')[0])) endByContent = page - 1;
         }
 
@@ -649,6 +762,13 @@ async function detectInicialRange(pdfBytes) {
             } else if (hasC && endByClosingNoOab === null && i + 1 < totalPages && isSystemPage(pagesText[i+1]))
                 endByClosingNoOab = page;
         }
+    }
+
+    while (endById !== null && endById > startPage) {
+        const trailingPage = pagesText[endById - 1];
+        const previousPage = pagesText[endById - 2];
+        if (!isMetadataOnlyPage(trailingPage) || !hasPetitionEndSignal(previousPage)) break;
+        endById--;
     }
 
     const registrarProcon = (resultado) => registrarAnalise({
@@ -678,18 +798,36 @@ async function detectInicialRange(pdfBytes) {
     if (endByClosingNoOab !== null) cand.push(['close_no_oab', endByClosingNoOab]);
     if (endByClosingOnly !== null) cand.push(['close_only', endByClosingOnly]);
     candidatosFim = cand.map(([metodo, pagina]) => ({ metodo, pagina }));
-    if (cand.length > 0) { cand.sort((a,b) => a[1]-b[1]); endPage = cand[0][1]; endMethod = cand[0][0]; }
+    if (cand.length > 0) {
+        const ordered = [...cand].sort((a, b) => a[1] - b[1]);
+        let selected = ordered[0];
+        const closing = ordered.find(([method]) => method === 'close_only');
+        const idBoundary = ordered.find(([method]) => method === 'id');
+        if (closing && idBoundary && idBoundary[1] > closing[1] && idBoundary[1] <= closing[1] + 3) selected = idBoundary;
+        [endMethod, endPage] = selected;
+    }
 
     if (!endPage) {
         for (let i = startPage - 1; i < totalPages; i++) {
-            if (isRealClosing(pagesText[i].split('\n').slice(-20).join('\n'))) { endPage = i+1; endMethod = 'closing_only'; break; }
+            if (isRealClosing(pagesText[i].split('\n').slice(-20).join('\n'))) { endPage = i + 1; endMethod = 'closing_only'; break; }
         }
     }
     if (!endPage) { endPage = totalPages; endMethod = 'fallback'; }
 
+    if (endMethod === 'close_only' || endMethod === 'closing_only') {
+        const limit = Math.min(totalPages, endPage + MAX_EXTENSAO_ASSINATURA);
+        while (endPage < limit) {
+            const nextPage = pagesText[endPage];
+            const startsKnownDocument = /\bPROCURA(?:Ç|C)[AÃ]O\b/i.test(nextPage.slice(0, LIMITE_INICIO_GERAL));
+            if (isSystemPage(nextPage) || isNewDocByContent(nextPage) || startsKnownDocument || !hasTrailingSignatureSignal(nextPage)) break;
+            endPage++;
+        }
+    }
+
     // SCORE
     if (startMethod === 'pattern' || startMethod === 'inic1') score += 2;
     else if (startMethod === 'pattern_alt') { score += 1; if (!flags.includes('review')) flags.push('review'); }
+    else if (startMethod === 'pattern_antecedent') { score += 1; if (!flags.includes('review')) flags.push('review'); }
     else if (startMethod === 'termo2') { score += 1; if (!flags.includes('review')) flags.push('review'); }
     else if (startMethod === 'procon') { score += 1; if (!flags.includes('review')) flags.push('review'); }
     else { if (!flags.includes('review')) flags.push('review'); }
@@ -1082,15 +1220,21 @@ async function salvar(dir, nome, bytes) {
     });
 }
 
-const NOME_ARQUIVO_LOG = 'gannovodiv-correcoes.log';
+/** Um arquivo de log por dia, na data local do computador do operador. */
+function nomeArquivoLog(data = new Date()) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `gannovodiv-correcoes-${ano}-${mes}-${dia}.log`;
+}
 
-async function acrescentarLog(dir, texto) {
+async function acrescentarLog(dir, texto, nome) {
     const bytes = new TextEncoder().encode(texto);
     await requestGanToys('gantoys-file-result', {
         type: 'gantoys-file-request',
         action: 'append',
         directoryId: dir.id,
-        name: NOME_ARQUIVO_LOG,
+        name: nome,
         bytes: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
     });
 }
@@ -1098,7 +1242,11 @@ async function acrescentarLog(dir, texto) {
 function textoLimitado(text, limite = LIMITE_TEXTO_LOG) {
     if (!text) return '';
     if (text.length <= limite) return text;
-    return `${text.slice(0, limite)}\n[... ${text.length - limite} caracteres omitidos]`;
+    if (limite <= 0) return `[... ${text.length} caracteres omitidos]`;
+    const inicio = Math.ceil(limite / 2);
+    const fim = Math.floor(limite / 2);
+    const sufixo = fim > 0 ? `\n${text.slice(-fim)}` : '';
+    return `${text.slice(0, inicio)}\n[... ${text.length - limite} caracteres omitidos]${sufixo}`;
 }
 
 async function textosDeFronteira(doc, automatico, manual) {
@@ -1115,7 +1263,14 @@ async function textosDeFronteira(doc, automatico, manual) {
     const textos = [];
     for (const pagina of [...paginas].sort((a, b) => a - b)) {
         const page = await doc.getPage(pagina);
-        textos.push({ pagina, texto: textoLimitado(await textoDaPagina(page)) });
+        const textoCompleto = await textoDaPagina(page);
+        textos.push({
+            pagina,
+            caracteres: textoCompleto.length,
+            truncado: textoCompleto.length > LIMITE_TEXTO_LOG,
+            caracteresOmitidos: Math.max(0, textoCompleto.length - LIMITE_TEXTO_LOG),
+            texto: textoLimitado(textoCompleto),
+        });
     }
     return textos;
 }
@@ -1126,17 +1281,22 @@ async function registrarCorrecaoLog(antes, manual) {
     if (!dir) throw new Error('A pasta de destino da divisão não está disponível.');
     const trace = antes.trace;
     const fronteiras = await textosDeFronteira(currentDoc, antes, manual);
+    const agora = new Date();
+    const origem = location.origin === 'null' ? '' : location.origin;
 
     const registro = {
         schema: 1,
         tipo: 'correcao',
-        registradoEm: new Date().toISOString(),
+        registradoEm: agora.toISOString(),
         ambiente: {
             toy: 'divisor-automatico-santander',
             algoritmo: VERSAO_ALGORITMO,
-            url: location.href,
+            release: window.GANTOYS_RELEASE || null,
+            pdfjs: pdfjsLib.version || null,
+            url: `${origem}${location.pathname}`,
             navegador: navigator.userAgent,
             idioma: navigator.language,
+            fusoHorarioMinutos: agora.getTimezoneOffset(),
         },
         arquivo: {
             nome: antes.file,
@@ -1168,24 +1328,34 @@ async function registrarCorrecaoLog(antes, manual) {
             mudouFim: antes.end != null ? manual.end !== antes.end : null,
         },
         decisao: trace ? {
+            geradaEm: trace.geradoEm,
             pontuacao: trace.pontuacao,
             inicioMetodo: trace.inicioMetodo,
             fimMetodo: trace.fimMetodo,
             candidatosFim: trace.candidatosFim || [],
+            candidatoFimSelecionado: trace.fimMetodo ? { metodo: trace.fimMetodo, pagina: antes.end ?? null } : null,
             procon: trace.procon || null,
             parametros: {
                 inicio: START_PATTERNS.map(String),
                 fim: CLOSING_PATTERNS.map(String),
                 marcadoresFortes: STRONG_MARKERS,
                 continuacao: CONTINUATION_WORDS,
+                limites: {
+                    inicioGeral: LIMITE_INICIO_GERAL,
+                    inicioDefensoria: LIMITE_INICIO_DEFENSORIA,
+                    extensaoAssinatura: MAX_EXTENSAO_ASSINATURA,
+                    trechoResumo: LIMITE_TRECHO_LOG,
+                    textoFronteira: LIMITE_TEXTO_LOG,
+                },
             },
         } : null,
         paginas: trace ? trace.paginas : [],
         fronteiras,
     };
 
-    await acrescentarLog(dir, `${JSON.stringify(registro)}\n`);
-    return `${dir.name}/${NOME_ARQUIVO_LOG}`;
+    const nomeLog = nomeArquivoLog();
+    await acrescentarLog(dir, `${JSON.stringify(registro)}\n`, nomeLog);
+    return `${dir.name}/${nomeLog}`;
 }
 
 async function processarTudo() {

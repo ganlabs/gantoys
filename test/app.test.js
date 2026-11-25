@@ -1298,142 +1298,6 @@ test('App — o CSS do tema entra no iframe do toy e é persistido', async (t) =
     assert.equal(doc.querySelectorAll('#gantoys-theme-inject').length, 1);
 });
 
-test('App — o estado do toy é salvo ao trocar de ferramenta e restaurado ao carregar', async (t) => {
-    const app = await abrirApp(t, { globais: { GANTOYS_TOYS: { gancopy: 'COPY', ganpdf: 'PDF' } } });
-
-    app.clicar('[data-toy="gancopy"]');
-    app.seletor('#toyIframe').contentDocument.body.innerHTML = '<input name="alvo" value="guardado"><textarea name="obs">texto</textarea>';
-
-    app.clicar('[data-toy="home"]');
-    assert.equal(app.janela.localStorage.getItem('toy_state_gancopy'), '{"alvo":"guardado","obs":"texto"}');
-
-    app.clicar('[data-toy="gancopy"]');
-    const iframe = app.seletor('#toyIframe');
-    const doc = iframe.contentDocument;
-    doc.body.innerHTML = '<input name="alvo" value=""><textarea name="obs"></textarea>';
-    iframe.dispatchEvent(new app.janela.Event('load'));
-
-    assert.equal(doc.querySelector('[name="alvo"]').value, 'guardado');
-    assert.equal(doc.querySelector('[name="obs"]').value, 'texto');
-
-    // Fechar a aba também persiste o estado do toy aberto.
-    doc.querySelector('[name="alvo"]').value = 'ultimo';
-    app.janela.dispatchEvent(new app.janela.Event('beforeunload'));
-    assert.equal(app.janela.localStorage.getItem('toy_state_gancopy'), '{"alvo":"ultimo","obs":"texto"}');
-
-    // Trocar de ferramenta salva o estado da anterior.
-    doc.querySelector('[name="alvo"]').value = 'mudou';
-    app.clicar('[data-toy="ganpdf"]');
-    assert.equal(app.janela.localStorage.getItem('toy_state_gancopy'), '{"alvo":"mudou","obs":"texto"}');
-    assert.equal(app.janela.localStorage.getItem('lastToy'), 'ganpdf');
-});
-
-test('App — saveState guarda input, select, textarea, radio e checkbox', async (t) => {
-    const app = await abrirApp(t, { globais: { GANTOYS_TOYS: { gancopy: 'COPY' } } });
-
-    app.clicar('[data-toy="gancopy"]');
-    app.seletor('#toyIframe').contentDocument.body.innerHTML = `
-        <input name="texto" value="abc">
-        <select name="modo"><option value="x">X</option><option value="y" selected>Y</option></select>
-        <textarea name="obs">linha</textarea>
-        <input type="radio" name="turno" value="manha" checked>
-        <input type="radio" name="turno" value="tarde">
-        <input type="checkbox" name="ativo" checked>
-        <input type="checkbox" name="extra">
-        <input value="sem-nome">
-        <input name="desligado" value="" disabled>
-    `;
-
-    app.script('GANTOYS.saveState("gancopy")');
-
-    assert.equal(app.janela.localStorage.getItem('toy_state_gancopy'),
-        '{"texto":"abc","modo":"y","obs":"linha","turno":"manha","ativo":true,"extra":false,"desligado":""}');
-});
-
-test('App — restoreState aplica os valores, avisa as mudanças e ignora as iguais', async (t) => {
-    const app = await abrirApp(t, { globais: { GANTOYS_TOYS: { gancopy: 'COPY' } } });
-
-    app.clicar('[data-toy="gancopy"]');
-    const doc = app.seletor('#toyIframe').contentDocument;
-    doc.body.innerHTML = `
-        <input name="texto" value="antigo">
-        <select name="modo"><option value="x">X</option><option value="y" selected>Y</option></select>
-        <textarea name="obs">antiga</textarea>
-        <input type="radio" name="turno" value="manha" checked>
-        <input type="radio" name="turno" value="tarde">
-        <input type="checkbox" name="ativo" checked>
-        <input type="checkbox" name="extra">
-    `;
-
-    app.janela.localStorage.setItem('toy_state_ganx', JSON.stringify({
-        texto: 'novo', modo: 'x', obs: 'outra', turno: 'tarde', ativo: false, extra: true, inexistente: 'z',
-    }));
-
-    const eventos = [];
-    doc.querySelectorAll('[name]').forEach((campo) => {
-        campo.addEventListener('input', () => eventos.push(`input:${campo.name}`));
-        campo.addEventListener('change', () => eventos.push(`change:${campo.name}`));
-    });
-
-    app.script('GANTOYS.restoreState("ganx")');
-
-    assert.equal(doc.querySelector('[name="texto"]').value, 'novo');
-    assert.equal(doc.querySelector('[name="modo"]').value, 'x');
-    assert.equal(doc.querySelector('[name="obs"]').value, 'outra');
-    assert.deepEqual([...doc.querySelectorAll('[name="turno"]')].map((campo) => campo.checked), [false, true]);
-    assert.equal(doc.querySelector('[name="ativo"]').checked, false);
-    assert.equal(doc.querySelector('[name="extra"]').checked, true);
-    assert.deepEqual(eventos, [
-        'input:texto', 'change:texto',
-        'input:modo', 'change:modo',
-        'input:obs', 'change:obs',
-        'input:turno', 'change:turno',
-        'input:ativo', 'change:ativo',
-        'input:extra', 'change:extra',
-    ]);
-
-    // Segunda passada: tudo já está igual, nada é anunciado de novo.
-    eventos.length = 0;
-    app.script('GANTOYS.restoreState("ganx")');
-    assert.deepEqual(eventos, []);
-    assert.equal(doc.querySelector('[name="texto"]').value, 'novo');
-
-    // Sem estado salvo para o toy: nada muda.
-    eventos.length = 0;
-    app.script('GANTOYS.restoreState("ganpdf")');
-    assert.deepEqual(eventos, []);
-    assert.equal(doc.querySelector('[name="texto"]').value, 'novo');
-});
-
-test('App — restoreState com estado corrompido avisa e não quebra', async (t) => {
-    const app = await abrirApp(t, { globais: { GANTOYS_TOYS: { gancopy: 'COPY' } } });
-
-    app.clicar('[data-toy="gancopy"]');
-    const doc = app.seletor('#toyIframe').contentDocument;
-    doc.body.innerHTML = '<input name="texto" value="intacto">';
-    app.janela.localStorage.setItem('toy_state_gancopy', '{nao-e-json');
-
-    app.script('GANTOYS.restoreState("gancopy")');
-
-    assert.equal(doc.querySelector('[name="texto"]').value, 'intacto');
-    const avisos = app.mensagens('warn').map((linha) => linha.texto);
-    assert.equal(avisos.length, 1);
-    assert.ok(avisos[0].startsWith('Cannot restore state:'));
-});
-
-test('App — sem iframe aberto o estado não é gravado', async (t) => {
-    const app = await abrirApp(t);
-
-    assert.equal(app.existe('#toyIframe'), false);
-    app.script('GANTOYS.saveState("gancopy")');
-    app.script('GANTOYS.persistCurrentToyState()');
-    app.janela.localStorage.setItem('toy_state_ganpdf', JSON.stringify({ texto: 'x' }));
-    app.script('GANTOYS.restoreState("ganpdf")');
-
-    assert.equal(app.janela.localStorage.getItem('toy_state_gancopy'), null);
-    assert.deepEqual(app.mensagens('warn'), []);
-});
-
 test('App — falha do localStorage é avisada e não derruba o app', async (t) => {
     const app = await abrirApp(t, { globais: { GANTOYS_TOYS: { gancopy: 'COPY' } } });
     app.clicar('[data-toy="gancopy"]');
@@ -1448,13 +1312,11 @@ test('App — falha do localStorage é avisada e não derruba o app', async (t) 
     });
 
     app.script('GANTOYS.persistThemePayload()');
-    app.script('GANTOYS.saveState("gancopy")');
     app.script('GANTOYS.updateThemeInAllIframes()');
 
     const avisos = app.mensagens('warn').map((linha) => linha.texto);
     assert.deepEqual(avisos, [
         'Cannot persist theme payload: Error: quota excedida',
-        'Cannot save state: Error: quota excedida',
         'Cannot persist theme payload: Error: quota excedida',
     ]);
     assert.equal(app.existe('#toyIframe'), true);

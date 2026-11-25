@@ -530,6 +530,18 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--toy-accent); }
 
 .check-row { display: flex; align-items: center; gap: 9px; font-size: .92rem; font-weight: 600; cursor: pointer; }
 
+/* Barra de estado injetada por toys/shared/state.js em todos os toys. */
+.state-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin: -8px 0 16px;
+    font-size: .88rem;
+}
+.state-bar .check-row { font-weight: 500; }
+
 /* Lista de opções exclusivas (radio) ou múltiplas (checkbox) em cartões. */
 .choice-list { display: grid; gap: 10px; }
 

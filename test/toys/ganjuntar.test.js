@@ -528,3 +528,116 @@ test('ganjuntar — subpasta única com um PDF só gera uma parte e a lista de s
     assert.deepEqual(resultados(pagina).metas, ['1 páginas']);
     assert.deepEqual(await paginasDoPdf(pagina, origem.paraObjeto()['Somente.pdf']), [[600, 600]]);
 });
+
+/* ---------------------------------------------------------------------------
+ * Modo "Selecionar arquivos": lista própria e ordem escolhida pelo usuário.
+ * ------------------------------------------------------------------------- */
+
+function definirArquivosManuais(pagina, arquivos) {
+    Object.defineProperty(pagina.seletor('#filesInput'), 'files', { value: arquivos, configurable: true });
+    pagina.disparar('#filesInput', 'change');
+}
+
+function nomesDaOrdem(pagina) {
+    return pagina.textos('#fileOrder .file-order-name');
+}
+
+test('ganjuntar — modo arquivos: aba própria, lista vazia e nome padrão', async (t) => {
+    const pagina = await abrirToy(t);
+
+    assert.equal(pagina.atributo('#tabFolders', 'aria-selected'), 'true');
+    assert.equal(pagina.atributo('#tabFiles', 'aria-selected'), 'false');
+    assert.equal(pagina.seletor('#panelFiles').hidden, true);
+    assert.equal(pagina.seletor('#filesInput').multiple, true);
+    assert.equal(pagina.seletor('#filesInput').getAttribute('accept'), '.pdf,application/pdf');
+    assert.equal(pagina.seletor('#mergeFilesBtn').disabled, true);
+    assert.equal(pagina.seletor('#fileOrder').classList.contains('hidden'), true);
+    assert.equal(pagina.seletor('#filesInfo').classList.contains('hidden'), true);
+    assert.equal(pagina.seletor('#outputName').value, 'PDFs unidos');
+
+    pagina.clicar('#tabFiles');
+    assert.equal(pagina.seletor('#panelFiles').hidden, false);
+    assert.equal(pagina.seletor('#panelFolders').hidden, true);
+    assert.equal(pagina.atributo('#tabFiles', 'aria-selected'), 'true');
+
+    // Sem arquivos, juntar não produz resultado.
+    pagina.disparar('#mergeFilesBtn', 'click');
+    await pagina.tick(20);
+    assert.equal(pagina.seletor('#results').classList.contains('hidden'), true);
+});
+
+test('ganjuntar — modo arquivos: setas alteram a ordem e o X remove o item', async (t) => {
+    const pagina = await abrirToy(t);
+    lerArquivosComoOPagina(pagina, t);
+    pagina.clicar('#tabFiles');
+
+    const arquivos = await arquivosClassicos(pagina, [
+        { nome: 'um.pdf', caminho: 'um.pdf', bytes: Array.from(await criarPdf(pagina, [[100, 100]])) },
+        { nome: 'dois.pdf', caminho: 'dois.pdf', bytes: Array.from(await criarPdf(pagina, [[200, 200]])) },
+        { nome: 'tres.pdf', caminho: 'tres.pdf', bytes: Array.from(await criarPdf(pagina, [[300, 300]])) },
+    ]);
+    definirArquivosManuais(pagina, arquivos);
+
+    assert.deepEqual(nomesDaOrdem(pagina), ['um.pdf', 'dois.pdf', 'tres.pdf']);
+    assert.equal(pagina.texto('#filesCount'), '3');
+    assert.equal(pagina.seletor('#filesInfo').classList.contains('hidden'), false);
+    assert.equal(pagina.seletor('#mergeFilesBtn').disabled, false);
+    assert.equal(pagina.seletor('#filesInput').value, '');
+
+    // Primeiro item não sobe; último não desce.
+    assert.equal(pagina.seletor('#fileOrder .tile:first-child button[data-action="up"]').disabled, true);
+    assert.equal(pagina.seletor('#fileOrder .tile:last-child button[data-action="down"]').disabled, true);
+
+    pagina.clicar('#fileOrder .tile:nth-child(2) button[data-action="up"]');
+    assert.deepEqual(nomesDaOrdem(pagina), ['dois.pdf', 'um.pdf', 'tres.pdf']);
+
+    pagina.clicar('#fileOrder .tile:nth-child(1) button[data-action="down"]');
+    assert.deepEqual(nomesDaOrdem(pagina), ['um.pdf', 'dois.pdf', 'tres.pdf']);
+
+    pagina.clicar('#fileOrder .tile:nth-child(3) button[data-action="remove"]');
+    assert.deepEqual(nomesDaOrdem(pagina), ['um.pdf', 'dois.pdf']);
+    assert.equal(pagina.texto('#filesCount'), '2');
+    assert.equal(pagina.seletor('#mergeFilesBtn').disabled, false);
+});
+
+test('ganjuntar — modo arquivos: junta na ordem exibida e baixa com o nome informado', async (t) => {
+    const pagina = await abrirToy(t);
+    lerArquivosComoOPagina(pagina, t);
+    pagina.clicar('#tabFiles');
+
+    const arquivos = await arquivosClassicos(pagina, [
+        { nome: 'primeiro.pdf', caminho: 'primeiro.pdf', bytes: Array.from(await criarPdf(pagina, [[100, 100]])) },
+        { nome: 'segundo.pdf', caminho: 'segundo.pdf', bytes: Array.from(await criarPdf(pagina, [[200, 200], [210, 210]])) },
+    ]);
+    definirArquivosManuais(pagina, arquivos);
+    pagina.clicar('#fileOrder .tile:nth-child(2) button[data-action="up"]');
+    assert.deepEqual(nomesDaOrdem(pagina), ['segundo.pdf', 'primeiro.pdf']);
+
+    pagina.digitar('#outputName', 'Contrato unido');
+    pagina.clicar('#mergeFilesBtn');
+    await pagina.aguardar(() => !pagina.seletor('#results').classList.contains('hidden'), { descricao: 'resultado do modo arquivos' });
+
+    // Nenhum seletor de arquivo no jsdom: o PDF sai como download.
+    assert.equal(pagina.registro.downloads.length, 1);
+    assert.equal(pagina.registro.downloads[0].nome, 'Contrato unido.pdf');
+    const blob = pagina.registro.urls.get(pagina.registro.downloads[0].href);
+    assert.equal(blob.type, 'application/pdf');
+    assert.deepEqual(await paginasDoPdf(pagina, blob), [[200, 200], [210, 210], [100, 100]]);
+
+    const saida = resultados(pagina);
+    assert.deepEqual(saida.nomes, ['Contrato unido.pdf']);
+    assert.deepEqual(saida.estados, ['OK']);
+    assert.deepEqual(saida.metas, ['3 páginas']);
+});
+
+test('ganjuntar — modo arquivos: seleção sem PDF avisa e não altera a lista', async (t) => {
+    const pagina = await abrirToy(t);
+    pagina.clicar('#tabFiles');
+
+    definirArquivosManuais(pagina, [new pagina.janela.File(['nada'], 'nota.txt', { type: 'text/plain' })]);
+
+    assert.equal(pagina.seletor('#filesStatus').hidden, false);
+    assert.equal(pagina.texto('#filesStatus'), 'Selecione pelo menos um arquivo PDF.');
+    assert.equal(pagina.seletor('#filesInfo').classList.contains('hidden'), true);
+    assert.equal(pagina.seletor('#mergeFilesBtn').disabled, true);
+});

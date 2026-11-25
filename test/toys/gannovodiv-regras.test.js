@@ -371,3 +371,164 @@ test('NovoDiv regras — classificadores de página continuam decidindo igual', 
 
     assert.deepEqual(medido, golden.classificadores, 'classificador de página de sistema / documento novo / identificador mudou');
 });
+
+test('NovoDiv correções — fechamento intermediário não corta a cauda da inicial', async (t) => {
+    const detector = await abrirDetector(t);
+    const mesmaPagina = (id, texto) => `Num. ${id} - Pág. 1\n${texto}`;
+
+    const comIdentificador = await detector.detectar([
+        mesmaPagina(100, INICIAL),
+        mesmaPagina(100, paginaComFim('Nestes termos, pede deferimento.\nOAB/SP 123.456')),
+        mesmaPagina(100, paginaNeutra()),
+        mesmaPagina(100, FECHAMENTO),
+        mesmaPagina(200, paginaNeutra()),
+    ]);
+    assert.deepEqual(
+        { start: comIdentificador.start, end: comIdentificador.end },
+        { start: 1, end: 4 }
+    );
+
+    const comAssinaturaSeparada = await detector.detectar([
+        INICIAL,
+        paginaComFim('Nestes termos, pede deferimento.\nOAB/SP 123.456'),
+        paginaComFim('São Paulo, 10 de janeiro de 2025.\nAdvogado\nOAB/SP 123.456'),
+        SISTEMA,
+    ]);
+    assert.deepEqual(
+        { start: comAssinaturaSeparada.start, end: comAssinaturaSeparada.end },
+        { start: 1, end: 3 }
+    );
+});
+
+test('NovoDiv correções — frase de fechamento citada não encerra a inicial', async (t) => {
+    const detector = await abrirDetector(t);
+    const decisao = await detector.detectar([
+        INICIAL,
+        paginaComFim('A mensagem registra: “Sendo assim, comunicamos a reversão do valor correspondente”.'),
+        paginaNeutra(),
+        FECHAMENTO,
+        SISTEMA,
+    ]);
+
+    assert.deepEqual({ start: decisao.start, end: decisao.end }, { start: 1, end: 4 });
+});
+
+test('NovoDiv correções — identificadores compostos e rodapé vazio preservam o fim correto', async (t) => {
+    const detector = await abrirDetector(t);
+    const eproc = await detector.detectar([
+        SISTEMA,
+        `Evento 1, INIC1,\n${INICIAL}`,
+        `Evento 1, INIC1,\n${paginaNeutra()}`,
+        `Evento 1, ANEXOS PET INI2,\n${paginaNeutra()}`,
+    ]);
+    assert.deepEqual({ start: eproc.start, end: eproc.end }, { start: 2, end: 3 });
+
+    const pje = await detector.detectar([
+        SISTEMA,
+        `Num. 100 - Pág. 1\n${INICIAL}`,
+        `Num. 100 - Pág. 2\n${paginaComFim('Nestes termos, pede deferimento.\nRosilene\nOAB RJ 119174')}`,
+        'Num. 100 - Pág. 3\nAssinado eletronicamente por: AUTORA\nhttps://pje.example/documento\nNúmero do documento: 1',
+        `Num. 200 - Pág. 1\n${paginaNeutra()}`,
+    ]);
+    assert.deepEqual({ start: pje.start, end: pje.end }, { start: 2, end: 3 });
+});
+
+test('NovoDiv correções — candidato alternativo considera a primeira página do novo documento', async (t) => {
+    const detector = await abrirDetector(t);
+    const pje = (id, pagina, texto) => `Num. ${id} - Pág. ${pagina}\n${texto}`;
+    const decisao = await detector.detectar([
+        pje(10, 1, paginaComFim('Ao Juízo competente se requer a juntada.')),
+        pje(20, 1, INICIAL),
+        pje(20, 2, paginaNeutra()),
+        pje(20, 3, paginaNeutra()),
+        pje(20, 4, paginaComFim(`Ao Juízo competente.\n${FECHAMENTO}`)),
+        pje(20, 5, paginaComFim('Advogado\nOAB/SP 123.456')),
+        pje(30, 1, paginaNeutra()),
+    ]);
+
+    assert.deepEqual({ start: decisao.start, end: decisao.end }, { start: 2, end: 6 });
+});
+
+test('NovoDiv correções — documento INIC posterior impede PROCON anexo de virar inicial', async (t) => {
+    const detector = await abrirDetector(t);
+    const decisao = await detector.detectar([
+        SISTEMA,
+        `Evento 1, RG1,\n${paginaComInicio('TERMO DE NOTIFICAÇÃO\nNOTIFICAÇÃO DE AUDIÊNCIA')}`,
+        `Evento 1, RG1,\n${paginaNeutra()}`,
+        `Evento 1, INIC2,\n${INICIAL}`,
+        `Evento 1, INIC2,\n${FECHAMENTO}`,
+        `Evento 1, OUT3,\n${paginaNeutra()}`,
+    ]);
+
+    assert.deepEqual({ start: decisao.start, end: decisao.end }, { start: 4, end: 5 });
+    assert.equal(decisao.flags.includes('PROCON'), false);
+});
+
+test('NovoDiv correções — capas e formulários anexos não entram na inicial', async (t) => {
+    const detector = await abrirDetector(t);
+    const capa = `Num. 10 - Pág. 1\n${'EM ANEXO J.V '.repeat(20)}`;
+    const fallback = await detector.detectar([
+        SISTEMA,
+        capa,
+        `Num. 20 - Pág. 1\n${paginaNeutra()}`,
+        `Num. 20 - Pág. 2\n${FECHAMENTO}`,
+        `Num. 30 - Pág. 1\n${paginaNeutra()}`,
+    ]);
+    assert.deepEqual({ start: fallback.start, end: fallback.end }, { start: 3, end: 4 });
+
+    const boleto = await detector.detectar([
+        INICIAL,
+        paginaNeutra(),
+        `Local de pagemento\n${paginaNeutra()}`,
+    ]);
+    assert.deepEqual({ start: boleto.start, end: boleto.end }, { start: 1, end: 2 });
+
+    const formulario = await detector.detectar([
+        INICIAL,
+        paginaNeutra(),
+        `Recebi 1 folhas\n${paginaNeutra()}`,
+    ]);
+    assert.deepEqual({ start: formulario.start, end: formulario.end }, { start: 1, end: 2 });
+});
+
+test('NovoDiv correções — atos judiciais e petições incidentais não viram inicial', async (t) => {
+    const detector = await abrirDetector(t);
+    const decisao = await detector.detectar([
+        paginaComInicio('AO JUÍZO DA VARA CÍVEL\nPROCESSO Nº: 1\nBANCO SANTANDER, já qualificado nos autos, vem informar o encerramento do mandato.'),
+        paginaComInicio('EXCELENTÍSSIMO SENHOR JUIZ\nRef. Processo 1\nBANCO S.A. requerer a juntada dos instrumentos de mandato.'),
+        paginaComInicio('TRIBUNAL DE JUSTIÇA\nEXPEDIENTE DE INTIMAÇÃO\nPor ordem do Excelentíssimo Juiz, intime-se a parte.'),
+        INICIAL,
+        FECHAMENTO,
+    ]);
+
+    assert.deepEqual({ start: decisao.start, end: decisao.end }, { start: 4, end: 5 });
+});
+
+test('NovoDiv correções — OCR antecede o fallback quando as primeiras páginas são imagens', async (t) => {
+    const detector = await abrirDetector(t, {
+        ocr: [INICIAL, paginaNeutra(), paginaNeutra(), paginaNeutra(), FECHAMENTO],
+    });
+    const decisao = await detector.detectar([
+        '', '', '', '', '',
+        ...Array.from({ length: 29 }, () => ''),
+        paginaNeutra(),
+    ]);
+
+    assert.deepEqual({ start: decisao.start, end: decisao.end }, { start: 1, end: 5 });
+    assert.equal(decisao.flags.includes('OCR'), true);
+});
+
+test('NovoDiv correções — inicial original de processo antecedente prevalece sobre a incorporadora', async (t) => {
+    const detector = await abrirDetector(t);
+    const decisao = await detector.detectar([
+        SISTEMA,
+        `Evento 1, INIC1,\nAO DOUTO JUÍZO DE DIREITO\nProcessos antecedentes: nº 1000000-00.2025.8.26.0001\n${paginaNeutra()}`,
+        `Evento 1, INIC1,\n${FECHAMENTO}`,
+        `Num. 500 - Pág. 1\nPara conferir o original, acesse o portal.\nAO JUÍZO DE DIREITO DA VARA CÍVEL\nA autora vem propor a presente ação.\n${paginaNeutra()}`,
+        `Num. 500 - Pág. 2\n${FECHAMENTO}\nfls. 16`,
+        'Num. 500 - Pág. 3\nAssinado eletronicamente por: AUTORA\nDocumento anexo:\nPara conferir o original, acesse o portal.',
+    ]);
+
+    assert.deepEqual({ start: decisao.start, end: decisao.end }, { start: 4, end: 5 });
+    assert.equal(decisao.flags.includes('review'), true);
+});

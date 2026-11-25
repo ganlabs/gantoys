@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-toy="gancopy">
 <head>
 <script>
     (function () {
@@ -160,6 +160,7 @@
     </main>
 
     <script src="../shared/request-id.js"></script>
+    <script src="../shared/state.js"></script>
     <script>
         const state = {
             santander: { source: null, destination: null },
@@ -200,10 +201,10 @@
 
         async function pickDirectory(bank, kind) {
             try {
-                // Mover escreve na origem também: a pasta precisa ser aberta em
-                // leitura e escrita para o arquivo poder ser removido depois.
-                const wantsWrite = kind === 'destination' || (bank === 'santander' && santanderMove());
-                const directory = await pickDirectoryFromGanToys(wantsWrite ? 'readwrite' : 'read');
+                // Toda pasta é aberta em leitura e escrita. Assim, marcar
+                // "Mover" depois de escolher a origem não perde a seleção: o
+                // handle já tem a permissão necessária para remover o arquivo.
+                const directory = await pickDirectoryFromGanToys('readwrite');
                 state[bank][kind] = directory;
                 const nameElement = $(`${bank}-${kind}-name`);
                 nameElement.textContent = directory.name;
@@ -377,16 +378,9 @@
             });
         }
 
-        // Mover precisa de permissão de escrita na origem. Se a pasta já foi
-        // escolhida no modo somente leitura, ela é descartada para ser escolhida
-        // de novo em leitura e escrita (o diálogo abre com o clique do usuário).
+        // A pasta de origem é aberta em leitura e escrita, então alternar
+        // "Mover" não descarta a seleção já feita.
         function onSantanderMoveChange() {
-            if (santanderMove() && state.santander.source) {
-                state.santander.source = null;
-                const nameElement = $('santander-source-name');
-                nameElement.textContent = 'Nenhuma pasta selecionada';
-                nameElement.classList.remove('ready');
-            }
             applySantanderMode();
             updateAvailability('santander');
         }
@@ -466,12 +460,21 @@
             }
         }
 
-        function activateTab(bank) {
+        function activateTab(bank, persistir = true) {
             for (const current of ['santander', 'bradesco']) {
                 const active = current === bank;
                 $(`tab-${current}`).setAttribute('aria-selected', String(active));
                 $(`panel-${current}`).hidden = !active;
             }
+            if (persistir && window.GanToyState) window.GanToyState.set('aba', bank);
+        }
+
+        if (window.GanToyState) {
+            window.GanToyState.onRestore((estado) => {
+                if (estado.habilitado && estado.extras.aba) activateTab(estado.extras.aba, false);
+            });
+            // Limpar estado volta à primeira aba, como numa abertura nova.
+            window.GanToyState.onClear(() => activateTab('santander', false));
         }
 
         $('tab-santander').addEventListener('click', () => activateTab('santander'));

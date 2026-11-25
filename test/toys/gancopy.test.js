@@ -804,24 +804,19 @@ test('gancopy — a opção Mover troca o botão, os rótulos e o texto da barra
     assert.equal(pagina.texto('#santander-notcopied-title'), 'Não copiados');
 });
 
-test('gancopy — marcar Mover descarta a origem escolhida para reabri-la em escrita', async (t) => {
+test('gancopy — marcar Mover mantém a origem escolhida, já aberta em escrita', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;
     const origem = montarArvore('Origem', { [`${PROCESSO}.pdf`]: 'A' });
 
     await escolherPasta(ctx, '#santander-source', origem);
-    assert.equal(origem.modoUsado, 'read', 'sem mover, a origem é lida em modo somente leitura');
+    assert.equal(origem.modoUsado, 'readwrite', 'a origem já é aberta em leitura e escrita');
     pagina.digitar('#santander-processes', PROCESSO);
     assert.equal(pagina.seletor('#santander-copy').disabled, true, 'sem destino, o botão segue desabilitado');
 
     pagina.marcar('#santander-move');
-    assert.equal(pagina.texto('#santander-source-name'), 'Nenhuma pasta selecionada');
-    assert.equal(pagina.seletor('#santander-source-name').classList.contains('ready'), false);
-    assert.equal(pagina.seletor('#santander-copy').disabled, true);
-
-    const comMove = montarArvore('Origem', { [`${PROCESSO}.pdf`]: 'A' });
-    await escolherPasta(ctx, '#santander-source', comMove);
-    assert.equal(comMove.modoUsado, 'readwrite', 'para mover, a origem é aberta em leitura e escrita');
+    assert.equal(pagina.texto('#santander-source-name'), 'Origem', 'a pasta de origem continua selecionada');
+    assert.equal(pagina.seletor('#santander-source-name').classList.contains('ready'), true);
     assert.equal(pagina.seletor('#santander-copy').disabled, true, 'ainda falta a pasta de destino');
 
     await escolherPasta(ctx, '#santander-destination', montarArvore('Destino', {}));

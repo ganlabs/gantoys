@@ -3,10 +3,15 @@ const { PDFDocument } = PDFLib;
 const state = {
     selectedDirHandle: null,
     subfolders: [],
+    manualFiles: [],
     isProcessing: false
 };
 
 const elements = {
+    tabFolders: document.getElementById('tabFolders'),
+    tabFiles: document.getElementById('tabFiles'),
+    panelFolders: document.getElementById('panelFolders'),
+    panelFiles: document.getElementById('panelFiles'),
     folderBtn: document.getElementById('folderBtn'),
     folderInput: document.getElementById('folderInput'),
     folderInfo: document.getElementById('folderInfo'),
@@ -16,6 +21,14 @@ const elements = {
     pdfCount: document.getElementById('pdfCount'),
     subfoldersList: document.getElementById('subfoldersList'),
     mergeBtn: document.getElementById('mergeBtn'),
+    filesBtn: document.getElementById('filesBtn'),
+    filesInput: document.getElementById('filesInput'),
+    filesStatus: document.getElementById('filesStatus'),
+    filesInfo: document.getElementById('filesInfo'),
+    filesCount: document.getElementById('filesCount'),
+    fileOrder: document.getElementById('fileOrder'),
+    outputName: document.getElementById('outputName'),
+    mergeFilesBtn: document.getElementById('mergeFilesBtn'),
     progressContainer: document.getElementById('progressContainer'),
     progressPercent: document.getElementById('progressPercent'),
     progressFill: document.getElementById('progressFill'),
@@ -33,6 +46,30 @@ function podeUsarSeletorDePasta() {
     if (location.protocol === 'file:' && window.parent !== window) return false;
     return true;
 }
+
+/* ---------------------------------------------------------------------------
+ * Modo de junção (abas)
+ * ------------------------------------------------------------------------- */
+
+function activateMode(mode, persistir = true) {
+    const arquivos = mode === 'files';
+    elements.tabFolders.setAttribute('aria-selected', String(!arquivos));
+    elements.tabFiles.setAttribute('aria-selected', String(arquivos));
+    elements.panelFolders.hidden = arquivos;
+    elements.panelFiles.hidden = !arquivos;
+    if (persistir && window.GanToyState) window.GanToyState.set('modo', mode);
+}
+
+if (window.GanToyState) {
+    window.GanToyState.onRestore((estado) => {
+        if (estado.habilitado && estado.extras.modo) activateMode(estado.extras.modo, false);
+    });
+    window.GanToyState.onClear(limparEstadoInterno);
+}
+
+/* ---------------------------------------------------------------------------
+ * Modo por subpastas
+ * ------------------------------------------------------------------------- */
 
 async function selectFolder() {
     elements.folderStatus.hidden = true;
@@ -291,7 +328,195 @@ async function mergePdfs() {
     renderResults(results);
 }
 
-async function renderResults(results) {
+/* ---------------------------------------------------------------------------
+ * Modo arquivos selecionados (ordem definida pelo usuário)
+ * ------------------------------------------------------------------------- */
+
+function selectFiles(fileList) {
+    elements.filesStatus.hidden = true;
+    const files = Array.from(fileList || []).filter(file => /\.pdf$/i.test(file.name));
+    if (files.length === 0) {
+        elements.filesStatus.textContent = 'Selecione pelo menos um arquivo PDF.';
+        elements.filesStatus.hidden = false;
+        return;
+    }
+
+    state.manualFiles = files;
+    elements.filesCount.textContent = files.length;
+    elements.filesInfo.classList.remove('hidden');
+    renderFileOrder();
+    elements.mergeFilesBtn.disabled = state.isProcessing;
+}
+
+function renderFileOrder() {
+    if (state.manualFiles.length === 0) {
+        elements.fileOrder.replaceChildren();
+        elements.fileOrder.classList.add('hidden');
+        return;
+    }
+
+    // Nome de arquivo vem do disco do usuário: montado com textContent.
+    const linhas = state.manualFiles.map((file, indice) => {
+        const linha = document.createElement('div');
+        linha.className = 'tile';
+
+        const numero = document.createElement('span');
+        numero.className = 'file-order-index';
+        numero.textContent = indice + 1;
+
+        const nome = document.createElement('span');
+        nome.className = 'file-order-name';
+        nome.textContent = file.name;
+
+        const acoes = document.createElement('span');
+        acoes.className = 'file-order-actions';
+        const botoes = [
+            ['up', 'bi-arrow-up', 'Mover para cima', indice === 0],
+            ['down', 'bi-arrow-down', 'Mover para baixo', indice === state.manualFiles.length - 1],
+            ['remove', 'bi-x-lg', 'Remover da lista', false]
+        ];
+        botoes.forEach(([acao, iconeClasse, rotulo, desabilitado]) => {
+            const botao = document.createElement('button');
+            botao.type = 'button';
+            botao.className = 'btn btn-outline btn-small btn-icon';
+            botao.dataset.action = acao;
+            botao.dataset.index = indice;
+            botao.setAttribute('aria-label', `${rotulo}: ${file.name}`);
+            botao.title = rotulo;
+            botao.disabled = desabilitado;
+            const icone = document.createElement('i');
+            icone.className = `bi ${iconeClasse}`;
+            icone.setAttribute('aria-hidden', 'true');
+            botao.appendChild(icone);
+            acoes.appendChild(botao);
+        });
+
+        linha.append(numero, nome, acoes);
+        return linha;
+    });
+
+    elements.fileOrder.replaceChildren(...linhas);
+    elements.fileOrder.classList.remove('hidden');
+}
+
+function moverArquivo(indice, passo) {
+    if (state.isProcessing) return;
+    const destino = indice + passo;
+    if (destino < 0 || destino >= state.manualFiles.length) return;
+    const [arquivo] = state.manualFiles.splice(indice, 1);
+    state.manualFiles.splice(destino, 0, arquivo);
+    renderFileOrder();
+}
+
+function removerArquivo(indice) {
+    if (state.isProcessing) return;
+    state.manualFiles.splice(indice, 1);
+    elements.filesCount.textContent = state.manualFiles.length;
+    elements.filesInfo.classList.toggle('hidden', state.manualFiles.length === 0);
+    elements.mergeFilesBtn.disabled = state.manualFiles.length === 0;
+    renderFileOrder();
+}
+
+function nomeSaida() {
+    const base = elements.outputName.value.trim().replace(/[\\/:*?"<>|]+/g, '-') || 'PDFs unidos';
+    return /\.pdf$/i.test(base) ? base : `${base}.pdf`;
+}
+
+/** Grava o PDF final: seletor de arquivo quando disponível, senão download. */
+async function salvarBlob(blob, nome) {
+    if (typeof window.showSaveFilePicker === 'function') {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: nome,
+                types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+        } catch (erro) {
+            // Cancelar o diálogo encerra a operação; falha de contexto (iframe,
+            // file://) cai para o download abaixo.
+            if (erro && erro.name === 'AbortError') throw erro;
+        }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+async function mergeSelectedFiles() {
+    if (state.manualFiles.length === 0 || state.isProcessing) return;
+
+    state.isProcessing = true;
+    elements.mergeFilesBtn.disabled = true;
+    elements.progressContainer.classList.add('visible');
+    elements.results.classList.add('hidden');
+    elements.progressCurrent.textContent = 'Arquivos selecionados';
+    elements.progressPercent.textContent = '0%';
+    elements.progressFill.style.width = '0%';
+
+    try {
+        const mergedPdf = await PDFDocument.create();
+        let pageCount = 0;
+        const arquivos = state.manualFiles.slice();
+        const total = arquivos.length;
+
+        for (let i = 0; i < total; i++) {
+            const file = arquivos[i];
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+                const pageIndices = pdf.getPageIndices();
+                if (pageIndices.length > 0) {
+                    const copiedPages = await mergedPdf.copyPages(pdf, pageIndices);
+                    copiedPages.forEach(page => mergedPdf.addPage(page));
+                    pageCount += pdf.getPageCount();
+                }
+            } catch (err) {
+                console.warn(`Erro ao processar ${file.name}:`, err);
+            }
+
+            const progress = Math.round(((i + 1) / total) * 100);
+            elements.progressPercent.textContent = `${progress}%`;
+            elements.progressFill.style.width = `${progress}%`;
+            elements.progressDetail.textContent = `${i + 1}/${total} - ${file.name}`;
+            await new Promise(r => setTimeout(r, 10));
+        }
+
+        if (pageCount === 0) throw new Error('Nenhuma página pôde ser lida nos PDFs selecionados.');
+
+        const bytes = await mergedPdf.save();
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const nome = nomeSaida();
+        try {
+            await salvarBlob(blob, nome);
+        } catch (err) {
+            // Cancelar o diálogo de salvar não perde a união: o resultado
+            // continua disponível no link do cartão.
+            if (!err || err.name !== 'AbortError') throw err;
+        }
+
+        elements.progressPercent.textContent = '100%';
+        elements.progressFill.style.width = '100%';
+        renderResults([{ name: nome, pages: pageCount, success: true, blob }], false);
+    } catch (err) {
+        console.error('Erro ao juntar os arquivos selecionados:', err);
+        renderResults([{ name: nomeSaida(), error: err.message, success: false }], false);
+    } finally {
+        elements.progressContainer.classList.remove('visible');
+        elements.mergeFilesBtn.disabled = state.manualFiles.length === 0;
+        state.isProcessing = false;
+    }
+}
+
+async function renderResults(results, abrirLinks = true) {
     // Cada item é montado com DOM + textContent: nome de subpasta/arquivo e
     // mensagem de erro vêm do disco do usuário.
     const itens = await Promise.all(results.map(async (r) => {
@@ -358,6 +583,7 @@ async function renderResults(results) {
     elements.resultsList.replaceChildren(...itens);
     elements.results.classList.remove('hidden');
 
+    if (!abrirLinks) return;
     const successfulResults = results.filter(r => r.success);
     for (const r of successfulResults) {
         const file = r.blob
@@ -368,9 +594,58 @@ async function renderResults(results) {
     }
 }
 
+/** Zera o estado que vive só na memória (botão "Limpar estado"). */
+function limparEstadoInterno() {
+    state.selectedDirHandle = null;
+    state.subfolders = [];
+    state.manualFiles = [];
+    state.isProcessing = false;
+
+    elements.folderBtn.classList.remove('selected');
+    preencherBotaoPasta(elements.folderBtn, 'Selecionar Pasta');
+    elements.folderInfo.classList.add('hidden');
+    elements.folderStatus.hidden = true;
+    elements.folderCount.textContent = '0';
+    elements.pdfCount.textContent = '0';
+    elements.subfoldersList.replaceChildren();
+    elements.subfoldersList.classList.add('hidden');
+    elements.mergeBtn.disabled = true;
+
+    elements.filesInfo.classList.add('hidden');
+    elements.filesStatus.hidden = true;
+    elements.filesCount.textContent = '0';
+    elements.fileOrder.replaceChildren();
+    elements.fileOrder.classList.add('hidden');
+    elements.mergeFilesBtn.disabled = true;
+
+    elements.progressContainer.classList.remove('visible');
+    elements.progressCurrent.textContent = '-';
+    elements.progressPercent.textContent = '0%';
+    elements.progressDetail.textContent = '-';
+    elements.progressFill.style.width = '';
+    elements.results.classList.add('hidden');
+    elements.resultsList.replaceChildren();
+}
+
+elements.tabFolders.addEventListener('click', () => activateMode('folders'));
+elements.tabFiles.addEventListener('click', () => activateMode('files'));
 elements.folderBtn.addEventListener('click', selectFolder);
 elements.folderInput.addEventListener('change', (event) => {
     selectFolderFromFiles(event.target.files);
     event.target.value = '';
 });
 elements.mergeBtn.addEventListener('click', mergePdfs);
+elements.filesBtn.addEventListener('click', () => elements.filesInput.click());
+elements.filesInput.addEventListener('change', (event) => {
+    selectFiles(event.target.files);
+    event.target.value = '';
+});
+elements.fileOrder.addEventListener('click', (event) => {
+    const botao = event.target.closest('button[data-action]');
+    if (!botao) return;
+    const indice = Number(botao.dataset.index);
+    if (botao.dataset.action === 'up') moverArquivo(indice, -1);
+    else if (botao.dataset.action === 'down') moverArquivo(indice, 1);
+    else if (botao.dataset.action === 'remove') removerArquivo(indice);
+});
+elements.mergeFilesBtn.addEventListener('click', mergeSelectedFiles);
