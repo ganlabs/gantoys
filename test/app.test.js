@@ -519,6 +519,31 @@ test('App — cópia: a busca casa por dígitos, não interpreta regex e compara
     assert.deepEqual(destino.caminhos(), ['contrato.pdf', 'ficha.pdf', 'g.pdf']);
 });
 
+test('App — Santander continua após resolver a lista e informa todas as referências do arquivo igual', async (t) => {
+    const app = await abrirApp(t);
+    const carta = correio();
+    const origem = montarArvore('Origem', {
+        '12/345/a.txt': 'A',
+        '12/345/b.txt': 'B',
+        '12/345/c.txt': 'C',
+    });
+    const destino = montarArvore('Destino', { 'b.txt': 'B' });
+    const sourceId = await registrarPasta(app, carta, origem, 'origem');
+    const destinationId = await registrarPasta(app, carta, destino, 'destino');
+    const resposta = await pedir(app, carta, {
+        type: 'gantoys-copy-request', requestId: 'sobrepostos', mode: 'santander',
+        sourceId, destinationId, processes: ['345', '12.345', '345'],
+    }, 'gantoys-copy-result');
+
+    assert.deepEqual(plano(resposta.result.results), [
+        { status: 'ok', message: '12/345/a.txt' },
+        { status: 'same', reference: '345\n12.345\n345', message: '12/345/b.txt: já existe no destino com o mesmo conteúdo' },
+        { status: 'ok', message: '12/345/c.txt' },
+    ]);
+    assert.equal(destino.conteudo('a.txt'), 'A');
+    assert.equal(destino.conteudo('c.txt'), 'C');
+});
+
 test('App — cópia: erro de disco no destino falha só aquele arquivo', async (t) => {
     const app = await abrirApp(t);
     const carta = correio();

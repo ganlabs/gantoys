@@ -663,6 +663,7 @@ Nas duas abas, os quadros `Copiados` e `Não copiados` só aparecem quando têm 
 ## Detalhes técnicos
 
 - Correspondência de processo: cada número informado é normalizado uma vez (texto em minúsculas e apenas os dígitos). Um arquivo casa quando o caminho em minúsculas contém o processo informado (para processos com algum caractere não numérico) ou quando os dígitos do caminho contêm todos os dígitos do processo.
+- Na aba `Arquivo`, a busca continua até o fim da pasta de origem, mesmo após localizar todos os processos. Para arquivos iguais ou com erro, o relatório inclui todos os processos correspondentes, mesmo que outro arquivo já corresponda ao mesmo processo.
 - O relatório marca como processados os estados `ok` (arquivo novo ou removido da origem) e `updated` (sobrescrito); `same`, `missing` e `fail` vão para `Não copiados`/`Não movidos`. Com `Mover`, o estado `ok` aparece como `MOVIDO`.
 - Durante a varredura, o progresso é enviado no máximo a cada 120 milissegundos e a barra fica cheia, com o texto `N analisado(s) | M copiado(s)` (ou `M movido(s)`); o texto inicial é `Procurando e copiando arquivos...` (aba `Arquivo`, ou `Procurando e movendo arquivos...` com `Mover`) ou `Procurando e copiando PDFs...` (aba `Bradesco`).
 - A comparação de conteúdo entre origem e destino é feita em blocos de 1 MiB, com comparação prévia de tamanho.

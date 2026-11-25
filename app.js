@@ -670,8 +670,11 @@ function createProcessSearch(processes) {
     };
 }
 
-function pathForms(path) {
-    return { lower: path.toLowerCase(), digits: path.replace(/\D/g, '') };
+function pathForms(path, search) {
+    return {
+        lower: search.byName === null ? '' : path.toLowerCase(),
+        digits: search.byDigits === null ? '' : path.replace(/\D/g, '')
+    };
 }
 
 function termMatchesForms(term, forms) {
@@ -733,12 +736,12 @@ async function planFileCopy(sourceHandle, destinationDirectory, destinationName)
     const destinationFile = await destinationHandle.getFile();
     if (await filesAreEqual(sourceFile, destinationFile)) return { action: 'identical', sourceFile };
 
-    return { action: 'overwrite', sourceFile };
+    return { action: 'overwrite', sourceFile, destinationHandle };
 }
 
 /** Grava o arquivo no destino (createWritable trunca: sobrescreve quando existe). */
-async function writeDestinationFile(destinationDirectory, destinationName, sourceFile) {
-    const target = await destinationDirectory.getFileHandle(destinationName, { create: true });
+async function writeDestinationFile(destinationDirectory, destinationName, { sourceFile, destinationHandle }) {
+    const target = destinationHandle ?? await destinationDirectory.getFileHandle(destinationName, { create: true });
     const writable = await target.createWritable();
     await writable.write(sourceFile);
     await writable.close();
@@ -858,7 +861,7 @@ async function handleDeleteRequest(source, request) {
 
         for await (const item of walkDirectoryFiles(directory, true)) {
             scanned += 1;
-            const forms = pathForms(item.path);
+            const forms = pathForms(item.path, search);
             if (!searchMatchesForms(search, forms)) {
                 reportProgress({ scanned, deleted });
                 continue;
@@ -922,68 +925,63 @@ async function handleCopyRequest(source, request) {
         if (request.mode === 'santander') {
             const search = createProcessSearch(request.processes);
             const results = [];
-            const resolved = new Set();
+            const pending = new Set(search.terms.keys());
             let scanned = 0;
             let found = 0;
             let copied = 0;
 
             for await (const item of walkDirectoryFiles(sourceDirectory, true)) {
                 scanned += 1;
-                const forms = pathForms(item.path);
+                const forms = pathForms(item.path, search);
                 if (!searchMatchesForms(search, forms)) {
                     reportProgress({ scanned, found, copied });
                     continue;
                 }
 
-                // Só nos arquivos aprovados pelo filtro rápido: descobre quais
-                // processos eles atendem, para depois listar os que ficaram sem arquivo.
-                const matchedProcesses = [];
-                search.terms.forEach((term, index) => {
-                    if (!termMatchesForms(term, forms)) return;
-                    resolved.add(index);
-                    matchedProcesses.push(request.processes[index]);
-                });
-
                 found += 1;
+                let result;
                 try {
                     const plan = await planFileCopy(item.handle, destinationDirectory, item.handle.name);
-                    if (plan.action === 'same-file') {
-                        // Mesmo arquivo dos dois lados: não há para onde mover.
-                        results.push({
-                            status: 'same',
-                            reference: matchedProcesses.join('\n'),
-                            message: `${item.path}: ${skipReason(plan.action)}`
-                        });
-                    } else if (plan.action === 'identical' && !move) {
-                        // Mesmo conteúdo no destino: não copia nem renomeia.
-                        results.push({
-                            status: 'same',
-                            reference: matchedProcesses.join('\n'),
-                            message: `${item.path}: ${skipReason(plan.action)}`
-                        });
+                    if (plan.action === 'same-file' || (plan.action === 'identical' && !move)) {
+                        result = { status: 'same', message: `${item.path}: ${skipReason(plan.action)}` };
                     } else {
                         const overwritten = plan.action === 'overwrite';
                         // 'create' grava; 'overwrite' regrava; 'identical' já tem o conteúdo no destino.
-                        if (plan.action !== 'identical') await writeDestinationFile(destinationDirectory, item.handle.name, plan.sourceFile);
+                        if (plan.action !== 'identical') await writeDestinationFile(destinationDirectory, item.handle.name, plan);
                         if (move) await removeSourceFile(item);
                         copied += 1;
-                        results.push({
+                        result = {
                             status: overwritten ? 'updated' : 'ok',
                             message: `${item.path}${move ? moveDetail(plan.action) : overwritten ? ' (sobrescrito)' : ''}`
-                        });
+                        };
                     }
                 } catch (error) {
-                    // a lista copiada pelo toy leva só os números dos processos afetados
-                    results.push({ status: 'fail', reference: matchedProcesses.join('\n'), message: `${item.path}: ${error.message}` });
+                    result = { status: 'fail', message: `${item.path}: ${error.message}` };
                 }
+
+                if (result.status === 'same' || result.status === 'fail') {
+                    // O relatório inclui até processos encontrados em arquivos anteriores.
+                    const references = [];
+                    for (let index = 0; index < search.terms.length; index += 1) {
+                        if (!termMatchesForms(search.terms[index], forms)) continue;
+                        pending.delete(index);
+                        references.push(request.processes[index]);
+                    }
+                    result.reference = references.join('\n');
+                } else {
+                    for (const index of pending) {
+                        if (termMatchesForms(search.terms[index], forms)) pending.delete(index);
+                    }
+                }
+                results.push(result);
                 reportProgress({ scanned, found, copied });
             }
 
             // "reference" alimenta a lista de não copiados exibida pelo toy.
-            request.processes.forEach((process, index) => {
-                if (resolved.has(index)) return;
+            for (const index of pending) {
+                const process = request.processes[index];
                 results.push({ status: 'missing', reference: process, message: `${process}: nenhum arquivo localizado na origem.` });
-            });
+            }
             if (results.length === 0) results.push({ status: 'missing', reference: '', message: 'Nenhum arquivo encontrado para os processos informados.' });
 
             reportProgress({ scanned, found, copied }, true);
@@ -1006,7 +1004,7 @@ async function handleCopyRequest(source, request) {
                     continue;
                 }
 
-                const forms = pathForms(item.path);
+                const forms = pathForms(item.path, search);
                 if (!searchMatchesForms(search, forms)) {
                     reportProgress({ scanned, copied, total: request.processes.length });
                     continue;
@@ -1024,7 +1022,7 @@ async function handleCopyRequest(source, request) {
                                 message: `${request.processes[index]} → ${targetName}: ${skipReason(plan.action)}`
                             };
                         } else {
-                            await writeDestinationFile(destinationDirectory, targetName, plan.sourceFile);
+                            await writeDestinationFile(destinationDirectory, targetName, plan);
                             copied += 1;
                             results[index] = {
                                 status: plan.action === 'overwrite' ? 'updated' : 'ok',
