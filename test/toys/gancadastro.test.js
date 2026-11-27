@@ -465,7 +465,8 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
 
     // Formatação: um xf centralizado por estilo de origem em uso.
     assert.match(partes['xl/styles.xml'], /<cellXfs count="6">/, 'um xf centralizado por estilo de origem');
-    assert.match(partes['xl/styles.xml'], /<alignment horizontal="center" vertical="center" wrapText="1"\/>/);
+    assert.match(partes['xl/styles.xml'], /<alignment horizontal="center" vertical="center"\/>/);
+    assert.doesNotMatch(partes['xl/styles.xml'], /wrapText/, 'a quebra automática de texto não entra na formatação');
 
     const sheet1 = partes['xl/worksheets/sheet1.xml'];
     const sheet2 = partes['xl/worksheets/sheet2.xml'];
@@ -476,7 +477,7 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
         'largura da coluna pelo maior conteúdo'
     );
     assert.ok(sheet1.includes('<col min="6" max="6" width="16" customWidth="1"/><col min="7" max="7" width="12" customWidth="1"/></cols>'), 'todas as colunas usadas recebem largura');
-    assert.equal((sheet1.match(/<row r="\d" ht="15" customHeight="1">/g) || []).length, 5, 'altura ajustada em todas as linhas');
+    assert.doesNotMatch(sheet1, /customHeight/, 'as linhas ficam na altura padrão do Excel');
 
     // Células reescritas: valor transformado, estilo centralizado.
     assert.ok(sheet1.includes('<c r="A2" s="4" t="inlineStr"><is><t>0004469-51.2026.8.05.0103</t></is></c>'), 'CNJ pontuado com o estilo da célula');
@@ -566,7 +567,7 @@ test('gancadastro — valor da causa vira número no formato Geral e sai central
     assert.match(xf, /numFmtId="0"/, 'o valor da causa usa o formato Geral do Excel');
     assert.match(xf, /applyNumberFormat="1"/, 'o formato de número é aplicado');
     assert.doesNotMatch(xf, /numFmtId="4"/, 'o formato numérico original sai do xf novo');
-    assert.match(xf, /<alignment\b[^>]*horizontal="center"[^>]*vertical="center"[^>]*wrapText="1"\/>/, 'a célula sai centralizada nas duas direções');
+    assert.match(xf, /<alignment\b[^>]*horizontal="center"[^>]*vertical="center"\/>/, 'a célula sai centralizada nas duas direções');
 
     // Valor 0 pintado de laranja: cor, formato Geral e alinhamento no mesmo xf.
     const celulaPintada = /<c r="F3" s="(\d+)"><v>0<\/v><\/c>/.exec(sheet1);

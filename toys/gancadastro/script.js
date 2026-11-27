@@ -10,9 +10,9 @@
    milhar.
 
    Toda aba com dados sai formatada como se o operador tivesse selecionado tudo
-   e centralizado: alinhamento horizontal e vertical no centro, texto com quebra
-   de linha automática, largura de coluna ajustada ao maior conteúdo e altura de
-   linha ajustada às linhas do texto.
+   e centralizado: alinhamento horizontal e vertical no centro e largura de
+   coluna ajustada ao maior conteúdo, sem quebra automática de texto. As linhas
+   ficam na altura padrão, porque o texto de cada célula cabe em uma linha.
 
    As transformações por coluna vêm do kit compartilhado: formatCnj para o
    número do processo, normalizeNameValue para os nomes e extractMoney para o
@@ -289,8 +289,8 @@ function escaparXml(texto) {
 /**
  * Injeta preenchimentos sólidos (fills) e deriva novos cellXfs em styles.xml,
  * preservando fontes e bordas de cada célula e trocando o alinhamento pelo
- * centralizado com quebra de linha. O formato de número original é mantido,
- * exceto no Valor da Causa, que passa para Geral.
+ * centralizado. O formato de número original é mantido, exceto no Valor da
+ * Causa, que passa para Geral.
  */
 function criarPintorDeEstilos(stylesXml) {
     let xml = stylesXml;
@@ -359,7 +359,7 @@ function criarPintorDeEstilos(stylesXml) {
         atributos.push({ name: 'applyAlignment', value: '1' });
         const textoAtributos = atributos.map(({ name, value }) => ` ${name}="${value}"`).join('');
 
-        const alinhamento = `<${prefixo}alignment horizontal="center" vertical="center" wrapText="1"/>`;
+        const alinhamento = `<${prefixo}alignment horizontal="center" vertical="center"/>`;
         const novoXf = `<${prefixo}xf${textoAtributos}>${base.filhos}${alinhamento}</${prefixo}xf>`;
         xml = xml.replace(new RegExp(`</(?:\\w+:)?cellXfs>`), `${novoXf}</${prefixo}cellXfs>`);
         const id = proximoXfId;
@@ -705,8 +705,8 @@ function processarAba(aba, strings, pintor) {
 /* ------------------------------------------------------------- formatação -- */
 
 const LARGURA_MINIMA_DA_COLUNA = 10;
-const LARGURA_MAXIMA_DA_COLUNA = 60;
-const ALTURA_DA_LINHA = 15;
+// O Excel não aceita largura de coluna maior que 255 caracteres.
+const LARGURA_MAXIMA_DA_COLUNA = 255;
 
 /** Número da coluna pela letra do endereço (A -> 1, Z -> 26, AA -> 27). */
 function indiceDaColuna(letras) {
@@ -716,16 +716,6 @@ function indiceDaColuna(letras) {
 /** Quantidade de caracteres do texto, contando par substituto como um. */
 function comprimentoDoTexto(texto) {
     return Array.from(String(texto)).length;
-}
-
-/** Grava a altura de cada linha num único passo pelo XML. */
-function ajustarAlturasDasLinhas(xml, alturas) {
-    return xml.replace(new RegExp('<((?:\\w+:)?row)\\b([^>]*)>', 'g'), (encontrado, nome, atributos) => {
-        const numero = /\br="([^"]+)"/.exec(atributos);
-        if (!numero || !alturas.has(numero[1])) return encontrado;
-        const limpos = atributos.replace(/\s+ht="[^"]*"/, '').replace(/\s+customHeight="[^"]*"/, '');
-        return `<${nome}${limpos} ht="${alturas.get(numero[1])}" customHeight="1">`;
-    });
 }
 
 /** Grava o estilo centralizado de cada célula num único passo pelo XML. */
@@ -758,10 +748,10 @@ function ajustarLargurasDasColunas(xml, larguras) {
 }
 
 /**
- * Formata a aba como um "selecionar tudo": centraliza horizontal e vertical,
- * liga a quebra de linha, ajusta a largura de cada coluna ao maior conteúdo e a
- * altura de cada linha ao número de linhas do texto. Devolve o XML e se houve
- * mudança, para a aba ser regravada mesmo sem célula de valor alterada.
+ * Formata a aba como um "selecionar tudo": centraliza horizontal e vertical e
+ * ajusta a largura de cada coluna ao maior conteúdo, sem quebra automática de
+ * texto. Devolve o XML e se houve mudança, para a aba ser regravada mesmo sem
+ * célula de valor alterada.
  */
 function formatarAba(xml, strings, pintor) {
     if (!pintor) return { xml, mudou: false };
@@ -769,53 +759,41 @@ function formatarAba(xml, strings, pintor) {
     const dados = primeiroFilho(documento, 'sheetData');
     if (!dados) return { xml, mudou: false };
 
-    const linhas = elementosPorNome(dados, 'row').map((linha) => {
-        const celulas = Array.from(linha.children).filter((no) => no.nodeType === 1 && no.localName === 'c');
-        return {
-            numero: linha.getAttribute('r'),
-            celulas: celulas.map((celula) => {
-                const endereco = celula.getAttribute('r');
-                return endereco ? {
-                    endereco,
-                    coluna: indiceDaColuna(endereco.replace(/\d+/g, '')),
-                    texto: textoDaCelula(celula, strings),
-                    temFormula: Boolean(primeiroFilho(celula, 'f')),
-                    estilo: celula.getAttribute('s')
-                } : null;
-            }).filter(Boolean)
-        };
-    });
+    const celulas = elementosPorNome(dados, 'row').flatMap((linha) => Array.from(linha.children)
+        .filter((no) => no.nodeType === 1 && no.localName === 'c')
+        .map((celula) => {
+            const endereco = celula.getAttribute('r');
+            return endereco ? {
+                endereco,
+                coluna: indiceDaColuna(endereco.replace(/\d+/g, '')),
+                texto: textoDaCelula(celula, strings),
+                temFormula: Boolean(primeiroFilho(celula, 'f')),
+                estilo: celula.getAttribute('s')
+            } : null;
+        })
+        .filter(Boolean));
 
     const larguras = new Map();
-    linhas.forEach(({ celulas }) => celulas.forEach(({ coluna, texto }) => {
+    celulas.forEach(({ coluna, texto }) => {
         const comprimento = comprimentoDoTexto(texto);
         if (comprimento > (larguras.get(coluna) || 0)) larguras.set(coluna, comprimento);
-    }));
+    });
     const largurasFinais = new Map(Array.from(larguras, ([coluna, comprimento]) => [
         coluna,
         Math.min(Math.max(comprimento + 2, LARGURA_MINIMA_DA_COLUNA), LARGURA_MAXIMA_DA_COLUNA)
     ]));
 
     const estilos = new Map();
-    const alturas = new Map();
-    linhas.forEach(({ numero, celulas }) => {
-        let linhasDeTexto = 1;
-        celulas.forEach(({ endereco, coluna, texto, temFormula, estilo }) => {
-            const comprimento = comprimentoDoTexto(texto);
-            const caracteresPorLinha = Math.max((largurasFinais.get(coluna) || LARGURA_MINIMA_DA_COLUNA) - 1, 1);
-            linhasDeTexto = Math.max(linhasDeTexto, Math.ceil(comprimento / caracteresPorLinha) || 1);
-            // Célula vazia e sem fórmula não mostra alinhamento nenhum.
-            if (!comprimento && !temFormula) return;
-            const novoEstilo = pintor.obterXfCentralizado(estilo);
-            if (novoEstilo === null || novoEstilo === Number(estilo || 0)) return;
-            estilos.set(endereco, novoEstilo);
-        });
-        if (numero) alturas.set(numero, linhasDeTexto * ALTURA_DA_LINHA);
+    celulas.forEach(({ endereco, texto, temFormula, estilo }) => {
+        // Célula vazia e sem fórmula não mostra alinhamento nenhum.
+        if (!comprimentoDoTexto(texto) && !temFormula) return;
+        const novoEstilo = pintor.obterXfCentralizado(estilo);
+        if (novoEstilo === null || novoEstilo === Number(estilo || 0)) return;
+        estilos.set(endereco, novoEstilo);
     });
 
     let resultado = xml;
     if (estilos.size) resultado = ajustarEstilosDasCelulas(resultado, estilos);
-    if (alturas.size) resultado = ajustarAlturasDasLinhas(resultado, alturas);
     if (largurasFinais.size) resultado = ajustarLargurasDasColunas(resultado, largurasFinais);
     return { xml: resultado, mudou: estilos.size > 0 || largurasFinais.size > 0 };
 }
