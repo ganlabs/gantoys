@@ -424,21 +424,20 @@ test('gancadastro — pacote com prefixo de namespace é reescrito no mesmo name
     await processarEGravar(pagina, destino);
 
     const saida = await abrirPacote(pagina, destino.paraObjeto()[NOME_SAIDA]);
-    const original = await abrirPacote(pagina, entrada);
     const sheet1 = saida.partes['xl/worksheets/sheet1.xml'];
 
     // O Excel escreve as tags com prefixo e sem namespace default: o elemento
     // gravado precisa manter o prefixo, senão sai do namespace da planilha.
     assert.ok(
-        sheet1.includes('<x:c r="A2" s="1" t="inlineStr"><x:is><x:t>0004469-51.2026.8.05.0103</x:t></x:is></x:c>'),
+        sheet1.includes('<x:c r="A2" s="4" t="inlineStr"><x:is><x:t>0004469-51.2026.8.05.0103</x:t></x:is></x:c>'),
         'a célula com prefixo precisa sair reescrita, no mesmo namespace do documento'
     );
-    assert.ok(sheet1.includes('<x:c r="F2"><x:v>20000</x:v></x:c>'), 'valor da causa reescrito como número, no mesmo prefixo');
-    assert.ok(sheet1.includes('<x:c r="B3" s="2" t="inlineStr"><x:is><x:t>SEM ADVOGADO</x:t></x:is></x:c>'), 'estilo preservado na célula com prefixo');
-    assert.ok(sheet1.includes('<x:c r="A3"><x:v>12345</x:v></x:c>'), 'valor fora de 20 dígitos fica intacto');
-    assert.ok(sheet1.includes('<x:c r="G2" t="s"><x:v>13</x:v></x:c>'), 'coluna fora do mapa fica intacta');
-    assert.equal(saida.partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'nenhum xf novo: o valor já está no formato Geral');
-    assert.equal(saida.partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
+    assert.ok(sheet1.includes('<x:c r="F2" s="3"><x:v>20000</x:v></x:c>'), 'valor da causa reescrito como número, no mesmo prefixo');
+    assert.ok(sheet1.includes('<x:c r="B3" s="5" t="inlineStr"><x:is><x:t>SEM ADVOGADO</x:t></x:is></x:c>'), 'estilo preservado na célula com prefixo');
+    assert.ok(sheet1.includes('<x:c r="A3" s="3"><x:v>12345</x:v></x:c>'), 'valor fora de 20 dígitos mantém o valor');
+    assert.ok(sheet1.includes('<x:c r="G2" t="s" s="3"><x:v>13</x:v></x:c>'), 'coluna fora do mapa mantém o valor');
+    assert.match(saida.partes['xl/styles.xml'], /<cellXfs count="6">/, 'um xf centralizado por estilo de origem, no mesmo prefixo');
+    assert.ok(saida.partes['xl/worksheets/sheet2.xml'].includes('<x:c r="A2" t="s" s="3"><x:v>19</x:v></x:c>'), 'aba sem coluna de cadastro ganha o alinhamento');
     assert.deepEqual(pagina.textos('#resultado-numeros .stat strong'), ['11', '2', '3', '1']);
 });
 
@@ -461,37 +460,51 @@ test('gancadastro — a saída preserva formatação, abas e nomes, e só reescr
     // Mesmas partes do pacote, mesmas abas, mesmos nomes.
     assert.deepEqual(saida.nomes, original.nomes, 'as partes do pacote continuam as mesmas');
     assert.equal(partes['xl/workbook.xml'], original.partes['xl/workbook.xml'], 'workbook.xml sai idêntico');
-    assert.equal(partes['xl/styles.xml'], original.partes['xl/styles.xml'], 'nenhum xf novo: o valor já está no formato Geral');
     assert.equal(partes['xl/sharedStrings.xml'], original.partes['xl/sharedStrings.xml'], 'sharedStrings.xml sai idêntico');
-    assert.equal(partes['xl/worksheets/sheet2.xml'], original.partes['xl/worksheets/sheet2.xml'], 'aba sem coluna de cadastro sai idêntica');
     assert.equal(partes['xl/worksheets/sheet3.xml'], original.partes['xl/worksheets/sheet3.xml'], 'aba vazia sai idêntica');
 
-    // Células reescritas: valor transformado com o estilo original preservado.
-    const sheet1 = partes['xl/worksheets/sheet1.xml'];
-    const reescrita = (endereco, valor, estilo = '') => `<c r="${endereco}"${estilo} t="inlineStr"><is><t>${valor}</t></is></c>`;
-    assert.ok(sheet1.includes(reescrita('A2', '0004469-51.2026.8.05.0103', ' s="1"')), 'CNJ pontuado com o estilo da célula');
-    assert.ok(sheet1.includes(reescrita('B2', 'JOSE  DA SILVA')), 'advogado normalizado, cortando o |');
-    assert.ok(sheet1.includes(reescrita('C2', '0')), 'SEM OAB vira 0');
-    assert.ok(sheet1.includes(reescrita('D2', 'TJ')), 'SEM UF vira TJ');
-    assert.ok(sheet1.includes(reescrita('E2', 'ILHEUS')), 'comarca sem acento');
-    assert.ok(sheet1.includes('<c r="F2"><v>20000</v></c>'), 'valor da causa gravado como número, sem o sufixo de centavos');
-    assert.ok(sheet1.includes(reescrita('B3', 'SEM ADVOGADO', ' s="2"')), 'SEM ADV vira SEM ADVOGADO com o estilo da célula');
-    assert.ok(sheet1.includes(reescrita('E3', 'NAO ENCONTRADO')), 'comarca normalizada');
-    assert.ok(sheet1.includes('<c r="F3"><v>1234.56</v></c>'), 'valor no padrão brasileiro gravado como número de verdade');
-    assert.ok(sheet1.includes(reescrita('D4', 'TJ')), 'célula de texto inline também é processada');
-    assert.ok(sheet1.includes(reescrita('B5', 'JOSE  DA SILVA')), 'a normalização vale para todas as linhas');
+    // Formatação: um xf centralizado por estilo de origem em uso.
+    assert.match(partes['xl/styles.xml'], /<cellXfs count="6">/, 'um xf centralizado por estilo de origem');
+    assert.match(partes['xl/styles.xml'], /<alignment horizontal="center" vertical="center" wrapText="1"\/>/);
 
-    // Células que não mudam ficam como estavam — o valor já numérico, a
-    // numérica inválida, a vazia, a que tem fórmula, a inline sem texto, a
-    // sem `r` e a coluna fora do mapa.
-    assert.ok(sheet1.includes('<c r="F4" t="n"><v>1500.5</v></c>'), 'valor já numérico e no formato Geral fica intacto');
-    assert.ok(sheet1.includes('<c r="A3"><v>12345</v></c>'), 'valor fora de 20 dígitos fica intacto');
-    assert.ok(sheet1.includes('<c r="A4" t="s"><v>15</v></c>'), 'CNJ já pontuado não é reescrito');
+    const sheet1 = partes['xl/worksheets/sheet1.xml'];
+    const sheet2 = partes['xl/worksheets/sheet2.xml'];
+
+    // Largura de coluna e altura de linha, como o duplo clique nas bordas.
+    assert.ok(
+        sheet1.includes('<cols><col min="1" max="1" width="27" customWidth="1"/><col min="2" max="2" width="18" customWidth="1"/>'),
+        'largura da coluna pelo maior conteúdo'
+    );
+    assert.ok(sheet1.includes('<col min="6" max="6" width="16" customWidth="1"/><col min="7" max="7" width="12" customWidth="1"/></cols>'), 'todas as colunas usadas recebem largura');
+    assert.equal((sheet1.match(/<row r="\d" ht="15" customHeight="1">/g) || []).length, 5, 'altura ajustada em todas as linhas');
+
+    // Células reescritas: valor transformado, estilo centralizado.
+    assert.ok(sheet1.includes('<c r="A2" s="4" t="inlineStr"><is><t>0004469-51.2026.8.05.0103</t></is></c>'), 'CNJ pontuado com o estilo da célula');
+    assert.ok(sheet1.includes('<c r="B2" t="inlineStr" s="3"><is><t>JOSE  DA SILVA</t></is></c>'), 'advogado normalizado, cortando o |');
+    assert.ok(sheet1.includes('<c r="C2" t="inlineStr" s="3"><is><t>0</t></is></c>'), 'SEM OAB vira 0');
+    assert.ok(sheet1.includes('<c r="D2" t="inlineStr" s="3"><is><t>TJ</t></is></c>'), 'SEM UF vira TJ');
+    assert.ok(sheet1.includes('<c r="E2" t="inlineStr" s="3"><is><t>ILHEUS</t></is></c>'), 'comarca sem acento');
+    assert.ok(sheet1.includes('<c r="F2" s="3"><v>20000</v></c>'), 'valor da causa gravado como número, sem o sufixo de centavos');
+    assert.ok(sheet1.includes('<c r="B3" s="5" t="inlineStr"><is><t>SEM ADVOGADO</t></is></c>'), 'SEM ADV vira SEM ADVOGADO com o estilo da célula');
+    assert.ok(sheet1.includes('<c r="E3" t="inlineStr" s="3"><is><t>NAO ENCONTRADO</t></is></c>'), 'comarca normalizada');
+    assert.ok(sheet1.includes('<c r="F3" s="3"><v>1234.56</v></c>'), 'valor no padrão brasileiro gravado como número de verdade');
+    assert.ok(sheet1.includes('<c r="D4" t="inlineStr" s="3"><is><t>TJ</t></is></c>'), 'célula de texto inline também é processada');
+    assert.ok(sheet1.includes('<c r="B5" t="inlineStr" s="3"><is><t>JOSE  DA SILVA</t></is></c>'), 'a normalização vale para todas as linhas');
+
+    // O valor das células que não mudam fica como estava; só o alinhamento
+    // muda. A vazia, a inline sem texto e a sem `r` continuam intactas.
+    assert.ok(sheet1.includes('<c r="F4" t="n" s="3"><v>1500.5</v></c>'), 'valor já numérico no formato Geral mantém o valor');
+    assert.ok(sheet1.includes('<c r="A3" s="3"><v>12345</v></c>'), 'valor fora de 20 dígitos mantém o valor');
+    assert.ok(sheet1.includes('<c r="A4" t="s" s="3"><v>15</v></c>'), 'CNJ já pontuado não é reescrito');
     assert.ok(sheet1.includes('<c r="B4"/>'), 'célula vazia fica intacta');
-    assert.ok(sheet1.includes('<c r="C4"><f>UPPER(B3)</f><v>SEM ADV</v></c>'), 'célula com fórmula é ignorada');
+    assert.ok(sheet1.includes('<c r="C4" s="3"><f>UPPER(B3)</f><v>SEM ADV</v></c>'), 'célula com fórmula mantém a fórmula');
     assert.ok(sheet1.includes('<c r="D3" t="inlineStr"><is></is></c>'), 'inline sem texto fica intacta');
     assert.ok(sheet1.includes('<c t="s"><v>13</v></c>'), 'célula sem endereço fica intacta');
-    assert.ok(sheet1.includes('<c r="G2" t="s"><v>13</v></c>'), 'coluna fora do mapa fica intacta');
+    assert.ok(sheet1.includes('<c r="G2" t="s" s="3"><v>13</v></c>'), 'coluna fora do mapa mantém o valor');
+
+    // Aba sem coluna de cadastro também sai centralizada.
+    assert.ok(sheet2.includes('<c r="A1" t="s" s="3"><v>18</v></c>'), 'aba sem coluna de cadastro mantém o valor e ganha o alinhamento');
+    assert.ok(sheet2.includes('<col min="1" max="1" width="10" customWidth="1"/>'), 'coluna curta usa a largura mínima');
 });
 
 
@@ -522,7 +535,7 @@ const SHEET_VALOR_NUMERICO = [
     '</sheetData></worksheet>',
 ].join('');
 
-test('gancadastro — valor da causa vira número no formato Geral sem perder o alinhamento', async (t) => {
+test('gancadastro — valor da causa vira número no formato Geral e sai centralizado', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;
     const destino = montarArvore('Destino', {});
@@ -543,7 +556,7 @@ test('gancadastro — valor da causa vira número no formato Geral sem perder o 
 
     const blocoXfs = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(styles)[1];
     const xfs = [...blocoXfs.matchAll(/<xf\b[^>]*?\/>|<xf\b[^>]*?>[\s\S]*?<\/xf>/g)].map((encontrado) => encontrado[0]);
-    assert.match(styles, /<cellXfs count="4">/, 'só dois xfs novos: valor e valor pintado');
+    assert.match(styles, /<cellXfs count="5">/, 'três xfs novos: valor, valor pintado e cabeçalho');
 
     // O valor vira número de verdade, sem `t="inlineStr"` e no formato Geral.
     const celula = /<c r="F2" s="(\d+)"><v>1234\.56<\/v><\/c>/.exec(sheet1);
@@ -553,7 +566,7 @@ test('gancadastro — valor da causa vira número no formato Geral sem perder o 
     assert.match(xf, /numFmtId="0"/, 'o valor da causa usa o formato Geral do Excel');
     assert.match(xf, /applyNumberFormat="1"/, 'o formato de número é aplicado');
     assert.doesNotMatch(xf, /numFmtId="4"/, 'o formato numérico original sai do xf novo');
-    assert.match(xf, /<alignment\b[^>]*horizontal="right"[^>]*vertical="center"\/>/, 'o alinhamento da célula é preservado');
+    assert.match(xf, /<alignment\b[^>]*horizontal="center"[^>]*vertical="center"[^>]*wrapText="1"\/>/, 'a célula sai centralizada nas duas direções');
 
     // Valor 0 pintado de laranja: cor, formato Geral e alinhamento no mesmo xf.
     const celulaPintada = /<c r="F3" s="(\d+)"><v>0<\/v><\/c>/.exec(sheet1);
@@ -561,7 +574,7 @@ test('gancadastro — valor da causa vira número no formato Geral sem perder o 
     const xfPintado = xfs[Number(celulaPintada[1])];
     assert.match(xfPintado, /numFmtId="0"/, 'valor 0 pintado também fica no formato Geral');
     assert.match(xfPintado, /fillId="1" applyFill="1"/, 'valor 0 pintado mantém a cor laranja no xf novo');
-    assert.match(xfPintado, /<alignment\b[^>]*horizontal="right"/, 'valor 0 pintado mantém o alinhamento');
+    assert.match(xfPintado, /<alignment\b[^>]*horizontal="center"/, 'valor 0 pintado também sai centralizado');
 
     // Célula que já era texto numérico também vira número, no mesmo xf do F2.
     const celulaTexto = /<c r="F4" s="(\d+)"><v>20000<\/v><\/c>/.exec(sheet1);
@@ -764,7 +777,7 @@ test('gancadastro — pasta de destino sem permissão de escrita mostra o erro d
     assert.equal(pagina.seletor('#processar').disabled, false, 'o operador pode tentar de novo');
 });
 
-test('gancadastro — aplica regras de carteira, comarca e audiência', async (t) => {
+test('gancadastro — aplica regras de carteira, comarca, órgão, num e audiência', async (t) => {
     const ctx = await abrir(t);
     const { pagina } = ctx;
     const destino = montarArvore('Destino', {});
@@ -828,7 +841,7 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
     assert.ok(sheet1.includes('BANCO BRADESCO SA'), 'regras de carteira e réu aplicadas');
     assert.ok(sheet1.includes('Mercado Livre'), 'resolveCarteiraReu atualizou carteira');
     assert.ok(
-        sheet1.includes('<c r="B13" t="inlineStr"><is><t>F.AB. ZONA OESTE S.A.</t></is></c>'),
+        sheet1.includes('<c r="B13" t="inlineStr" s="4"><is><t>F.AB. ZONA OESTE S.A.</t></is></c>'),
         'réu FAB junto com RIO+ vira FAB'
     );
     assert.ok(sheet1.includes('Saneamento - FAB'), 'carteira do réu combinado vira FAB');
@@ -836,7 +849,7 @@ test('gancadastro — aplica regras de carteira, comarca e audiência', async (t
     assert.ok(sheet1.includes('SAO PAULO'), 'capital virou a capital da UF');
     assert.ok(sheet1.includes('MEIER'), 'capital com sufixo virou o sufixo limpo');
     for (const linha of [7, 8, 9]) {
-        assert.match(sheet1, new RegExp(`<c r="C${linha}" t="s"><v>17</v></c>`), 'Leopoldina permanece na comarca original');
+        assert.match(sheet1, new RegExp(`<c r="C${linha}" t="s" s="4"><v>17</v></c>`), 'Leopoldina permanece na comarca original');
     }
     assert.ok(sheet1.includes('FREGUESIA'), 'Jacarepagua JEC virou Freguesia');
     assert.ok(sheet1.includes('TAQUARA'), 'Jacarepagua VC virou Taquara');
@@ -1007,6 +1020,143 @@ test('gancadastro — carteira contendo Santander mantém carteira e réu intact
     const sheet1 = saida.partes['xl/worksheets/sheet1.xml'];
 
     assert.equal(styles.includes('FFFFA500'), false, 'carteira Santander não deve criar estilo laranja');
-    assert.equal(/<c[^>]*\bs=/.test(sheet1), false, 'células de Santander não devem receber estilo de pintura');
-    assert.ok(sheet1.includes('<c r="A2" t="s"><v>2</v></c>') && sheet1.includes('<c r="B2" t="s"><v>3</v></c>'), 'carteira e réu do Santander devem permanecer intactos');
+    assert.doesNotMatch(styles, /fillId="[1-9]/, 'nenhum xf novo de Santander recebe preenchimento');
+    assert.ok(sheet1.includes('<c r="A2" t="s" s="3"><v>2</v></c>') && sheet1.includes('<c r="B2" t="s" s="3"><v>3</v></c>'), 'carteira e réu do Santander devem permanecer intactos');
+});
+
+test('gancadastro — réu com Bradesco no nome vira a carteira Indenizatória e o nome único do banco', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    const stringsBradesco = [
+        'Carteira', 'Parte Ré',
+        'Santander - Indenizatória', 'BANCO BRADESCO FINANCIAMENTOS SA',
+        'Outra Carteira', 'banco bradesco s.a.',
+        'BANCO BRADESCO SA',
+        'Bradesco - Indenizatória', 'Qualquer Réu',
+    ];
+    const sharedBradesco = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${stringsBradesco.length}" uniqueCount="${stringsBradesco.length}">`,
+        ...stringsBradesco.map((v) => `<si><t>${v}</t></si>`),
+        '</sst>',
+    ].join('');
+
+    const sheetBradesco = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>',
+        '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>',
+        '<row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2" t="s"><v>3</v></c></row>',
+        '<row r="3"><c r="A3" t="s"><v>4</v></c><c r="B3" t="s"><v>5</v></c></row>',
+        '<row r="4"><c r="A4" t="s"><v>4</v></c><c r="B4" t="s"><v>6</v></c></row>',
+        '<row r="5"><c r="A5" t="s"><v>7</v></c><c r="B5" t="s"><v>8</v></c></row>',
+        '</sheetData></worksheet>',
+    ].join('');
+
+    const entrada = await montarPlanilha(pagina, { customSheet1: sheetBradesco, customSharedStrings: sharedBradesco });
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    // A regra vale para qualquer carteira escrita, inclusive a do Santander, e
+    // o réu sai sempre com o nome único do cadastro de destino.
+    pagina.script(readFileSync('vendor/xlsx/xlsx.full.min.js', 'utf8'));
+    pagina.janela.__saidaXlsx = Array.from(destino.paraObjeto()[NOME_SAIDA]);
+    const lido = await pagina.script(`(() => {
+        const livro = XLSX.read(new Uint8Array(window.__saidaXlsx), { type: 'array' });
+        const aba = livro.Sheets[livro.SheetNames[0]];
+        const linhas = {};
+        for (let linha = 2; linha <= 5; linha += 1) {
+            linhas['A' + linha] = String(aba['A' + linha].v);
+            linhas['B' + linha] = String(aba['B' + linha].v);
+        }
+        return linhas;
+    })()`);
+    assert.deepEqual(JSON.parse(JSON.stringify(lido)), {
+        A2: 'Bradesco - Indenizatória',
+        B2: 'BANCO BRADESCO SA',
+        A3: 'Bradesco - Indenizatória',
+        B3: 'BANCO BRADESCO SA',
+        A4: 'Bradesco - Indenizatória',
+        B4: 'BANCO BRADESCO SA',
+        A5: 'Bradesco - Indenizatória',
+        B5: 'BANCO BRADESCO SA',
+    });
+});
+
+test('gancadastro — órgão limitado à lista do destino e Num 1 quando o órgão é VU', async (t) => {
+    const ctx = await abrir(t);
+    const { pagina } = ctx;
+    const destino = montarArvore('Destino', {});
+
+    const celula = (endereco, texto) => (texto === ''
+        ? `<c r="${endereco}" t="inlineStr"><is><t></t></is></c>`
+        : `<c r="${endereco}" t="inlineStr"><is><t>${texto}</t></is></c>`);
+    const linha = (numero, orgao, rito, num) => [
+        `<row r="${numero}">`,
+        celula(`A${numero}`, orgao),
+        celula(`B${numero}`, rito),
+        celula(`C${numero}`, num),
+        '</row>',
+    ].join('');
+
+    const sheetOrgao = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>',
+        linha(1, 'Órgão', 'Rito', 'Num'),
+        linha(2, 'VARA CIVEL', 'Comum', '0'),
+        linha(3, 'VARA FEDERAL', 'Comum', '5'),
+        linha(4, '1 JUIZADO ESPECIAL CIVEL', 'Juizados', '3'),
+        linha(5, 'JEF', 'Comum', '0'),
+        linha(6, 'VU', 'Comum', '0'),
+        linha(7, 'VU', 'Juizados', '7'),
+        linha(8, 'SECRETARIA', 'Juizados', '2'),
+        linha(9, 'VARA CIVEL', 'Rito Sumário', '2'),
+        '</sheetData></worksheet>',
+    ].join('');
+
+    const entrada = await montarPlanilha(pagina, { customSheet1: sheetOrgao });
+    selecionarArquivo(pagina, entrada, 'cadastro.xlsx');
+    await escolherDestino(ctx, destino);
+    await aguardarProcessamentoLiberado(pagina);
+    congelarRelogio(pagina);
+    await processarEGravar(pagina, destino);
+
+    pagina.script(readFileSync('vendor/xlsx/xlsx.full.min.js', 'utf8'));
+    pagina.janela.__saidaXlsx = Array.from(destino.paraObjeto()[NOME_SAIDA]);
+    const lido = await pagina.script(`(() => {
+        const livro = XLSX.read(new Uint8Array(window.__saidaXlsx), { type: 'array' });
+        const aba = livro.Sheets[livro.SheetNames[0]];
+        const valores = {};
+        for (let linha = 2; linha <= 9; linha += 1) {
+            valores['A' + linha] = String(aba['A' + linha].v);
+            valores['C' + linha] = String(aba['C' + linha].v);
+        }
+        return valores;
+    })()`);
+
+    assert.deepEqual(JSON.parse(JSON.stringify(lido)), {
+        // Órgão fora da lista segue o rito: Comum vira VC, Juizados vira JEC.
+        A2: 'VC',
+        C2: '0',
+        A3: 'VC',
+        C3: '5',
+        A4: 'JEC',
+        C4: '3',
+        // Órgão já válido fica como está; fora da lista e sem rito que decida,
+        // o texto original permanece para o operador conferir.
+        A5: 'JEF',
+        C5: '0',
+        A6: 'VU',
+        C6: '1',
+        A7: 'VU',
+        C7: '1',
+        A8: 'JEC',
+        C8: '2',
+        A9: 'VARA CIVEL',
+        C9: '2',
+    });
 });

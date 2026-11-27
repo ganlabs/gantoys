@@ -3,11 +3,16 @@
    Lê o pacote OOXML escolhido, padroniza as colunas de cadastro reconhecidas e
    grava uma cópia na pasta de destino escolhida pela ponte do app. A saída é o
    MESMO pacote, com apenas as células alteradas reescritas como texto inline.
-   Quantidade de abas, nomes e alinhamento saem como estavam. A exceção é a
-   coluna Valor da Causa: a célula recebe o número de verdade, no formato Geral
-   (numFmt 0), sem o ponto de milhar. Assim o Excel não marca a célula como
-   "número armazenado como texto" e um leitor não confunde a vírgula decimal
-   com separador de milhar.
+   Quantidade de abas e nomes saem como estavam. A exceção é a coluna Valor da
+   Causa: a célula recebe o número de verdade, no formato Geral (numFmt 0), sem
+   o ponto de milhar. Assim o Excel não marca a célula como "número armazenado
+   como texto" e um leitor não confunde a vírgula decimal com separador de
+   milhar.
+
+   Toda aba com dados sai formatada como se o operador tivesse selecionado tudo
+   e centralizado: alinhamento horizontal e vertical no centro, texto com quebra
+   de linha automática, largura de coluna ajustada ao maior conteúdo e altura de
+   linha ajustada às linhas do texto.
 
    As transformações por coluna vêm do kit compartilhado: formatCnj para o
    número do processo, normalizeNameValue para os nomes e extractMoney para o
@@ -68,6 +73,21 @@ function comarcaPeloCodigoEs(processo) {
     const digitos = String(processo ?? '').replace(/\D/g, '');
     if (digitos.length !== 20 || digitos.slice(13, 16) !== '808') return null;
     return COMARCAS_POR_CODIGO_ES[digitos.slice(16, 20)] || '';
+}
+
+
+/** Órgãos aceitos no cadastro de destino. */
+const ORGAOS_VALIDOS = ['JEC', 'JEF', 'JEA', 'VC', 'VU', 'VF'];
+
+/**
+ * Órgão definido pelo rito: Comum vira VC e Juizados vira JEC. Devolve '' para
+ * qualquer outro rito, que não decide o órgão.
+ */
+function orgaoPeloRito(rito) {
+    const normalizado = normalizarCabecalho(rito);
+    if (normalizado.startsWith('COMUM')) return 'VC';
+    if (normalizado.startsWith('JUIZAD')) return 'JEC';
+    return '';
 }
 
 
@@ -268,8 +288,9 @@ function escaparXml(texto) {
 
 /**
  * Injeta preenchimentos sólidos (fills) e deriva novos cellXfs em styles.xml,
- * preservando fontes, bordas e alinhamento de cada célula. O formato de número
- * original é mantido, exceto no Valor da Causa, que passa para Geral.
+ * preservando fontes e bordas de cada célula e trocando o alinhamento pelo
+ * centralizado com quebra de linha. O formato de número original é mantido,
+ * exceto no Valor da Causa, que passa para Geral.
  */
 function criarPintorDeEstilos(stylesXml) {
     let xml = stylesXml;
@@ -282,6 +303,17 @@ function criarPintorDeEstilos(stylesXml) {
     const fills = elementosPorNome(fillsNode, 'fill');
     const xfs = elementosPorNome(cellXfsNode, 'xf');
     const serializador = new XMLSerializer();
+
+    // Atributos e filhos de cada xf, em memória, inclusive dos xfs derivados.
+    // Sem isso, centralizar uma célula recém-pintada perderia a cor, porque o
+    // `s` da célula já aponta para um xf que só existe no XML novo.
+    const definicoes = xfs.map((xf) => ({
+        atributos: Array.from(xf.attributes),
+        filhos: Array.from(xf.childNodes)
+            .filter((no) => !(no.nodeType === 1 && no.localName === 'alignment'))
+            .map((no) => serializador.serializeToString(no))
+            .join('')
+    }));
 
     // O Valor da Causa passa para o formato Geral (numFmt 0) e recebe o número
     // de verdade. Um formato de moeda herdado exibiria "1.234,56"; o ponto de
@@ -306,40 +338,57 @@ function criarPintorDeEstilos(stylesXml) {
         const chave = `${s}|${cor || ''}|${geral ? 'g' : ''}`;
         if (xfMap.has(chave)) return xfMap.get(chave);
 
-        const xfOriginal = xfs[s] || xfs[0];
-        if (!xfOriginal) return null;
-        let atributos = '';
-        Array.from(xfOriginal.attributes).forEach((attr) => {
+        const base = definicoes[s] || definicoes[0];
+        if (!base) return null;
+        const atributos = [];
+        base.atributos.forEach((attr) => {
             if (cor && (attr.name === 'fillId' || attr.name === 'applyFill')) return;
             if (geral && (attr.name === 'numFmtId' || attr.name === 'applyNumberFormat')) return;
-            atributos += ` ${attr.name}="${attr.value}"`;
+            // O alinhamento é sempre substituído pelo centralizado.
+            if (attr.name === 'applyAlignment') return;
+            atributos.push({ name: attr.name, value: attr.value });
         });
-        if (cor) atributos += ` fillId="${obterOuCriarFill(cor)}" applyFill="1"`;
-        if (geral) atributos += ' numFmtId="0" applyNumberFormat="1"';
+        if (cor) {
+            atributos.push({ name: 'fillId', value: String(obterOuCriarFill(cor)) });
+            atributos.push({ name: 'applyFill', value: '1' });
+        }
+        if (geral) {
+            atributos.push({ name: 'numFmtId', value: '0' });
+            atributos.push({ name: 'applyNumberFormat', value: '1' });
+        }
+        atributos.push({ name: 'applyAlignment', value: '1' });
+        const textoAtributos = atributos.map(({ name, value }) => ` ${name}="${value}"`).join('');
 
-        // Filhos do xf (alignment/protection) entram no novo xf: alinhamento
-        // da célula não pode mudar por causa de uma cor ou do formato Geral.
-        const filhos = Array.from(xfOriginal.childNodes)
-            .map((no) => serializador.serializeToString(no))
-            .join('');
-        const novoXf = `<${prefixo}xf${atributos}>${filhos}</${prefixo}xf>`;
+        const alinhamento = `<${prefixo}alignment horizontal="center" vertical="center" wrapText="1"/>`;
+        const novoXf = `<${prefixo}xf${textoAtributos}>${base.filhos}${alinhamento}</${prefixo}xf>`;
         xml = xml.replace(new RegExp(`</(?:\\w+:)?cellXfs>`), `${novoXf}</${prefixo}cellXfs>`);
         const id = proximoXfId;
         proximoXfId += 1;
         xml = xml.replace(new RegExp(`(<(?:\\w+:)?cellXfs\\b[^>]*\\bcount=")\\d+(")`), `$1${proximoXfId}$2`);
+        definicoes.push({ atributos, filhos: base.filhos, centralizado: true });
         xfMap.set(chave, id);
         return id;
     }
 
     /** O xf já está no formato Geral (numFmt 0 ou sem numFmt declarado). */
     function ehGeral(sBase) {
-        const xf = xfs[Number(sBase) || 0];
-        return !xf || Number(xf.getAttribute('numFmtId') || 0) === 0;
+        const definicao = definicoes[Number(sBase) || 0];
+        if (!definicao) return true;
+        const numFmt = definicao.atributos.find((attr) => attr.name === 'numFmtId');
+        return !numFmt || Number(numFmt.value) === 0;
+    }
+
+    /** Xf já centralizado não é derivado de novo. */
+    function obterXfCentralizado(sBase) {
+        const definicao = definicoes[Number(sBase) || 0];
+        if (definicao && definicao.centralizado) return Number(sBase) || 0;
+        return obterOuCriarXf(sBase, null);
     }
 
     return {
         obterXf: (sBase, cor) => obterOuCriarXf(sBase, cor),
         obterXfGeral: (sBase, cor) => obterOuCriarXf(sBase, cor, true),
+        obterXfCentralizado,
         ehGeral,
         obterXml: () => xml,
         teveMudanca: () => proximoXfId > xfs.length
@@ -420,7 +469,14 @@ function calcularNovosValoresECores(mapaLinha) {
     // 1. Regra Carteira e Parte Ré
     const cart = texto('carteira');
     const pRe = texto('parteRe');
-    if (cart) {
+    const pReNorm = normalizarCabecalho(pRe);
+    if (pReNorm.includes('BRADESCO')) {
+        // Todo réu Bradesco pertence à carteira Indenizatória, qualquer que
+        // seja a carteira escrita. O sistema de destino usa um único
+        // cadastro para o banco: o nome sai sempre como BANCO BRADESCO SA.
+        novos.set('carteira', 'Bradesco - Indenizatória');
+        novos.set('parteRe', 'BANCO BRADESCO SA');
+    } else if (cart) {
         const cartNorm = normalizarCabecalho(cart);
         if (cartNorm.includes('BRADESCO') && cartNorm.includes('INDENIZATORIA')) {
             if (mapaLinha.has('parteRe')) novos.set('parteRe', 'BANCO BRADESCO SA');
@@ -440,7 +496,17 @@ function calcularNovosValoresECores(mapaLinha) {
         }
     }
 
-    // 2. Regra Comarca
+    // 2. Órgão: só pode ser JEC, JEF, JEA, VC, VU ou VF. Fora da lista, o rito
+    // define o órgão: Comum vira VC e Juizados vira JEC. Sem rito que decida, o
+    // texto original fica como está, para o operador conferir.
+    let orgaoFinal = '';
+    if (mapaLinha.has('orgao')) {
+        orgaoFinal = normalizarCabecalho(texto('orgao'));
+        if (!ORGAOS_VALIDOS.includes(orgaoFinal)) orgaoFinal = orgaoPeloRito(texto('rito'));
+        if (orgaoFinal) novos.set('orgao', orgaoFinal);
+    }
+
+    // 3. Regra Comarca
     if (mapaLinha.has('comarca')) {
         let com = normalizeNameValue(texto('comarca'));
         const comNorm = normalizarCabecalho(com);
@@ -465,14 +531,13 @@ function calcularNovosValoresECores(mapaLinha) {
             const resto = com.replace(/\bCAPITAL\b/gi, '').replace(/^[\s\-_/:]+|[\s\-_/:]+$/g, '').trim();
             com = normalizeNameValue(resto);
         } else if (comNorm === 'JACAREPAGUA') {
-            const orgao = normalizarCabecalho(texto('orgao'));
-            if (orgao === 'JEC') com = 'FREGUESIA';
-            else if (orgao === 'VC') com = 'TAQUARA';
+            if (orgaoFinal === 'JEC') com = 'FREGUESIA';
+            else if (orgaoFinal === 'VC') com = 'TAQUARA';
         }
         novos.set('comarca', com);
     }
 
-    // 3. Regra Tipo Audiencia
+    // 4. Regra Tipo Audiencia
     if (mapaLinha.has('tipoAudiencia')) {
         const tAud = texto('tipoAudiencia').trim();
         const dAud = texto('dataAudiencia').trim();
@@ -481,7 +546,7 @@ function calcularNovosValoresECores(mapaLinha) {
         }
     }
 
-    // 4. Valor da Causa 0 -> laranja
+    // 5. Valor da Causa 0 -> laranja
     if (mapaLinha.has('valor')) {
         const val = texto('valor');
         const digits = val.replace(/\D/g, '');
@@ -490,27 +555,25 @@ function calcularNovosValoresECores(mapaLinha) {
         }
     }
 
-    // 5. Advogado Adverso "SEM ADVOGADO" e Órgão fora de JEC, JEA, JECRIM -> laranja
+    // 6. Advogado Adverso "SEM ADVOGADO" e Órgão fora de JEC e JEA -> laranja
     if (mapaLinha.has('advogado') && mapaLinha.has('orgao')) {
         const adv = normalizeNameValue(texto('advogado'));
-        if (adv === 'SEM ADVOGADO') {
-            const org = normalizarCabecalho(texto('orgao'));
-            if (!['JEC', 'JEA', 'JECRIM'].includes(org)) {
-                cores.set('advogado', COR_LARANJA);
-            }
+        if (adv === 'SEM ADVOGADO' && !['JEC', 'JEA'].includes(orgaoFinal)) {
+            cores.set('advogado', COR_LARANJA);
         }
     }
 
-    // 6. Num 0 e Órgão VC ou VU -> laranja
-    if (mapaLinha.has('num') && mapaLinha.has('orgao')) {
+    // 7. Órgão VU: o Num é sempre 1. Fora isso, Num 0 com Órgão VC -> laranja.
+    if (mapaLinha.has('num')) {
         const num = texto('num').trim();
-        const org = normalizarCabecalho(texto('orgao'));
-        if ((num === '0' || num === '00') && ['VC', 'VU'].includes(org)) {
+        if (orgaoFinal === 'VU') {
+            novos.set('num', '1');
+        } else if ((num === '0' || num === '00') && orgaoFinal === 'VC') {
             cores.set('num', COR_LARANJA);
         }
     }
 
-    // 7. Rito fora de Comum e Juizados -> laranja
+    // 8. Rito fora de Comum e Juizados -> laranja
     if (mapaLinha.has('rito')) {
         const rito = normalizarCabecalho(texto('rito'));
         if (rito && rito !== 'COMUM' && !rito.startsWith('JUIZAD')) {
@@ -518,7 +581,7 @@ function calcularNovosValoresECores(mapaLinha) {
         }
     }
 
-    // 8. Causa Raiz: se a Carteira não contiver Bradesco nem Santander -> vermelho
+    // 9. Causa Raiz: se a Carteira não contiver Bradesco nem Santander -> vermelho
     if (mapaLinha.has('causaRaiz') && mapaLinha.has('carteira')) {
         const cartFinal = novos.get('carteira') || cart;
         const cartFinalNorm = normalizarCabecalho(cartFinal);
@@ -637,6 +700,124 @@ function processarAba(aba, strings, pintor) {
         });
     });
     return { xml, contagem };
+}
+
+/* ------------------------------------------------------------- formatação -- */
+
+const LARGURA_MINIMA_DA_COLUNA = 10;
+const LARGURA_MAXIMA_DA_COLUNA = 60;
+const ALTURA_DA_LINHA = 15;
+
+/** Número da coluna pela letra do endereço (A -> 1, Z -> 26, AA -> 27). */
+function indiceDaColuna(letras) {
+    return Array.from(letras).reduce((total, letra) => total * 26 + letra.charCodeAt(0) - 64, 0);
+}
+
+/** Quantidade de caracteres do texto, contando par substituto como um. */
+function comprimentoDoTexto(texto) {
+    return Array.from(String(texto)).length;
+}
+
+/** Grava a altura de cada linha num único passo pelo XML. */
+function ajustarAlturasDasLinhas(xml, alturas) {
+    return xml.replace(new RegExp('<((?:\\w+:)?row)\\b([^>]*)>', 'g'), (encontrado, nome, atributos) => {
+        const numero = /\br="([^"]+)"/.exec(atributos);
+        if (!numero || !alturas.has(numero[1])) return encontrado;
+        const limpos = atributos.replace(/\s+ht="[^"]*"/, '').replace(/\s+customHeight="[^"]*"/, '');
+        return `<${nome}${limpos} ht="${alturas.get(numero[1])}" customHeight="1">`;
+    });
+}
+
+/** Grava o estilo centralizado de cada célula num único passo pelo XML. */
+function ajustarEstilosDasCelulas(xml, estilos) {
+    return xml.replace(new RegExp('<((?:\\w+:)?c)\\b([^>]*?)(/?)>', 'g'), (encontrado, nome, atributos, fecho) => {
+        const endereco = /\br="([^"]+)"/.exec(atributos);
+        if (!endereco || !estilos.has(endereco[1])) return encontrado;
+        const estilo = estilos.get(endereco[1]);
+        const novos = /\bs="[^"]*"/.test(atributos)
+            ? atributos.replace(/\bs="[^"]*"/, `s="${estilo}"`)
+            : `${atributos} s="${estilo}"`;
+        return `<${nome}${novos}${fecho}>`;
+    });
+}
+
+/** Substitui (ou insere antes de sheetData) a largura de cada coluna usada. */
+function ajustarLargurasDasColunas(xml, larguras) {
+    const tag = /<((?:\w+:)?)sheetData\b/.exec(xml);
+    if (!tag) return xml;
+    const prefixo = tag[1];
+    const colunas = Array.from(larguras.entries())
+        .sort(([a], [b]) => a - b)
+        .map(([coluna, largura]) => `<${prefixo}col min="${coluna}" max="${coluna}" width="${largura}" customWidth="1"/>`)
+        .join('');
+    if (!colunas) return xml;
+    const bloco = `<${prefixo}cols>${colunas}</${prefixo}cols>`;
+    const existente = new RegExp(`<${prefixo}cols\\b[^>]*?(?:/>|>[\\s\\S]*?</${prefixo}cols>)`);
+    if (existente.test(xml)) return xml.replace(existente, bloco);
+    return xml.replace(`<${prefixo}sheetData`, `${bloco}<${prefixo}sheetData`);
+}
+
+/**
+ * Formata a aba como um "selecionar tudo": centraliza horizontal e vertical,
+ * liga a quebra de linha, ajusta a largura de cada coluna ao maior conteúdo e a
+ * altura de cada linha ao número de linhas do texto. Devolve o XML e se houve
+ * mudança, para a aba ser regravada mesmo sem célula de valor alterada.
+ */
+function formatarAba(xml, strings, pintor) {
+    if (!pintor) return { xml, mudou: false };
+    const documento = analisarXml(xml);
+    const dados = primeiroFilho(documento, 'sheetData');
+    if (!dados) return { xml, mudou: false };
+
+    const linhas = elementosPorNome(dados, 'row').map((linha) => {
+        const celulas = Array.from(linha.children).filter((no) => no.nodeType === 1 && no.localName === 'c');
+        return {
+            numero: linha.getAttribute('r'),
+            celulas: celulas.map((celula) => {
+                const endereco = celula.getAttribute('r');
+                return endereco ? {
+                    endereco,
+                    coluna: indiceDaColuna(endereco.replace(/\d+/g, '')),
+                    texto: textoDaCelula(celula, strings),
+                    temFormula: Boolean(primeiroFilho(celula, 'f')),
+                    estilo: celula.getAttribute('s')
+                } : null;
+            }).filter(Boolean)
+        };
+    });
+
+    const larguras = new Map();
+    linhas.forEach(({ celulas }) => celulas.forEach(({ coluna, texto }) => {
+        const comprimento = comprimentoDoTexto(texto);
+        if (comprimento > (larguras.get(coluna) || 0)) larguras.set(coluna, comprimento);
+    }));
+    const largurasFinais = new Map(Array.from(larguras, ([coluna, comprimento]) => [
+        coluna,
+        Math.min(Math.max(comprimento + 2, LARGURA_MINIMA_DA_COLUNA), LARGURA_MAXIMA_DA_COLUNA)
+    ]));
+
+    const estilos = new Map();
+    const alturas = new Map();
+    linhas.forEach(({ numero, celulas }) => {
+        let linhasDeTexto = 1;
+        celulas.forEach(({ endereco, coluna, texto, temFormula, estilo }) => {
+            const comprimento = comprimentoDoTexto(texto);
+            const caracteresPorLinha = Math.max((largurasFinais.get(coluna) || LARGURA_MINIMA_DA_COLUNA) - 1, 1);
+            linhasDeTexto = Math.max(linhasDeTexto, Math.ceil(comprimento / caracteresPorLinha) || 1);
+            // Célula vazia e sem fórmula não mostra alinhamento nenhum.
+            if (!comprimento && !temFormula) return;
+            const novoEstilo = pintor.obterXfCentralizado(estilo);
+            if (novoEstilo === null || novoEstilo === Number(estilo || 0)) return;
+            estilos.set(endereco, novoEstilo);
+        });
+        if (numero) alturas.set(numero, linhasDeTexto * ALTURA_DA_LINHA);
+    });
+
+    let resultado = xml;
+    if (estilos.size) resultado = ajustarEstilosDasCelulas(resultado, estilos);
+    if (alturas.size) resultado = ajustarAlturasDasLinhas(resultado, alturas);
+    if (largurasFinais.size) resultado = ajustarLargurasDasColunas(resultado, largurasFinais);
+    return { xml: resultado, mudou: estilos.size > 0 || largurasFinais.size > 0 };
 }
 
 function somar(alvos, contagem) {
@@ -843,10 +1024,11 @@ async function processarPlanilha() {
 
     abas.forEach((aba) => {
         const resultado = processarAba(aba, strings, pintor);
+        const formatado = formatarAba(resultado.xml, strings, pintor);
         aba.contagem = resultado.contagem;
         somar(contagem, resultado.contagem);
-        if (resultado.contagem.alteradas || resultado.contagem.pintadas) {
-            zip.file(aba.caminho, resultado.xml);
+        if (resultado.contagem.alteradas || resultado.contagem.pintadas || formatado.mudou) {
+            zip.file(aba.caminho, formatado.xml);
         }
     });
 
